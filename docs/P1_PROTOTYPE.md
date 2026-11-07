@@ -181,7 +181,7 @@ The adapter validates the source archive SHA-256 against the in-memory inspectio
 
 **This is verification of instruction start positions only**, not executable reachability, actual object-state transitions, or animation timing.
 
-**Testing limitation:** GitHub Actions uses **mocked** external disassembler output, covering successful comparisons and failure handling. An actual original-game `descumm` invocation has **not yet been completed** in the research environment because the executable was unavailable. This must remain recorded as unresolved.
+**Verification status:** On 2026-11-07, the user supplied Windows output from real `descumm` runs: all **11** object 358 candidates in script 201 and all **6** in script 202 matched expected instruction starts, with no unmatched candidates or opcode conflicts. The research environment itself has not executed the external tool. GitHub Actions uses **mocked** external disassembler output; its passing tests are not the source of the real-script result. A separate opt-in `tests/test_private_descumm.py` test now reproduces the real comparison when both local inputs are explicitly provided.
 
 Reference: [Object 358 script evidence register](research/P1_OBJECT_358_SCRIPT_SURVEY.md).
 
@@ -197,7 +197,7 @@ Reference: [Object 358 script evidence register](research/P1_OBJECT_358_SCRIPT_S
 
 ## Verification
 
-- **GitHub Actions: 77 tests discovered, 76 synthetic tests passed, 1 optional private-integration test explicitly skipped, 0 failures** ([verified workflow run](https://github.com/87otlto-coder/Scummbucket/actions/runs/42415134971)). The external `descumm` adapter tests use mocked tool output; they **do not** represent completed original-game disassembly.
+- **GitHub Actions: 78 tests discovered, 76 synthetic tests passed, 2 optional private-integration tests skipped, 0 failures** ([verified workflow run](https://github.com/87otlto-coder/Scummbucket/actions/runs/42418289487)). The user independently completed actual `descumm` checks locally for scripts 201 and 202; CI itself uses mocked output and does not access game files.
 - User-supplied MI2 ZIP passed structural inventory: 110 rooms, 127 palette-cycle records in 21 rooms and 158 multi-state object images.
 - New resource-ID extraction tests cover two distinct scripts sharing a room, exact byte matches in both representations, empty and invalid slots, corrupt links, overwrite refusal and the new CLI.
 - Room 4 `CYCL` chunk exports in both `decoded` and `stored` modes were verified byte-for-byte against the original `MONKEY2.001` source slices.
@@ -216,6 +216,18 @@ $env:SCUMMBUCKET_MI2_ARCHIVE = "C:\path\to\mi2.zip"
 python -m unittest discover -s tests -v
 Remove-Item Env:\SCUMMBUCKET_MI2_ARCHIVE
 ```
+
+To also repeat the **real `descumm` instruction-alignment regression**, use both environment variables:
+
+```powershell
+$env:SCUMMBUCKET_MI2_ARCHIVE = "D:\old"
+$env:SCUMMBUCKET_DESCUMM = "C:\Users\87otl\Tools\scummvm-tools\descumm.exe"
+python -m unittest discover -s tests -v
+Remove-Item Env:\SCUMMBUCKET_MI2_ARCHIVE
+Remove-Item Env:\SCUMMBUCKET_DESCUMM
+```
+
+The separate private disassembly test expects 11 verified starts in local script 201 and 6 in script 202, with no unmatched candidate or opcode conflicts. Source fingerprints prevent silently accepting another edition. The tests still do not prove gameplay execution or animation timing.
 
 The integration test expects the **specific SHA-256 fingerprints** recorded in the P0 research documents. A different, legitimate MI2 edition may fail this exact fixture; that is an edition-mismatch signal and must not be presented as proof the game archive is corrupted.
 

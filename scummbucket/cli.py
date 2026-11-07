@@ -22,11 +22,24 @@ def main(argv=None) -> int:
     export.add_argument("--representation", choices=("decoded", "stored"), default="decoded",
                         help="decoded removes XOR 0x69; stored preserves exact archive bytes")
     export.add_argument("--json", action="store_true", help="Print full JSON result")
+
+    by_id = sub.add_parser("extract-id", help="Export one verified resource by directory type and ID")
+    by_id.add_argument("input", help="ZIP, folder or MONKEY2.000 input")
+    by_id.add_argument("--directory", choices=("DROO", "DSCR", "DSOU", "DCOS", "DCHR"),
+                       required=True, help="SCUMM v5 index directory")
+    by_id.add_argument("--id", type=int, required=True, help="Resource ID within the chosen directory")
+    by_id.add_argument("--output-dir", required=True, help="New output directory for chunk and manifest")
+    by_id.add_argument("--representation", choices=("decoded", "stored"), default="decoded")
+    by_id.add_argument("--json", action="store_true", help="Print full JSON result")
     args = parser.parse_args(argv)
 
-    if args.command == "extract":
-        report = extract(args.input, args.output_dir, room_id=args.room,
-                         tag=args.tag, representation=args.representation)
+    if args.command in ("extract", "extract-id"):
+        if args.command == "extract-id":
+            report = extract(args.input, args.output_dir, directory=args.directory,
+                             resource_id=args.id, representation=args.representation)
+        else:
+            report = extract(args.input, args.output_dir, room_id=args.room,
+                             tag=args.tag, representation=args.representation)
         if args.json:
             print(json.dumps(report, indent=2))
         else:

@@ -18,8 +18,12 @@ def encoded(data: bytes) -> bytes:
 
 
 def index() -> bytes:
-    directories = b"".join(chunk(t, struct.pack("<H", 1) + b"\x01" + struct.pack("<I", 30))
-                           for t in ("DROO", "DSCR", "DSOU", "DCOS", "DCHR"))
+    # Room slot 0 is unused; room 1 lives in file number 1 with offset 0.
+    # Other resource directories are empty in this deliberately tiny fixture.
+    room_dir = chunk("DROO", struct.pack("<H", 2) + b"\x00\x01" + struct.pack("<II", 0, 0))
+    directories = room_dir + b"".join(
+        chunk(t, struct.pack("<H", 1) + b"\x00" + struct.pack("<I", 0))
+        for t in ("DSCR", "DSOU", "DCOS", "DCHR"))
     return b"".join([chunk("RNAM", b""), chunk("MAXS", b""), directories,
                      chunk("DOBJ", struct.pack("<H", 1) + b"\x00" * 5)])
 
@@ -72,7 +76,9 @@ class InspectorTest(unittest.TestCase):
         self.assertEqual(report["resources"]["room_count"], 1)
         self.assertEqual(report["resources"]["cycle_count"], 1)
         self.assertEqual(report["resources"]["multistate_object_images"], 1)
-        self.assertEqual(report["index"]["DROO"]["slots"], 1)
+        self.assertEqual(report["index"]["DROO"]["slots"], 2)
+        self.assertEqual(report["directory_links"]["summary"],
+                         {"linked": 1, "unused": 5, "failed": 0})
         self.assertEqual(report["resources"]["resource_counts"]["OBIM"], 1)
         self.assertEqual(report["diagnostic_counts"].get("error", 0), 0)
         self.assertNotIn("CYCLE_TRAILING_BYTES", [x["code"] for x in report["diagnostics"]])
@@ -113,7 +119,7 @@ class InspectorTest(unittest.TestCase):
         self.assertIn("CYCLE_TERMINATOR_MISSING", self.diagnostic(inspect(self.zip_path)))
 
     def test_bad_index_directory_count(self):
-        bad = index().replace(b"DROO\x00\x00\x00\x0f\x01\x00", b"DROO\x00\x00\x00\x0f\x02\x00")
+        bad = index().replace(b"DROO\x00\x00\x00\x14\x02\x00", b"DROO\x00\x00\x00\x14\x03\x00")
         make_zip(self.zip_path, a=bad, b=resource())
         self.assertIn("DIRECTORY_LENGTH_INVALID", self.diagnostic(inspect(self.zip_path)))
 

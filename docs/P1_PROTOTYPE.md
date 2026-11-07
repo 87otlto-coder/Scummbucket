@@ -156,6 +156,35 @@ python -m scummbucket scenes "C:\path\to\mi2.zip" --room 34 --json
 
 Replace the example ZIP path with your authorized local archive. The human-readable output summarizes candidate counts by object; the JSON retains individual offsets for reproducible review.
 
+## Independent v5 script-boundary verification (optional external tool)
+
+ScummBucket can now compare an existing script-state byte-pattern candidate to a real instruction boundary emitted by the separately installed **ScummVM Tools** `descumm`. This avoids embedding its GPL implementation in ScummBucket.
+
+**Installation:** Obtain the Windows ScummVM Tools package at https://www.scummvm.org/en/downloads/ and extract it outside the source checkout (for example `C:\Users\87otl\Tools\scummvm-tools`). Locate `descumm.exe` there. The CLI also supports an executable already on `PATH`.
+
+```powershell
+cd "C:\Users\87otl\ScummBucket"
+$descumm = (Get-ChildItem "C:\Users\87otl\Tools\scummvm-tools" -Recurse -Filter descumm.exe -File | Select-Object -First 1).FullName
+
+python -m scummbucket verify-descumm "D:\old" --room 34 --script 201 --object 358 --descumm "$descumm"
+python -m scummbucket verify-descumm "D:\old" --room 34 --script 202 --object 358 --descumm "$descumm"
+```
+
+For machine-readable evidence, append `--json` or `--output "C:\Users\87otl\ScummBucket\reports\descumm-script-201.json"` (the reports folder must exist and the file must not already exist). No commercial script data or disassembler binary is written to GitHub.
+
+The adapter validates the source archive SHA-256 against the in-memory inspection before extracting a temporary `LSCR`, runs `descumm -5 -o -h` with a timeout, parses only explicit emitted offset/opcode lines, and compares them with the candidate raw bytes. It returns:
+
+- `confirmed_opcode_start` only when the external disassembler emits the expected opcode at that script body offset;
+- `not_emitted` for unmatched byte-pattern candidates (inconclusive, **not** automatically rejected);
+- `opcode_conflict` plus a diagnostic for an inconsistent emitted opcode;
+- an explicit failure if the tool is missing, times out, crashes, produces incomplete output, or reports inconsistent instruction offsets.
+
+**This is verification of instruction start positions only**, not executable reachability, actual object-state transitions, or animation timing.
+
+**Testing limitation:** GitHub Actions uses **mocked** external disassembler output, covering successful comparisons and failure handling. An actual original-game `descumm` invocation has **not yet been completed** in the research environment because the executable was unavailable. This must remain recorded as unresolved.
+
+Reference: [Object 358 script evidence register](research/P1_OBJECT_358_SCRIPT_SURVEY.md).
+
 ## Not yet supported / limitations
 
 - Exact retail edition identification by trusted fingerprint; structural compatibility is not conclusive.
@@ -196,7 +225,7 @@ Do not commit game archives, extracted graphics, audio, ROMs or other commercial
 
 ## Next P1 acceptance work
 
-1. Upgrade selected `drawObject`/`setState` byte patterns to **instruction-boundary-aware** script references, proving where they are valid instructions and identifying script control flow before making animation claims.
+1. Run the new independent `verify-descumm` command on original scripts 201 and 202; record verified instruction boundaries, inconclusive matches, and any errors. Then trace the relevant script control flow without claiming playback from disassembly alone.
 2. Expand structured resource-level recovery diagnostics where an isolated malformed chunk can be safely skipped.
 3. Add archive/version identification and signature regression fixtures.
 4. Verify reproducible extraction across more resource classes and strengthen source provenance fields.

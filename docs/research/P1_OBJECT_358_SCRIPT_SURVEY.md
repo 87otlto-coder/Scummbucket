@@ -80,10 +80,46 @@ Every machine-readable candidate includes `instruction_alignment_verified=false`
 | Object 358 animates automatically in game | **Not established** | Observe ScummVM gameplay and timing |
 | Animation frames/state order/delays | **Not established** | Instrument verified codepath and renderer |
 
-## 6. Next experiment / exit criteria
+## 6. Independent instruction-offset comparison (available in ScummBucket)
+
+**Implementation status:** A `verify-descumm` command has been added to the P1 feature branch. It exports only the selected original `LSCR` chunk to an OS temporary directory, invokes the **separately installed** ScummVM Tools `descumm` executable with `-5 -o -h`, and compares emitted instruction start offsets and opcode bytes to our existing candidates. It deletes the temporary script after the process exits and does not commit proprietary data.
+
+**Real disassembler run status: NOT YET PERFORMED.** The research environment did not have `descumm` installed. Unit tests mock its output to verify the matching and error-reporting logic; they are not evidence that an actual source instruction has been independently disassembled.
+
+The original private script chunks were separately rechecked by SHA-256, without committing them:
+
+| Local script | `LSCR` source offset | Chunk size | XOR-decoded chunk SHA-256 |
+| --- | ---: | ---: | --- |
+| 201 | 2,740,982 | 5,050 bytes | `3dd3377827386229962e9aae8d681426115ad228efe1ecf36d7469154d1fbc09` |
+| 202 | 2,746,032 | 1,107 bytes | `1bb2578f20c0aad5146995f7d40b5cfdd0fe6b5c25a65faaffeddb5f12c82ee9` |
+
+On Windows, download **ScummVM Tools for Windows** from https://www.scummvm.org/en/downloads/ (the tools package, not just the game runner), and extract it into a folder outside the source checkout, for example `C:\Users\87otl\Tools\scummvm-tools`. Find the `descumm.exe` executable, then run:
+
+```powershell
+cd "C:\Users\87otl\ScummBucket"
+git pull --ff-only origin feature/p1-scumm-v5-inventory
+
+$descumm = (Get-ChildItem "C:\Users\87otl\Tools\scummvm-tools" -Recurse -Filter descumm.exe -File | Select-Object -First 1).FullName
+
+python -m scummbucket verify-descumm "D:\old" --room 34 --script 201 --object 358 --descumm "$descumm"
+python -m scummbucket verify-descumm "D:\old" --room 34 --script 202 --object 358 --descumm "$descumm"
+```
+
+The `D:\old` input is the original-game directory confirmed working in this user's local session. The full path to the executable is user-configurable; no game archives or binaries are embedded into the application.
+
+**Interpretation rules:**
+
+- `confirmed_opcode_start`: `descumm` emitted the expected opcode at that exact script-body offset. This supports **instruction alignment only**.
+- `not_emitted`: no matching offset appeared in the disassembler output. This is **inconclusive**, not automatically a false positive; output may suppress or restructure lines.
+- `opcode_conflict`: the disassembler emitted a different opcode at the same offset. This is an error and must be investigated.
+- Nonzero disassembler exits, missing executable, malformed output, timeouts, duplicate emitted offsets, and source-hash mismatches are explicitly reported as failures.
+
+**None** of these statuses proves that the script branch executes in-game, that the object cycles automatically, or what its animation timing would be.
+
+## 7. Next experiment / exit criteria
 
 1. Use an established SCUMM v5 disassembler (prefer independently installed ScummVM Tools `descumm`) on **private, extracted** `LSCR` 201 and 202 bytes.
-2. Compare decoded **instruction start offsets** against the 17 recorded byte-pattern offsets. Record confirmed matches, false positives, and undecoded sections with diagnostics.
+2. Compare decoded **instruction start offsets** against the 17 recorded byte-pattern offsets. Record confirmed instruction starts, inconclusive/unemitted candidates, opcode conflicts, and undecoded sections with diagnostics.
 3. Determine whether variable 100 is used to select image state in an executable branch. Do not infer loop timing from a literal code sequence.
 4. Use observed gameplay or instrumented ScummVM rendering to establish any actual animation frame/timing behavior.
 5. Preserve source offsets, script IDs and the distinction between *observed raw bytes*, *disassembled code*, *executed behavior*, and *reconstructed animation*.

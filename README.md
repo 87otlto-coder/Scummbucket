@@ -31,11 +31,12 @@ Reference implementations require independent validation against relevant game e
 
 ## Experimental archive inspector (P1 prototype)
 
-A limited, read-only command-line prototype is available on the P1 feature branch. It currently supports the original DOS Monkey Island 2 `MONKEY2.000` / `MONKEY2.001` pair only. This is an **inventory and diagnostics tool**, not yet a working asset exporter.
+A limited, read-only command-line prototype is available on the P1 feature branch. It currently supports the original DOS Monkey Island 2 `MONKEY2.000` / `MONKEY2.001` pair only. This is an **inventory, diagnostics and selective raw-chunk export tool**, not yet an image, animation or audio decoder.
 
 ```bash
 python -m scummbucket inspect /path/to/mi2.zip
 python -m scummbucket inspect /path/to/mi2.zip --json
+python -m scummbucket extract /path/to/mi2.zip --room 4 --tag CYCL --output-dir /new/path/cycles
 python -m unittest discover -s tests -v
 ```
 
@@ -43,7 +44,7 @@ See [P1 prototype documentation](docs/P1_PROTOTYPE.md) for supported behavior, f
 
 ## Current status
 
-P0 format research is documented in [PR #2](https://github.com/87otlto-coder/Scummbucket/pull/2) and remains open. This branch introduces the first **P1 inspection prototype** in [PR #3](https://github.com/87otlto-coder/Scummbucket/pull/3). It has been tested against one user-supplied MI2 archive and synthetic fixtures, but **P1 is not complete**: raw extraction, full resource provenance, additional diagnostics and cross-edition support are still outstanding.
+P0 format research is documented in [PR #2](https://github.com/87otlto-coder/Scummbucket/pull/2) and remains open. This branch introduces the first **P1 inspection and raw extraction prototype** in [PR #3](https://github.com/87otlto-coder/Scummbucket/pull/3). It has been tested against one user-supplied MI2 archive and synthetic fixtures, but **P1 is not complete**: complete resource-directory cross-links, resilient per-resource recovery, advanced provenance verification and cross-edition support are still outstanding.
 
 Commercial game files and extracted copyrighted game assets must not be committed to this repository. Use authorized local copies for integration testing; favor synthetic fixtures in version control.
 

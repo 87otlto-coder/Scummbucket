@@ -104,9 +104,9 @@ When the variable is absent, the private test reports `skipped` explicitly. When
 
 ## Verification
 
-- **26 prior synthetic unit tests passed** on the prototype (15 inventory tests + 11 export tests).
+- **GitHub Actions: 48 tests discovered, 47 synthetic tests passed, 1 optional private-integration test explicitly skipped** because no original-game files are stored in the repository.
 - User-supplied MI2 ZIP passed structural inventory: 110 rooms, 127 palette-cycle records in 21 rooms and 158 multi-state object images.
-- Ten new synthetic linker tests and one integrated failure-status test are included; the **full 37-test synthetic suite passed in GitHub Actions** on the current feature branch.
+- New resource-ID extraction tests cover two distinct scripts sharing a room, exact byte matches in both representations, empty and invalid slots, corrupt links, overwrite refusal and the new CLI.
 - Room 4 `CYCL` chunk exports in both `decoded` and `stored` modes were verified byte-for-byte against the original `MONKEY2.001` source slices.
 - Four warnings concerning unverified palette-cycle flags are intentionally preserved; they are not parse failures.
 - A ZIP labeled `mi1.zip` did not contain The Secret of Monkey Island and was rejected as unsupported (`GAME_PAIR_NOT_FOUND`).

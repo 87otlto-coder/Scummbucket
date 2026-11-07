@@ -14,6 +14,7 @@ Open PowerShell and run:
 cd "C:\Users\87otl\ScummBucket"
 python -m scummbucket inspect "C:\path\to\mi2.zip"
 python -m scummbucket inspect "C:\path\to\mi2.zip" --json
+New-Item -ItemType Directory -Force "C:\Users\87otl\ScummBucket\reports" | Out-Null
 python -m scummbucket inspect "C:\path\to\MONKEY2.000" --output "C:\Users\87otl\ScummBucket\reports\mi2-inventory.json"
 
 # Export room 4 palette-cycle chunks, removing the file-level XOR encoding:

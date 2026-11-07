@@ -197,7 +197,7 @@ Reference: [Object 358 script evidence register](research/P1_OBJECT_358_SCRIPT_S
 
 ## Verification
 
-- **GitHub Actions: 65 tests discovered, 64 synthetic tests passed, 1 optional private-integration test explicitly skipped, 0 failures** ([verified workflow run](https://github.com/87otlto-coder/Scummbucket/actions/runs/42413238213)).
+- **GitHub Actions: 77 tests discovered, 76 synthetic tests passed, 1 optional private-integration test explicitly skipped, 0 failures** ([verified workflow run](https://github.com/87otlto-coder/Scummbucket/actions/runs/42415134971)). The external `descumm` adapter tests use mocked tool output; they **do not** represent completed original-game disassembly.
 - User-supplied MI2 ZIP passed structural inventory: 110 rooms, 127 palette-cycle records in 21 rooms and 158 multi-state object images.
 - New resource-ID extraction tests cover two distinct scripts sharing a room, exact byte matches in both representations, empty and invalid slots, corrupt links, overwrite refusal and the new CLI.
 - Room 4 `CYCL` chunk exports in both `decoded` and `stored` modes were verified byte-for-byte against the original `MONKEY2.001` source slices.

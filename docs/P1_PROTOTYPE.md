@@ -130,12 +130,27 @@ This inventory is a P1 prerequisite for P4 background-animation reconstruction, 
 
 ## Verification
 
-- **GitHub Actions: 48 tests discovered, 47 synthetic tests passed, 1 optional private-integration test explicitly skipped** because no original-game files are stored in the repository.
+- **GitHub Actions: 58 tests discovered, 57 synthetic tests passed, 1 optional private-integration test explicitly skipped, 0 failures** ([verified workflow run](https://github.com/87otlto-coder/Scummbucket/actions/runs/42412135349)).
 - User-supplied MI2 ZIP passed structural inventory: 110 rooms, 127 palette-cycle records in 21 rooms and 158 multi-state object images.
 - New resource-ID extraction tests cover two distinct scripts sharing a room, exact byte matches in both representations, empty and invalid slots, corrupt links, overwrite refusal and the new CLI.
 - Room 4 `CYCL` chunk exports in both `decoded` and `stored` modes were verified byte-for-byte against the original `MONKEY2.001` source slices.
 - Four warnings concerning unverified palette-cycle flags are intentionally preserved; they are not parse failures.
 - A ZIP labeled `mi1.zip` did not contain The Secret of Monkey Island and was rejected as unsupported (`GAME_PAIR_NOT_FOUND`).
+
+## Optional local original-game validation
+
+The repo includes an integration test for the fingerprinted MI2 sample, but the test is **skipped in GitHub Actions** because proprietary game archives are never committed.
+
+To run it privately on your own Windows machine, set the environment variable to your authorized game archive path, then run the tests:
+
+\`\`\`powershell
+cd "C:\Users\87otl\ScummBucket"
+$env:SCUMMBUCKET_MI2_ARCHIVE = "C:\path\to\mi2.zip"
+python -m unittest discover -s tests -v
+Remove-Item Env:\SCUMMBUCKET_MI2_ARCHIVE
+\`\`\`
+
+The integration test expects the **specific SHA-256 fingerprints** recorded in the P0 research documents. A different, legitimate MI2 edition may fail this exact fixture; that is an edition-mismatch signal and must not be presented as proof the game archive is corrupted.
 
 ## Privacy and project discipline
 

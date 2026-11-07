@@ -29,6 +29,18 @@ ScummBucket is intended as an asset-extraction and reconstruction toolkit, **not
 
 Reference implementations require independent validation against relevant game editions. Third-party licensing must be respected.
 
+## Experimental archive inspector (P1 prototype)
+
+A limited, read-only command-line prototype is available on the P1 feature branch. It currently supports the original DOS Monkey Island 2 `MONKEY2.000` / `MONKEY2.001` pair only. This is an **inventory and diagnostics tool**, not yet a working asset exporter.
+
+```bash
+python -m scummbucket inspect /path/to/mi2.zip
+python -m scummbucket inspect /path/to/mi2.zip --json
+python -m unittest discover -s tests -v
+```
+
+See [P1 prototype documentation](docs/P1_PROTOTYPE.md) for supported behavior, failure reporting and remaining limitations. The sample game files must remain outside the repository.
+
 ## Current status
 
 P0 (format research and validation) is next. No complete archive reader or verified original-game extraction implementation has been established in this repository.

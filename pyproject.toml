@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scummbucket"
+version = "0.1.0a0"
+description = "Read-only SCUMM resource investigation and extraction toolkit"
+requires-python = ">=3.10"
+
+[project.scripts]
+scummbucket = "scummbucket.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["scummbucket*"]

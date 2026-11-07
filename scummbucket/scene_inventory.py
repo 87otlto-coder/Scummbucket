@@ -170,4 +170,9 @@ def build_scene_inventory(decoded: bytes, resources: dict, directory_links: dict
         "multistate_object_candidates", "rooms_with_multistate_candidates",
         "palette_cycle_records", "rooms_with_palette_cycle_candidates")}
     summary["rooms"] = len(scenes)
-    return {"summary": summary, "rooms": scenes, "status": "structural_relationships_only"}, diagnostics
+    from .script_candidates import scan_room_script_patterns
+    script_summary, script_diagnostics = scan_room_script_patterns(decoded, scenes, source=source)
+    diagnostics.extend(script_diagnostics)
+    summary["script_pattern_candidates"] = script_summary
+    return {"summary": summary, "rooms": scenes,
+            "status": "structural_relationships_and_unaligned_script_patterns"}, diagnostics

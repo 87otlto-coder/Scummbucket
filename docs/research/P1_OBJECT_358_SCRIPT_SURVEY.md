@@ -84,7 +84,17 @@ Every machine-readable candidate includes `instruction_alignment_verified=false`
 
 **Implementation status:** A `verify-descumm` command has been added to the P1 feature branch. It exports only the selected original `LSCR` chunk to an OS temporary directory, invokes the **separately installed** ScummVM Tools `descumm` executable with `-5 -o -h`, and compares emitted instruction start offsets and opcode bytes to our existing candidates. It deletes the temporary script after the process exits and does not commit proprietary data.
 
-**Real disassembler run status: NOT YET PERFORMED.** The research environment did not have `descumm` installed. Unit tests mock its output to verify the matching and error-reporting logic; they are not evidence that an actual source instruction has been independently disassembled.
+**Real disassembler run status: COMPLETED BY USER ON WINDOWS (2026-11-07).** The user ran the official ScummVM Tools `descumm.exe` against the original game archive via ScummBucket's `verify-descumm` adapter and supplied screenshots of both terminal results. The research environment itself did not execute that external binary; our evidence for its successful execution is the supplied output, not the mocked CI tests.
+
+| Local script | Candidates checked | Confirmed opcode starts | Not emitted | Opcode conflicts | Adapter result |
+| --- | ---: | ---: | ---: | ---: | --- |
+| 201 | 11 | 11 | 0 | 0 | `success` |
+| 202 | 6 | 6 | 0 | 0 | `success` |
+| **Total** | **17** | **17** | **0** | **0** | **All matched** |
+
+**Evidence scope:** Each positive match establishes that `descumm` emitted the expected **opcode at the same script-body instruction offset** as the existing direct-object byte pattern. It supports instruction-boundary alignment. The adapter does not yet compare full decoded operand semantics with the disassembler's human-readable output and cannot establish whether a branch executes, how frequently it executes, or any animation frame timing. The script's structure and image-state relationships remain separate from observed gameplay.
+
+The four `CYCLE_FLAGS_UNVERIFIED` warnings seen in both screenshots originated from the whole-archive palette-cycle inspection and are not caused by these local scripts. They remain open diagnostic findings.
 
 The original private script chunks were separately rechecked by SHA-256, without committing them:
 
@@ -116,12 +126,29 @@ The `D:\old` input is the original-game directory confirmed working in this user
 
 **None** of these statuses proves that the script branch executes in-game, that the object cycles automatically, or what its animation timing would be.
 
+### Reproducing this result as a private integration regression
+
+Two opt-in regression tests are available in the repository: the existing archive inventory test, and the new real-disassembler integration test `tests/test_private_descumm.py`. Both skip in CI unless given the user's private inputs. To run both on the Windows workstation (without committing any copyrighted resources):
+
+```powershell
+cd "C:\Users\87otl\ScummBucket"
+git pull --ff-only origin feature/p1-scumm-v5-inventory
+$env:SCUMMBUCKET_MI2_ARCHIVE = "D:\old"
+$env:SCUMMBUCKET_DESCUMM = "C:\Users\87otl\Tools\scummvm-tools\descumm.exe"
+python -m unittest discover -s tests -v
+Remove-Item Env:\SCUMMBUCKET_MI2_ARCHIVE
+Remove-Item Env:\SCUMMBUCKET_DESCUMM
+```
+
+Do not interpret an optional test skipped because its inputs were absent as an executed verification.
+
 ## 7. Next experiment / exit criteria
 
-1. Use an established SCUMM v5 disassembler (prefer independently installed ScummVM Tools `descumm`) on **private, extracted** `LSCR` 201 and 202 bytes.
-2. Compare decoded **instruction start offsets** against the 17 recorded byte-pattern offsets. Record confirmed instruction starts, inconclusive/unemitted candidates, opcode conflicts, and undecoded sections with diagnostics.
-3. Determine whether variable 100 is used to select image state in an executable branch. Do not infer loop timing from a literal code sequence.
-4. Use observed gameplay or instrumented ScummVM rendering to establish any actual animation frame/timing behavior.
-5. Preserve source offsets, script IDs and the distinction between *observed raw bytes*, *disassembled code*, *executed behavior*, and *reconstructed animation*.
+1. **Completed:** An independently installed `descumm` corroborated all 17 opcode starts for object 358 in scripts 201 and 202, as evidenced by the user-supplied Windows output. This does not imply runtime execution.
+2. **Next:** Capture the relevant disassembler lines and neighboring control flow, including operand semantics, branch conditions, loops, and the variable reference 100. Record undecoded sections with diagnostics rather than guessing.
+3. Examine whether object 357's script 202 state changes are related to those of object 358; do not infer a dependency merely from shared script storage.
+4. Verify which branches execute during gameplay using ScummVM trace instrumentation or observed playback. Establish frame order and timing separately.
+5. Preserve offsets, script IDs, opcode interpretations, and the four evidence levels: *raw bytes*, *disassembled instructions*, *executed behavior*, and *reconstructed animation*.
+6. Review the palette-cycle flags independently; do not suppress warnings merely because script disassembly passed.
 
 **P1 remains incomplete. This is evidence-gathering in support of P4, not completed animation reconstruction.**

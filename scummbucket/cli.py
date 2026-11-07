@@ -94,10 +94,23 @@ def main(argv=None) -> int:
             for room in scenes:
                 pairs = sum(o["status"] == "paired" for o in room["objects"])
                 candidates = sum(o["background_animation_candidate"] for o in room["objects"])
+                hit_count = len(room.get("script_state_candidates", []))
                 print(f"Room {room['room_id']:03d}: objects={pairs} paired, "
                       f"multistate candidates={candidates}, "
                       f"palette cycle records={len(room['palette_cycles'])}, "
-                      f"local script chunks={len(room['local_script_chunks'])}")
+                      f"local script chunks={len(room['local_script_chunks'])}, "
+                      f"state opcode byte-pattern candidates={hit_count}")
+                if args.room is not None:
+                    for obj in room["objects"]:
+                        hits = [hit for hit in room.get("script_state_candidates", [])
+                                if hit["object_id"] == obj["object_id"]]
+                        if hits:
+                            draws = sum(x["operation_candidate"] == "drawObject" for x in hits)
+                            sets = sum(x["operation_candidate"] == "setState" for x in hits)
+                            scripts = sorted({x["script_id"] for x in hits if x["script_id"] is not None})
+                            print(f"  Object {obj['object_id']}: drawObject={draws}, "
+                                  f"setState={sets}, local scripts={scripts} "
+                                  f"(byte patterns only; instruction alignment unverified)")
             print("Note: candidates do not establish active animation or script control.")
             for d in report["diagnostics"]:
                 print(f"{d['severity'].upper()} {d['code']}: {d['message']}", file=sys.stderr)

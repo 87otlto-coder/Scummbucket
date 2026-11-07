@@ -23,6 +23,9 @@ python -m scummbucket extract "C:\path\to\mi2.zip" --room 4 --tag CYCL --output-
 # Export room 4 chunks as bytes stored in the original SCUMM container:
 python -m scummbucket extract "C:\path\to\mi2.zip" --room 4 --output-dir "C:\Users\87otl\ScummBucket\exports\room-004-stored" --representation stored
 
+# Extract exactly one indexed global script, by ID (not all scripts in room 4):
+python -m scummbucket extract-id "C:\path\to\mi2.zip" --directory DSCR --id 12 --output-dir "C:\Users\87otl\ScummBucket\exports\script-012"
+
 python -m unittest discover -s tests -v
 ```
 
@@ -60,6 +63,35 @@ Unexpected disk numbers, missing room targets, incorrect byte offsets, wrong chu
 
 Ten additional synthetic-only linker tests cover valid linking, empty slots and deliberate failures. A GitHub Actions workflow runs the full Python synthetic test suite on pull requests.
 
+## Targeted resource-ID extraction
+
+A second command, `extract-id`, selects **one validated directory record**, avoiding the ambiguity of selecting a tag shared by many resources in a room:
+
+```powershell
+cd "C:\Users\87otl\ScummBucket"
+python -m scummbucket extract-id "C:\path\to\mi2.zip" --directory DSCR --id 12 --output-dir "C:\Users\87otl\ScummBucket\exports\script-012"
+```
+
+Directory types: `DROO` (room), `DSCR` (global script), `DSOU` (sound), `DCOS` (costume) and `DCHR` (character font). IDs refer to index-directory **slots**, not room-local `LSCR` bytecode IDs. An empty slot gives `RESOURCE_SLOT_UNUSED` (failed request; skipped count 1); an out-of-range ID gives `RESOURCE_ID_OUT_OF_RANGE`. Any invalid source directory link blocks extraction rather than guessing a target.
+
+The output is still a raw SCUMM chunk, including its eight-byte header. The manifest includes the exact directory type, resource ID, room, source offset, byte length and hashes. As for room exports, `decoded` means file XOR removed, not an interpreted costume, script, sound or image.
+
+For the fingerprinted MI2 sample, the source index's `DSCR[12]` resolves to room 4, absolute source offset 228,779, `SCRP` chunk size 94 bytes. Its XOR-decoded chunk SHA-256 is `58bcbcff5f2bf5d60e4a66e1a2ea5cdf95ffa82566e982527ec7de6868abae12`. This is reproducible byte provenance, **not** evidence that script 12 runs a particular background animation.
+
+### Optional private integration regression
+
+The standard GitHub Actions workflow uses **only synthetic fixtures**. An authorized user with the exact fingerprinted MI2 sample can enable additional integration checks without copying commercial game files into GitHub:
+
+```powershell
+cd "C:\Users\87otl\ScummBucket"
+$env:SCUMMBUCKET_MI2_ARCHIVE = "C:\path\to\mi2.zip"
+python -m unittest discover -s tests -v
+Remove-Item Env:\SCUMMBUCKET_MI2_ARCHIVE
+```
+
+When the variable is absent, the private test reports `skipped` explicitly. When present, it checks both file fingerprints, room/cycle/link counts, `DSCR[12]` provenance, one byte-exact raw script export and source archive immutability. If the files represent a different edition, the test **fails with an edition mismatch** rather than treating it as a successful regression.
+
+
 ## Not yet supported / limitations
 
 - Exact retail edition identification by trusted fingerprint; structural compatibility is not conclusive.
@@ -85,7 +117,7 @@ Do not commit game archives, extracted graphics, audio, ROMs or other commercial
 
 ## Next P1 acceptance work
 
-1. Extend the verified directory-ID links into a script/resource dependency map without pretending to execute scripts.
+1. Move from verified resource-ID export to a conservative script/animation candidate map, without claiming script execution or confirmed background playback.
 2. Expand structured resource-level recovery diagnostics where an isolated malformed chunk can be safely skipped.
 3. Add archive/version identification and signature regression fixtures.
 4. Verify reproducible extraction across more resource classes and strengthen source provenance fields.

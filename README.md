@@ -43,7 +43,7 @@ See [P1 prototype documentation](docs/P1_PROTOTYPE.md) for supported behavior, f
 
 ## Current status
 
-P0 (format research and validation) is next. No complete archive reader or verified original-game extraction implementation has been established in this repository.
+P0 format research is documented in [PR #2](https://github.com/87otlto-coder/Scummbucket/pull/2) and remains open. This branch introduces the first **P1 inspection prototype** in [PR #3](https://github.com/87otlto-coder/Scummbucket/pull/3). It has been tested against one user-supplied MI2 archive and synthetic fixtures, but **P1 is not complete**: raw extraction, full resource provenance, additional diagnostics and cross-edition support are still outstanding.
 
 Commercial game files and extracted copyrighted game assets must not be committed to this repository. Use authorized local copies for integration testing; favor synthetic fixtures in version control.
 

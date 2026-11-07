@@ -4,6 +4,7 @@ import json
 import sys
 
 from .extraction import extract
+from .descumm_verification import verify_descumm
 from .inspector import inspect
 
 
@@ -36,7 +37,44 @@ def main(argv=None) -> int:
     scene.add_argument("--room", type=int, help="Show one room ID; omit for all rooms")
     scene.add_argument("--json", action="store_true", help="Print complete scene relationship JSON")
     scene.add_argument("--output", help="Write JSON report to a new file, without overwriting")
+    verifier = sub.add_parser("verify-descumm",
+        help="Verify SCUMM v5 object-state candidate offsets with external descumm")
+    verifier.add_argument("input", help="Original DOS MI2 ZIP, folder, or MONKEY2.000 file")
+    verifier.add_argument("--room", type=int, required=True, help="Room ID (0..255)")
+    verifier.add_argument("--script", type=int, required=True, help="Room-local LSCR script ID (0..255)")
+    verifier.add_argument("--object", type=int, required=True, help="Object ID (0..65535)")
+    verifier.add_argument("--descumm", help="Path to official ScummVM Tools descumm executable; defaults to PATH")
+    verifier.add_argument("--json", action="store_true", help="Print machine-readable report")
+    verifier.add_argument("--output", help="Write report to a new JSON file; never overwrite")
     args = parser.parse_args(argv)
+
+    if args.command == "verify-descumm":
+        report = verify_descumm(args.input, room_id=args.room, script_id=args.script,
+                                object_id=args.object, descumm=args.descumm)
+        if args.output:
+            try:
+                with open(args.output, "x", encoding="utf-8") as f:
+                    json.dump(report, f, indent=2)
+                    f.write("\n")
+            except OSError as exc:
+                print(f"ERROR OUTPUT_WRITE_FAILED: {type(exc).__name__}: {exc}", file=sys.stderr)
+                return 2
+        if args.json:
+            print(json.dumps(report, indent=2))
+        else:
+            counts = report["summary"]
+            print(f"External disassembly verification: {report['status']} ({args.input})")
+            print(f"Room {args.room}, LSCR {args.script}, object {args.object}: "
+                  f"patterns={counts['candidates']}, "
+                  f"confirmed instruction starts={counts['confirmed_opcode_starts']}, "
+                  f"not emitted={counts['not_emitted']}, conflicts={counts['opcode_conflicts']}")
+            print("This verifies instruction boundaries only, not runtime execution or animation timing.")
+            for item in report["candidates"]:
+                print(f"  0x{item['source_offset']:08X} {item['operation_candidate']}: "
+                      f"{item['disassembly_status']}")
+            for d in report["diagnostics"]:
+                print(f"{d['severity'].upper()} {d['code']}: {d['message']}", file=sys.stderr)
+        return 0 if report["status"] == "success" else 2
 
     if args.command in ("extract", "extract-id"):
         if args.command == "extract-id":

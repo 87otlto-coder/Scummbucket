@@ -4,19 +4,28 @@
 
 ## Run
 
-Python 3.10+ is sufficient for the source-tree CLI (no third-party runtime packages):
+Python 3.10+ is sufficient for the source-tree CLI (no third-party runtime packages).
 
-```bash
-python -m scummbucket inspect /path/to/mi2.zip
-python -m scummbucket inspect /path/to/mi2/ --json
-python -m scummbucket inspect /path/to/MONKEY2.000 --output /new/path/report.json
+**Standard Windows checkout:** `C:\Users\87otl\ScummBucket`
 
-# Choose one room, and optionally one chunk type.
-python -m scummbucket extract /path/to/mi2.zip --room 4 --tag CYCL --output-dir /new/path/cycles
-python -m scummbucket extract /path/to/mi2.zip --room 4 --output-dir /new/path/room-4 --representation stored
+Open PowerShell and run:
+
+```powershell
+cd "C:\Users\87otl\ScummBucket"
+python -m scummbucket inspect "C:\path\to\mi2.zip"
+python -m scummbucket inspect "C:\path\to\mi2.zip" --json
+python -m scummbucket inspect "C:\path\to\MONKEY2.000" --output "C:\Users\87otl\ScummBucket\reports\mi2-inventory.json"
+
+# Export room 4 palette-cycle chunks, removing the file-level XOR encoding:
+python -m scummbucket extract "C:\path\to\mi2.zip" --room 4 --tag CYCL --output-dir "C:\Users\87otl\ScummBucket\exports\room-004-cycl"
+
+# Export room 4 chunks as bytes stored in the original SCUMM container:
+python -m scummbucket extract "C:\path\to\mi2.zip" --room 4 --output-dir "C:\Users\87otl\ScummBucket\exports\room-004-stored" --representation stored
 
 python -m unittest discover -s tests -v
 ```
+
+Replace `C:\path\to\mi2.zip` with the location of your own archive. **Keep original game archives outside the repository**; the checkout root is for source, documentation and generated results under ignored `exports\` and `reports\` subfolders. Every extraction output directory must be a new destination because the command refuses to overwrite an existing manifest. The project path is a local documentation default, not a hard-coded application requirement.
 
 `inspect --output` and `extract` use **exclusive file creation**: neither overwrites existing files. `extract` refuses an existing `manifest.json` to avoid unlabeled outputs and rejects a symlink output directory.
 

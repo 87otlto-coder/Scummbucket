@@ -55,6 +55,9 @@ def main(argv=None) -> int:
             print(f"Game: {report['detected_game']['id']}; rooms: {r['room_count']}; "
                   f"cycles: {r['cycle_count']} in {r['rooms_with_cycles']} rooms; "
                   f"multi-state OBIM: {r['multistate_object_images']}")
+            links = report.get("directory_links", {}).get("summary")
+            if links:
+                print("Directory references: " + ", ".join(f"{k}={v}" for k, v in links.items()))
             print("Decoded/exported assets: 0 (inventory only)")
         for d in report["diagnostics"]:
             print(f"{d['severity'].upper()} {d['code']}: {d['message']}", file=sys.stderr)

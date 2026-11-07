@@ -33,12 +33,16 @@ Reference implementations require independent validation against relevant game e
 
 A limited, read-only command-line prototype is available on the P1 feature branch. It currently supports the original DOS Monkey Island 2 `MONKEY2.000` / `MONKEY2.001` pair only. This is an **inventory, diagnostics and selective raw-chunk export tool**, not yet an image, animation or audio decoder.
 
-```bash
-python -m scummbucket inspect /path/to/mi2.zip
-python -m scummbucket inspect /path/to/mi2.zip --json
-python -m scummbucket extract /path/to/mi2.zip --room 4 --tag CYCL --output-dir /new/path/cycles
+On Windows, the standard local project directory is `C:\Users\87otl\ScummBucket`. From PowerShell, run:
+
+```powershell
+cd "C:\Users\87otl\ScummBucket"
+python -m scummbucket inspect "C:\path\to\mi2.zip" --json
+python -m scummbucket extract "C:\path\to\mi2.zip" --room 4 --tag CYCL --output-dir "C:\Users\87otl\ScummBucket\exports\room-004-cycl"
 python -m unittest discover -s tests -v
 ```
+
+Replace `C:\path\to\mi2.zip` with the location of your own game archive. Export files go under `exports\` rather than the project root. The source archive should remain outside the repository; the project path is a documentation convention, **not hard-coded into the tool**.
 
 The inspector now resolves index directory IDs to individual room, script, sound, costume and font chunks. The supplied MI2 sample resolves **646 populated references**, with **142 unused slots** and zero reference mismatches. This does not mean scripts or assets have been decoded.
 

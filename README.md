@@ -48,9 +48,11 @@ Replace `C:\path\to\mi2.zip` with the location of your own game archive. Export 
 
 The `extract-id` command exports one validated resource by directory type and ID, with byte-exact source provenance. Global script 12 in the supplied MI2 sample, for example, is a 94-byte `SCRP` chunk. This does **not** interpret the script instructions.
 
-The new `scenes` command pairs `OBIM` and `OBCD` by their actual object IDs, reports multi-state image candidates, and lists room palette cycles and nearby script/costume storage context. In the private sample, **all 1,145 object-image chunks match object-code chunks by ID**, and **158 paired objects contain multiple visual states**. This is not evidence that the states animate during gameplay.
+The `scenes` command pairs `OBIM` and `OBCD` by their actual object IDs, reports multi-state image candidates, lists room palette cycles and nearby script/costume storage context, and now records **unverified object-state opcode byte-pattern matches** from room-local scripts with exact source offsets. In the private sample, **all 1,145 object-image chunks match object-code chunks by ID**, and **158 paired objects contain multiple visual states**. This is not evidence that the states animate during gameplay.
 
 The inspector now resolves index directory IDs to individual room, script, sound, costume and font chunks. The supplied MI2 sample resolves **646 populated references**, with **142 unused slots** and zero reference mismatches. This does not mean scripts or assets have been decoded.
+
+For object **358**, the fingerprinted MI2 sample contains **17 state-operation-like byte patterns** across room 34 local scripts 201 and 202 (**11 drawObject / 6 setState**). These patterns are **not** instruction-boundary verified or demonstrated runtime behavior; see the [object 358 evidence register](docs/research/P1_OBJECT_358_SCRIPT_SURVEY.md).
 
 See [P1 prototype documentation](docs/P1_PROTOTYPE.md) for supported behavior, failure reporting and remaining limitations. The sample game files must remain outside the repository.
 

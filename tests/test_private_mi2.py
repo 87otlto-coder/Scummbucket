@@ -36,6 +36,15 @@ class PrivateMonkey2IntegrationTest(unittest.TestCase):
         self.assertEqual(resources["cycle_count"], 127)
         self.assertEqual(resources["rooms_with_cycles"], 21)
         self.assertEqual(resources["multistate_object_images"], 158)
+        scene_summary = report["scene_inventory"]["summary"]
+        self.assertEqual(scene_summary["rooms"], 110)
+        self.assertEqual(scene_summary["paired_objects"], 1145)
+        self.assertEqual(scene_summary["unpaired_objects"], 0)
+        self.assertEqual(scene_summary["ambiguous_objects"], 0)
+        self.assertEqual(scene_summary["unreadable_object_chunks"], 0)
+        self.assertEqual(scene_summary["multistate_object_candidates"], 158)
+        self.assertEqual(scene_summary["palette_cycle_records"], 127)
+        self.assertEqual(scene_summary["rooms_with_palette_cycle_candidates"], 21)
         self.assertEqual(report["directory_links"]["summary"],
                          {"linked": 646, "unused": 142, "failed": 0})
         link = next(e for e in report["directory_links"]["entries"]

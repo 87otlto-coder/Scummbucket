@@ -29,7 +29,7 @@ python -m scummbucket extract-id "C:\path\to\mi2.zip" --directory DSCR --id 12 -
 python -m unittest discover -s tests -v
 ```
 
-Replace `C:\path\to\mi2.zip` with the location of your own archive. **Keep original game archives outside the repository**; the checkout root is for source, documentation and generated results under ignored `exports\` and `reports\` subfolders. Every extraction output directory must be a new destination because the command refuses to overwrite an existing manifest. The project path is a local documentation default, not a hard-coded application requirement.
+Replace `C:\path\to\mi2.zip` with the location of your own archive. **Keep original game archives outside the repository**; the checkout root is for source, documentation and generated results under ignored `exports` and `reports` subfolders. Every extraction output directory must be a new destination because the command refuses to overwrite an existing manifest. The project path is a local documentation default, not a hard-coded application requirement.
 
 `inspect --output` and `extract` use **exclusive file creation**: neither overwrites existing files. `extract` refuses an existing `manifest.json` to avoid unlabeled outputs and rejects a symlink output directory.
 
@@ -94,35 +94,73 @@ When the variable is absent, the private test reports `skipped` explicitly. When
 
 ## Scene relationships and background-animation candidates (P1 follow-up)
 
-**New command:** \`scenes\` inspects the selected room's palette-cycle records, object identity/state pairs, room-local script chunks and global script/costume resources **stored** in the same room bundle.
+**New command:** `scenes` inspects the selected room's palette-cycle records, object identity/state pairs, room-local script chunks and global script/costume resources **stored** in the same room bundle.
 
 From the standard Windows checkout, use PowerShell:
 
-\`\`\`powershell
+```powershell
 cd "C:\Users\87otl\ScummBucket"
 python -m scummbucket scenes "C:\path\to\mi2.zip" --room 34
 python -m scummbucket scenes "C:\path\to\mi2.zip" --room 34 --json
-\`\`\`
+```
 
-Replace the example input with the actual authorized archive location. \`--room\` is optional (it otherwise shows all 110 rooms). Use \`--output "C:\Users\87otl\ScummBucket\reports\room-034.json"\` to write a new report; the parent directory must already exist, and existing files are never overwritten.
+Replace the example input with the actual authorized archive location. `--room` is optional (it otherwise shows all 110 rooms). Use `--output "C:\Users\87otl\ScummBucket\reports\room-034.json"` to write a new report; the parent directory must already exist, and existing files are never overwritten.
 
 ### Object-ID pairing and evidence semantics
 
-SCUMM v5 \`OBIM\` image containers hold an \`IMHD\` object ID and declared image count; corresponding \`OBCD\` code containers hold a \`CDHD\` object ID. The new \`scene_inventory\` report matches **IDs, not chunk order**, and records both source locations and the number/tags of visual states.
+SCUMM v5 `OBIM` image containers hold an `IMHD` object ID and declared image count; corresponding `OBCD` code containers hold a `CDHD` object ID. The new `scene_inventory` report matches **IDs, not chunk order**, and records both source locations and the number/tags of visual states.
 
-Against the independently inspected MI2 sample, **1,145 object-image containers pair with 1,145 object-code containers by ID**. The image-state counts match the \`IMHD\` declarations; **158 paired objects have two or more visual states**. Palette cycling remains represented as **127 cycle records in 21 rooms**.
+Against the independently inspected MI2 sample, **1,145 object-image containers pair with 1,145 object-code containers by ID**. The image-state counts match the `IMHD` declarations; **158 paired objects have two or more visual states**. Palette cycling remains represented as **127 cycle records in 21 rooms**.
 
-**Critical distinction:** "multistate object" is an **animation candidate**, not evidence of active movement. States may be interactive, scripted, or unused. \`animation_observed\` and \`script_control_verified\` remain false. Same-room \`LSCR\`, \`ENCD\` and \`EXCD\` chunks are listed by storage location only. Global \`DSCR\` and \`DCOS\` IDs mapped to that bundle are also **storage associations, not proven script calls or costume use**.
+**Critical distinction:** "multistate object" is an **animation candidate**, not evidence of active movement. States may be interactive, scripted, or unused. `animation_observed` and `script_control_verified` remain false. Same-room `LSCR`, `ENCD` and `EXCD` chunks are listed by storage location only. Global `DSCR` and `DCOS` IDs mapped to that bundle are also **storage associations, not proven script calls or costume use**.
 
-Malformed nested \`IMHD\`/\`CDHD\` structure, duplicate IDs and other resource-local anomalies produce named diagnostics. Structural object corruption results in a **partial** inspection, rather than disappearing from the inventory. Mismatched object IDs or image counts stay visible as warnings.
+Malformed nested `IMHD`/`CDHD` structure, duplicate IDs and other resource-local anomalies produce named diagnostics. Structural object corruption results in a **partial** inspection, rather than disappearing from the inventory. Mismatched object IDs or image counts stay visible as warnings.
 
 This inventory is a P1 prerequisite for P4 background-animation reconstruction, **not** a script interpreter or a rendered scene.
+
+## SCUMM v5 object-state byte-pattern survey (P1 follow-up)
+
+The `scenes` command now includes `script_state_candidates`, recorded with exact script IDs, source-file byte offsets, raw byte patterns, decoded candidate operands, and evidence qualifiers. It searches room-local `LSCR`, `ENCD`, and `EXCD` script payloads for known direct-object forms of `drawObject` and `setState`.
+
+**Crucial limitation:** This is a **byte-wise pattern scanner**, not an instruction-aligned SCUMM decompiler. A matching byte sequence can occur inside another instruction's operands or text, and matching a code pattern does not establish that the engine executes that instruction. Each candidate explicitly sets `instruction_alignment_verified: false`, `runtime_execution_verified: false` and `script_control_verified: false`. This is *triage evidence* for subsequent instruction-boundary-aware decoding, not proof of background animation.
+
+### Example: room 34, object 358
+
+On the specifically fingerprinted private DOS MI2 sample, object **358** has **16 image states**, and a separate read-only scan of its room-local scripts found:
+
+- **17 candidate opcode patterns**: **11** resembling `drawObject`, **6** resembling `setState`.
+- The patterns occur in local **script 201** (7 draw, 4 set) and **script 202** (4 draw, 2 set).
+- Four `drawObject` patterns use a variable state operand with raw reference **100**. The remaining draw patterns explicitly contain state **1**; the `setState` patterns contain state **0**.
+- Other room objects may have candidate state patterns too; the example count above is **only for object 358**.
+
+Examples of exact, reproducible offsets in XOR-decoded `MONKEY2.001`:
+
+| Source byte offset (decimal) | Script | Bytes (hex) | Candidate reading |
+| ---: | ---: | --- | --- |
+| 2,742,765 | 201 | `05 66 01 02 01 00` | `drawObject(358, state=1)` |
+| 2,742,844 | 201 | `05 66 01 82 64 00` | `drawObject(358, state=variable-reference 100)` |
+| 2,744,442 | 201 | `07 66 01 00` | `setState(358, 0)` |
+| 2,746,412 | 202 | `05 66 01 02 01 00` | `drawObject(358, state=1)` |
+
+**The table describes matching byte patterns**, not confirmed instruction boundaries or confirmed scene animation.
+
+References: [ScummVM `script_v5.cpp`](https://github.com/scummvm/scummvm/blob/master/engines/scumm/script_v5.cpp) (`setupOpcodes`, `o5_drawObject`, `o5_setState`, `getVarOrDirectWord`).
+
+PowerShell from the standard project directory:
+
+```powershell
+cd "C:\Users\87otl\ScummBucket"
+python -m scummbucket scenes "C:\path\to\mi2.zip" --room 34
+python -m scummbucket scenes "C:\path\to\mi2.zip" --room 34 --json
+```
+
+Replace the example ZIP path with your authorized local archive. The human-readable output summarizes candidate counts by object; the JSON retains individual offsets for reproducible review.
 
 ## Not yet supported / limitations
 
 - Exact retail edition identification by trusted fingerprint; structural compatibility is not conclusive.
 - Automatic archive-wide or arbitrary byte-range extraction. Export selection deliberately requires a room, and may optionally specify a chunk tag.
-- Directory IDs now locate global scripts, costumes and sounds; scene inventory pairs object IDs and records nearby resources by storage. **Script bytecode interpretation, genuine script-to-object dependencies, and verified animation playback remain unimplemented.**
+- Directory IDs now locate global scripts, costumes and sounds; scene inventory pairs object IDs and records nearby resources by storage. **Full bytecode interpretation, instruction-aligned script-to-object dependencies, and verified animation playback remain unimplemented.**
 - Recovery of individual malformed resource chunks when the outer room structure fails validation: the current inspector stops safely for that input.
 - Image, sprite/costume, palette pixel, animation, script or audio decoding.
 - Monkey Island 1 or other editions/SCUMM versions.
@@ -130,7 +168,7 @@ This inventory is a P1 prerequisite for P4 background-animation reconstruction, 
 
 ## Verification
 
-- **GitHub Actions: 58 tests discovered, 57 synthetic tests passed, 1 optional private-integration test explicitly skipped, 0 failures** ([verified workflow run](https://github.com/87otlto-coder/Scummbucket/actions/runs/42412135349)).
+- **GitHub Actions: 65 tests discovered, 64 synthetic tests passed, 1 optional private-integration test explicitly skipped, 0 failures** ([verified workflow run](https://github.com/87otlto-coder/Scummbucket/actions/runs/42413238213)).
 - User-supplied MI2 ZIP passed structural inventory: 110 rooms, 127 palette-cycle records in 21 rooms and 158 multi-state object images.
 - New resource-ID extraction tests cover two distinct scripts sharing a room, exact byte matches in both representations, empty and invalid slots, corrupt links, overwrite refusal and the new CLI.
 - Room 4 `CYCL` chunk exports in both `decoded` and `stored` modes were verified byte-for-byte against the original `MONKEY2.001` source slices.
@@ -143,12 +181,12 @@ The repo includes an integration test for the fingerprinted MI2 sample, but the 
 
 To run it privately on your own Windows machine, set the environment variable to your authorized game archive path, then run the tests:
 
-\`\`\`powershell
+```powershell
 cd "C:\Users\87otl\ScummBucket"
 $env:SCUMMBUCKET_MI2_ARCHIVE = "C:\path\to\mi2.zip"
 python -m unittest discover -s tests -v
 Remove-Item Env:\SCUMMBUCKET_MI2_ARCHIVE
-\`\`\`
+```
 
 The integration test expects the **specific SHA-256 fingerprints** recorded in the P0 research documents. A different, legitimate MI2 edition may fail this exact fixture; that is an edition-mismatch signal and must not be presented as proof the game archive is corrupted.
 
@@ -158,7 +196,7 @@ Do not commit game archives, extracted graphics, audio, ROMs or other commercial
 
 ## Next P1 acceptance work
 
-1. Advance the conservative animation-candidate map into a verified script-reference analysis for a narrow, documented set of SCUMM v5 opcodes, without claiming full interpreter coverage.
+1. Upgrade selected `drawObject`/`setState` byte patterns to **instruction-boundary-aware** script references, proving where they are valid instructions and identifying script control flow before making animation claims.
 2. Expand structured resource-level recovery diagnostics where an isolated malformed chunk can be safely skipped.
 3. Add archive/version identification and signature regression fixtures.
 4. Verify reproducible extraction across more resource classes and strengthen source provenance fields.

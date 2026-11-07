@@ -1,9 +1,13 @@
 """Synthetic scene relationship checks. No commercial game data or script execution."""
+import contextlib
+import io
+import json
 import struct
 import tempfile
 import unittest
 from pathlib import Path
 
+from scummbucket.cli import main
 from scummbucket.inspector import inspect, _parse_resource
 from scummbucket.scene_inventory import build_scene_inventory
 from test_inspector import chunk, index, resource, make_zip
@@ -89,6 +93,41 @@ class SceneInventoryTest(unittest.TestCase):
         self.assertIn("OBJECT_IMAGE_COUNT_MISMATCH",
                       [d["code"] for d in report["diagnostics"]])
         self.assertEqual(report["scene_inventory"]["summary"]["paired_objects"], 1)
+
+    def test_scenes_cli_renders_selected_room(self):
+        self.check(resource(multiple_states=True))
+        output, errors = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+            exit_code = main(["scenes", str(self.source), "--room", "1"])
+        self.assertEqual(exit_code, 0, errors.getvalue())
+        self.assertIn("Room 001:", output.getvalue())
+        self.assertIn("multistate candidates=1", output.getvalue())
+        self.assertIn("does not establish active animation", output.getvalue())
+
+    def test_scenes_cli_json_has_explicit_unverified_status(self):
+        self.check(resource(multiple_states=True))
+        with contextlib.redirect_stdout(io.StringIO()) as unused:
+            pass
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            self.assertEqual(main(["scenes", str(self.source), "--room", "1", "--json"]), 0)
+        document = json.loads(output.getvalue())
+        self.assertEqual(document["operation"], "scene_candidates")
+        self.assertEqual(len(document["rooms"]), 1)
+        self.assertEqual(document["rooms"][0]["room_id"], 1)
+        self.assertIn("no script control", document["interpretation"].lower())
+
+    def test_scenes_cli_unknown_room_and_output_overwrite(self):
+        self.check(resource(multiple_states=True))
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(main(["scenes", str(self.source), "--room", "2", "--json"]), 2)
+        self.assertIn("SCENE_ROOM_NOT_FOUND", out.getvalue())
+        target = Path(self.tmp.name) / "previous.json"
+        target.write_text("UNCHANGED")
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(main(["scenes", str(self.source), "--output", str(target)]), 2)
+        self.assertEqual(target.read_text(), "UNCHANGED")
 
     def test_scripts_and_costumes_are_storage_context_not_proven_references(self):
         data = resource(multiple_states=True)

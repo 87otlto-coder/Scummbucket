@@ -38,11 +38,23 @@ Operations are `success`, `partial`, or `failed`, with per-item success/failure 
 - Explicit failed/partial diagnostics and warnings, including output collisions and malformed input.
 - Synthetic-only unit tests. Private integration checks against the supplied Monkey Island 2 archive.
 
+## Directory resource-ID linking (P1 follow-up)
+
+The inspector now adds `directory_links` to its JSON report. Each slot in `DROO` (rooms), `DSCR` (global scripts), `DSOU` (sounds), `DCOS` (costumes) and `DCHR` (character fonts) is reported as `linked`, `unused` or `failed`. Populated entries resolve through the room table and `LOFF` source position; the target must be an independently parsed chunk of the expected tag in the correct room.
+
+The original DOS v5 room entries use the `DROO` slot ID as the room ID, with file number 1 and offset zero (the room's location comes from `LOFF`). For other resource types, the directory's room number identifies the `LOFF` room and the offset is relative to that room's `ROOM` chunk. This is derived from ScummVM's `getResourceRoomNr()`, `getResourceRoomOffset()` and `loadResource()` logic and verified against the supplied sample. It is **not** asserted for unrelated SCUMM versions or editions.
+
+For the supplied MI2 resource fingerprints, **646 resource slots resolve correctly and 142 slots are unused; no populated references fail.** Unused slots are normal, not errors. The breakdown is 110 rooms, 167 scripts, 199 sounds, 162 costumes and 8 fonts. Source byte offsets and lengths are retained for each matched chunk. These are **resource references**, not decoded script or costume content.
+
+Unexpected disk numbers, missing room targets, incorrect byte offsets, wrong chunk tags, repeated locations and inconsistent directory counts produce named diagnostics. Report status becomes `partial` when any of those represent an error; raw extraction refuses an incompletely validated inspection.
+
+Ten additional synthetic-only linker tests cover valid linking, empty slots and deliberate failures. A GitHub Actions workflow runs the full Python synthetic test suite on pull requests.
+
 ## Not yet supported / limitations
 
 - Exact retail edition identification by trusted fingerprint; structural compatibility is not conclusive.
 - Automatic archive-wide or arbitrary byte-range extraction. Export selection deliberately requires a room, and may optionally specify a chunk tag.
-- Complete directory-resource ID links into scripts, costumes and sounds.
+- Directory IDs now locate global scripts, costumes and sounds; **script bytecode interpretation and cross-resource dependency graphs** remain unimplemented.
 - Recovery of individual malformed resource chunks when the outer room structure fails validation: the current inspector stops safely for that input.
 - Image, sprite/costume, palette pixel, animation, script or audio decoding.
 - Monkey Island 1 or other editions/SCUMM versions.
@@ -50,8 +62,9 @@ Operations are `success`, `partial`, or `failed`, with per-item success/failure 
 
 ## Verification
 
-- **26 synthetic unit tests passed** on the prototype (15 inventory tests + 11 export tests).
+- **26 prior synthetic unit tests passed** on the prototype (15 inventory tests + 11 export tests).
 - User-supplied MI2 ZIP passed structural inventory: 110 rooms, 127 palette-cycle records in 21 rooms and 158 multi-state object images.
+- Ten new synthetic linker tests pass independently; full-suite CI validation must be checked for the integrated branch.
 - Room 4 `CYCL` chunk exports in both `decoded` and `stored` modes were verified byte-for-byte against the original `MONKEY2.001` source slices.
 - Four warnings concerning unverified palette-cycle flags are intentionally preserved; they are not parse failures.
 - A ZIP labeled `mi1.zip` did not contain The Secret of Monkey Island and was rejected as unsupported (`GAME_PAIR_NOT_FOUND`).
@@ -62,7 +75,7 @@ Do not commit game archives, extracted graphics, audio, ROMs or other commercial
 
 ## Next P1 acceptance work
 
-1. Validate and link index directory resource IDs to underlying chunks and container offsets.
+1. Extend the verified directory-ID links into a script/resource dependency map without pretending to execute scripts.
 2. Expand structured resource-level recovery diagnostics where an isolated malformed chunk can be safely skipped.
 3. Add archive/version identification and signature regression fixtures.
 4. Verify reproducible extraction across more resource classes and strengthen source provenance fields.

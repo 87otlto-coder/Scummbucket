@@ -112,6 +112,8 @@ Review third-party licenses before incorporating code. Respect ScummVM's GPL obl
 
 ## Working Across Conversations
 
+**Default Windows checkout path:** `C:\Users\87otl\ScummBucket`. Use this path consistently in local PowerShell examples, with generated assets under `exports\` and reports under `reports\`. Keep original commercial game files outside the repository. This is a user-specific documentation convention, **not** a hard-coded runtime requirement: CLI input/output paths must remain configurable for other machines.
+
 At the start of substantial work, inspect the latest repository state, roadmap and relevant documentation. Never assume proposed changes from earlier chats were actually implemented.
 
 Work in manageable, testable passes; respect requests for smaller increments.

@@ -41,6 +41,7 @@ python -m scummbucket inspect "C:\path\to\mi2.zip" --json
 python -m scummbucket extract "C:\path\to\mi2.zip" --room 4 --tag CYCL --output-dir "C:\Users\87otl\ScummBucket\exports\room-004-cycl"
 python -m scummbucket extract-id "C:\path\to\mi2.zip" --directory DSCR --id 12 --output-dir "C:\Users\87otl\ScummBucket\exports\script-012"
 python -m scummbucket scenes "C:\path\to\mi2.zip" --room 34
+python -m scummbucket verify-descumm "C:\path\to\mi2.zip" --room 34 --script 201 --object 358 --descumm "C:\path\to\descumm.exe"
 python -m unittest discover -s tests -v
 ```
 
@@ -51,6 +52,8 @@ The `extract-id` command exports one validated resource by directory type and ID
 The `scenes` command pairs `OBIM` and `OBCD` by their actual object IDs, reports multi-state image candidates, lists room palette cycles and nearby script/costume storage context, and now records **unverified object-state opcode byte-pattern matches** from room-local scripts with exact source offsets. In the private sample, **all 1,145 object-image chunks match object-code chunks by ID**, and **158 paired objects contain multiple visual states**. This is not evidence that the states animate during gameplay.
 
 The inspector now resolves index directory IDs to individual room, script, sound, costume and font chunks. The supplied MI2 sample resolves **646 populated references**, with **142 unused slots** and zero reference mismatches. This does not mean scripts or assets have been decoded.
+
+The optional `verify-descumm` command can check candidate instruction boundaries against the separately installed ScummVM Tools disassembler. The tool is available from [official ScummVM downloads](https://www.scummvm.org/en/downloads/). **Its actual run on the supplied game scripts remains outstanding**; the synthetic integration tests use mocked disassembler output and must not be presented as a real disassembly result.
 
 For object **358**, the fingerprinted MI2 sample contains **17 state-operation-like byte patterns** across room 34 local scripts 201 and 202 (**11 drawObject / 6 setState**). These patterns are **not** instruction-boundary verified or demonstrated runtime behavior; see the [object 358 evidence register](docs/research/P1_OBJECT_358_SCRIPT_SURVEY.md).
 

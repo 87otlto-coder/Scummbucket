@@ -14,6 +14,8 @@ import re
 import struct
 import zipfile
 
+from .linking import link_index_resources
+
 MAX_FILE_BYTES = 64 * 1024 * 1024
 MAX_INPUT_ENTRIES = 4096
 MAX_CHUNKS = 100_000
@@ -347,7 +349,8 @@ def inspect(path: str | Path) -> dict:
     """Return a JSON-serializable report. Never conceal or discard failures."""
     path = Path(path)
     report = {"schema_version": "0.1", "status": "failed", "detected_game": None,
-              "input": str(path), "sources": [], "index": {}, "resources": {}, "diagnostics": []}
+              "input": str(path), "sources": [], "index": {}, "resources": {},
+              "directory_links": {}, "diagnostics": []}
     diagnostics: list[Diagnostic] = []
     try:
         left, right, label0, label1 = _read_pair(path)
@@ -361,9 +364,13 @@ def inspect(path: str | Path) -> dict:
                                   "Expected XOR-0x69 SCUMM v5 RNAM/LECF pair", str(path))
         report["index"], _ = _parse_index(decoded0, label0)
         report["resources"] = _parse_resource(decoded1, label1, diagnostics)
+        report["directory_links"], link_diagnostics = link_index_resources(
+            report["index"], report["resources"], source=label1)
+        diagnostics.extend(Diagnostic(**detail) for detail in link_diagnostics)
         report["detected_game"] = {"id": "monkey2", "format": "SCUMM v5-style DOS",
                                    "edition_confidence": "structural; exact retail edition unverified"}
-        report["status"] = "success"
+        report["status"] = ("partial" if any(d.severity in ("error", "fatal") for d in diagnostics)
+                            else "success")
     except InspectionError as exc:
         diagnostics.append(Diagnostic("error", exc.code, str(exc), exc.source, exc.offset, exc.tag))
     except (OSError, ValueError, struct.error, zipfile.BadZipFile) as exc:

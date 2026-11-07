@@ -92,11 +92,37 @@ Remove-Item Env:\SCUMMBUCKET_MI2_ARCHIVE
 When the variable is absent, the private test reports `skipped` explicitly. When present, it checks both file fingerprints, room/cycle/link counts, `DSCR[12]` provenance, one byte-exact raw script export and source archive immutability. If the files represent a different edition, the test **fails with an edition mismatch** rather than treating it as a successful regression.
 
 
+## Scene relationships and background-animation candidates (P1 follow-up)
+
+**New command:** \`scenes\` inspects the selected room's palette-cycle records, object identity/state pairs, room-local script chunks and global script/costume resources **stored** in the same room bundle.
+
+From the standard Windows checkout, use PowerShell:
+
+\`\`\`powershell
+cd "C:\Users\87otl\ScummBucket"
+python -m scummbucket scenes "C:\path\to\mi2.zip" --room 34
+python -m scummbucket scenes "C:\path\to\mi2.zip" --room 34 --json
+\`\`\`
+
+Replace the example input with the actual authorized archive location. \`--room\` is optional (it otherwise shows all 110 rooms). Use \`--output "C:\Users\87otl\ScummBucket\reports\room-034.json"\` to write a new report; the parent directory must already exist, and existing files are never overwritten.
+
+### Object-ID pairing and evidence semantics
+
+SCUMM v5 \`OBIM\` image containers hold an \`IMHD\` object ID and declared image count; corresponding \`OBCD\` code containers hold a \`CDHD\` object ID. The new \`scene_inventory\` report matches **IDs, not chunk order**, and records both source locations and the number/tags of visual states.
+
+Against the independently inspected MI2 sample, **1,145 object-image containers pair with 1,145 object-code containers by ID**. The image-state counts match the \`IMHD\` declarations; **158 paired objects have two or more visual states**. Palette cycling remains represented as **127 cycle records in 21 rooms**.
+
+**Critical distinction:** "multistate object" is an **animation candidate**, not evidence of active movement. States may be interactive, scripted, or unused. \`animation_observed\` and \`script_control_verified\` remain false. Same-room \`LSCR\`, \`ENCD\` and \`EXCD\` chunks are listed by storage location only. Global \`DSCR\` and \`DCOS\` IDs mapped to that bundle are also **storage associations, not proven script calls or costume use**.
+
+Malformed nested \`IMHD\`/\`CDHD\` structure, duplicate IDs and other resource-local anomalies produce named diagnostics. Structural object corruption results in a **partial** inspection, rather than disappearing from the inventory. Mismatched object IDs or image counts stay visible as warnings.
+
+This inventory is a P1 prerequisite for P4 background-animation reconstruction, **not** a script interpreter or a rendered scene.
+
 ## Not yet supported / limitations
 
 - Exact retail edition identification by trusted fingerprint; structural compatibility is not conclusive.
 - Automatic archive-wide or arbitrary byte-range extraction. Export selection deliberately requires a room, and may optionally specify a chunk tag.
-- Directory IDs now locate global scripts, costumes and sounds; **script bytecode interpretation and cross-resource dependency graphs** remain unimplemented.
+- Directory IDs now locate global scripts, costumes and sounds; scene inventory pairs object IDs and records nearby resources by storage. **Script bytecode interpretation, genuine script-to-object dependencies, and verified animation playback remain unimplemented.**
 - Recovery of individual malformed resource chunks when the outer room structure fails validation: the current inspector stops safely for that input.
 - Image, sprite/costume, palette pixel, animation, script or audio decoding.
 - Monkey Island 1 or other editions/SCUMM versions.
@@ -117,7 +143,7 @@ Do not commit game archives, extracted graphics, audio, ROMs or other commercial
 
 ## Next P1 acceptance work
 
-1. Move from verified resource-ID export to a conservative script/animation candidate map, without claiming script execution or confirmed background playback.
+1. Advance the conservative animation-candidate map into a verified script-reference analysis for a narrow, documented set of SCUMM v5 opcodes, without claiming full interpreter coverage.
 2. Expand structured resource-level recovery diagnostics where an isolated malformed chunk can be safely skipped.
 3. Add archive/version identification and signature regression fixtures.
 4. Verify reproducible extraction across more resource classes and strengthen source provenance fields.

@@ -1,6 +1,6 @@
 # P1 — Room 34, Object 358: Script-Pattern Evidence Register
 
-**Status:** Reproducible byte-pattern investigation; **not** verified script disassembly or animation timing  
+**Status:** Original 17 byte patterns now **independently confirmed as instruction starts**; subsequent instruction-level behavior analysis completed, but **gameplay execution and animation timing remain unverified**  
 **Date:** 2026-11-07  
 **Scope:** Specific user-supplied original DOS Monkey Island 2 resource pair only
 
@@ -54,11 +54,11 @@ The same room contains additional candidate matches targeting object 357; they m
 
 ### Critical evidence qualification
 
-**These are byte-pattern matches, not verified instruction boundaries.** The scanner does not know whether a byte falls in executable code, an instruction operand, a text string, or unreachable code. The matches are consistent with ScummVM's operand encodings but **do not yet demonstrate that these are executable instructions**.
+**Historical scanner limitation:** The original byte-wise scanner did not know instruction boundaries and correctly marked all matches `instruction_alignment_verified=false`. That limitation still applies to **new unverified byte patterns**. However, **all 17 object-358 matches were subsequently independently corroborated by a real external `descumm` run** (section 6).
 
-They do not establish a runtime animation, automatic cycling, state order, frame duration, or the triggering gameplay conditions. Script execution and variable 100's actual value remain unverified.
+**New analysis:** The full user-supplied disassembly reports establish a scripted password/number demonstration. State selection is `min(15, 3*n-1+r)` for selected number `n=1..5` and random `r=0..2`; see [the source-backed behavior analysis](P1_ROOM34_OBJECT_BEHAVIOR.md) and [machine-readable 17-event register](P1_ROOM34_OBJECT_EVENTS.json). That is script-level evidence, **not** recorded gameplay.
 
-Every machine-readable candidate includes `instruction_alignment_verified=false`, `runtime_execution_verified=false`, and `script_control_verified=false`. Do not promote these flags without a separate test.
+Do not overwrite the scanner's **raw** evidence flag as though its byte-pattern scan had become a disassembler. Preserve each verification method and its level of evidence separately. Gameplay execution, frame timing and image appearances remain unverified.
 
 ## 4. Reference implementations and licensing
 
@@ -74,11 +74,12 @@ Every machine-readable candidate includes `instruction_alignment_verified=false`
 | --- | --- | --- |
 | Object 358 has 16 stored image states | **Directly observed** | Decode state images in P2/P4 |
 | OBIM and OBCD match object ID 358 | **Directly observed** | Preserve paired positions |
-| Script 201 and 202 carry matching opcode-like windows | **Directly observed bytes**, interpretation provisional | Disassemble with correct alignment |
-| Some windows resemble variable-driven draw-state changes | **Provisional** | Identify variable 100 semantics |
-| These windows are valid, reachable script instructions | **Not established** | Compare against descumm / script CFG |
-| Object 358 animates automatically in game | **Not established** | Observe ScummVM gameplay and timing |
-| Animation frames/state order/delays | **Not established** | Instrument verified codepath and renderer |
+| Scripts 201/202 include 17 direct-object state-operation instructions | **17 instruction starts confirmed** by independent `descumm` | Preserve offsets and external evidence |
+| Four `drawObject` instructions select temporary `Var[100]` | **Verified from disassembly** | Compare images and runtime variable values |
+| State formula `min(15, 3*n-1+r)` | **Disassembled**, ScummVM RNG range independently checked | Verify visual output and runtime |
+| These instructions execute in real gameplay | **Not yet observed** | Trace gameplay branches and callbacks |
+| Object 358 cycles autonomously | **Not demonstrated**; interaction-driven script context identified | Seek genuine autonomous room animations elsewhere |
+| Animation frame order and elapsed timing | **Not established** | Instrument executed state changes and renderer |
 
 ## 6. Independent instruction-offset comparison (available in ScummBucket)
 
@@ -145,10 +146,11 @@ Do not interpret an optional test skipped because its inputs were absent as an e
 ## 7. Next experiment / exit criteria
 
 1. **Completed:** An independently installed `descumm` corroborated all 17 opcode starts for object 358 in scripts 201 and 202, as evidenced by the user-supplied Windows output. This does not imply runtime execution.
-2. **Next:** Capture the relevant disassembler lines and neighboring control flow, including operand semantics, branch conditions, loops, and the variable reference 100. Record undecoded sections with diagnostics rather than guessing.
-3. Examine whether object 357's script 202 state changes are related to those of object 358; do not infer a dependency merely from shared script storage.
-4. Verify which branches execute during gameplay using ScummVM trace instrumentation or observed playback. Establish frame order and timing separately.
-5. Preserve offsets, script IDs, opcode interpretations, and the four evidence levels: *raw bytes*, *disassembled instructions*, *executed behavior*, and *reconstructed animation*.
-6. Review the palette-cycle flags independently; do not suppress warnings merely because script disassembly passed.
+2. **Completed:** Examined the two complete user-supplied `descumm` reports. Documented the number/state selection formula, dialogue and cutscene branches, script-level delays, and object 357's distinct placement/reset references. See [behavior analysis](P1_ROOM34_OBJECT_BEHAVIOR.md) and [event metadata](P1_ROOM34_OBJECT_EVENTS.json).
+3. **Next:** Decode and visually verify object 358 image states, including state 0 and whether image 16 is ever displayed.
+4. **Next:** Trace which branches execute during actual gameplay using ScummVM instrumented observation; measure state transitions in engine ticks and wall-clock time. Do not infer frame duration from `breakHere` or `WaitForMessage` alone.
+5. Investigate scripts 25/26 and object 357 separately; a shared cutscene does not establish synchronized environmental animation.
+6. Identify and verify a genuinely continuous background-animation example for P4, rather than treating this puzzle object's interactive states as automatic looping.
+7. Preserve all four evidence levels: *raw bytes*, *disassembled instructions*, *executed behavior*, and *reconstructed animation*. Keep palette-cycle warnings visible and independently unresolved.
 
 **P1 remains incomplete. This is evidence-gathering in support of P4, not completed animation reconstruction.**

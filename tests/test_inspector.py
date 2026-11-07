@@ -123,6 +123,16 @@ class InspectorTest(unittest.TestCase):
         make_zip(self.zip_path, a=bad, b=resource())
         self.assertIn("DIRECTORY_LENGTH_INVALID", self.diagnostic(inspect(self.zip_path)))
 
+    def test_directory_link_mismatch_is_partial_and_visible(self):
+        malformed = bytearray(index())
+        # DROO: chunk header 8, count 2, room number for slot 1 at +11.
+        malformed[malformed.index(b"DROO") + 11] = 2
+        make_zip(self.zip_path, a=bytes(malformed), b=resource())
+        report = inspect(self.zip_path)
+        self.assertEqual(report["status"], "partial")
+        self.assertEqual(report["directory_links"]["summary"]["failed"], 1)
+        self.assertIn("ROOM_DIRECTORY_UNSUPPORTED", [d["code"] for d in report["diagnostics"]])
+
     def test_raw_chunk_length_less_than_header(self):
         with self.assertRaises(InspectionError) as c:
             chunks(b"FOOB\x00\x00\x00\x07", 0, 8, "synthetic")

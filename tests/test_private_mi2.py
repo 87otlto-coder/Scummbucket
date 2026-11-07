@@ -10,7 +10,7 @@ import tempfile
 import unittest
 
 from scummbucket.extraction import extract
-from scummbucket.inspector import inspect
+from scummbucket.inspector import inspect, _read_pair, XOR_KEY
 
 
 ARCHIVE = os.environ.get("SCUMMBUCKET_MI2_ARCHIVE")
@@ -58,6 +58,18 @@ class PrivateMonkey2IntegrationTest(unittest.TestCase):
         self.assertIn(2744442, {h["source_offset"] for h in candidates})
         self.assertTrue(all(not h["instruction_alignment_verified"] for h in candidates))
         self.assertFalse(object358["script_control_verified"])
+        # Identity and source positions are checked without committing game bytes.
+        _, stored, _, _ = _read_pair(source)
+        decoded = bytes(value ^ XOR_KEY for value in stored)
+        for sid, at, length, expected in (
+            (201, 2740982, 5050, "3dd3377827386229962e9aae8d681426115ad228efe1ecf36d7469154d1fbc09"),
+            (202, 2746032, 1107, "1bb2578f20c0aad5146995f7d40b5cfdd0fe6b5c25a65faaffeddb5f12c82ee9"),
+        ):
+            chunk = decoded[at:at + length]
+            self.assertEqual(chunk[:4], b"LSCR")
+            self.assertEqual(int.from_bytes(chunk[4:8], "big"), length)
+            self.assertEqual(chunk[8], sid)
+            self.assertEqual(hashlib.sha256(chunk).hexdigest(), expected)
         self.assertEqual(report["directory_links"]["summary"],
                          {"linked": 646, "unused": 142, "failed": 0})
         link = next(e for e in report["directory_links"]["entries"]

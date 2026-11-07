@@ -102,12 +102,10 @@ class SceneInventoryTest(unittest.TestCase):
         self.assertEqual(exit_code, 0, errors.getvalue())
         self.assertIn("Room 001:", output.getvalue())
         self.assertIn("multistate candidates=1", output.getvalue())
-        self.assertIn("does not establish active animation", output.getvalue())
+        self.assertIn("do not establish active animation or script control", output.getvalue())
 
     def test_scenes_cli_json_has_explicit_unverified_status(self):
         self.check(resource(multiple_states=True))
-        with contextlib.redirect_stdout(io.StringIO()) as unused:
-            pass
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
             self.assertEqual(main(["scenes", str(self.source), "--room", "1", "--json"]), 0)

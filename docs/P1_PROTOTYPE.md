@@ -142,7 +142,7 @@ Examples of exact, reproducible offsets in XOR-decoded `MONKEY2.001`:
 | 2,744,442 | 201 | `07 66 01 00` | `setState(358, 0)` |
 | 2,746,412 | 202 | `05 66 01 02 01 00` | `drawObject(358, state=1)` |
 
-**The table describes matching byte patterns**, not confirmed instruction boundaries or confirmed scene animation.
+**Interpretation:** The table originated as unaligned raw matches. The user subsequently verified **all 17 object 358 opcode starts** with external `descumm`. That corroborates instruction starts for this specific object; **it still does not verify actual branch execution, image rendering or elapsed animation timing**. Other raw pattern matches remain unverified until individually checked.
 
 References: [ScummVM `script_v5.cpp`](https://github.com/scummvm/scummvm/blob/master/engines/scumm/script_v5.cpp) (`setupOpcodes`, `o5_drawObject`, `o5_setState`, `getVarOrDirectWord`).
 
@@ -185,6 +185,24 @@ The adapter validates the source archive SHA-256 against the in-memory inspectio
 
 Reference: [Object 358 script evidence register](research/P1_OBJECT_358_SCRIPT_SURVEY.md).
 
+## Verified room 34 script behavior: number selection, not autonomous looping
+
+The user supplied complete external `descumm` reports for local scripts **201** and **202**. Their original UTF-16LE report hashes and source-provenance details are recorded in the [behavior analysis](research/P1_ROOM34_OBJECT_BEHAVIOR.md).
+
+Both scripts contain branch-dependent instructions to display object **358** in state **1**, select a randomized number image via `Var[100]`, and reset its state to **0** on specified paths. Engine semantics establish that `getRandomNr(2)` returns 0, 1 or 2, so the selection expression for `n=1..5` is `min(15, 3*n-1+r)` with `r=0..2`.
+
+The complete analysis records:
+
+- The two demonstration scripts, their conditional/dialogue paths and instruction offsets.
+- `breakHere()`, `WaitForMessage()`, and `delay` as **script timing constructs**, not measured seconds or playback frames.
+- Object **357** as an actor-position anchor and reset target, without assuming synchronized animation with 358.
+- The distinction between **script-driven interaction**, **autonomously repeating scenery**, and **observed runtime effects**.
+- All four unresolved `CYCLE_FLAGS_UNVERIFIED` warnings; successful disassembly does not remove them.
+
+The [17-event machine-readable evidence register](research/P1_ROOM34_OBJECT_EVENTS.json) stores derived offsets and operand classifications only; it does not contain commercial game bytes. Five tests guard its internal consistency, but those tests do not independently prove gameplay behavior.
+
+**P4 consequence:** A fixed 16-frame looping export would *not* faithfully reconstruct this interactive object. A conditional, parameterized state sequence is a better candidate once asset rendering, branching and timing are independently verified.
+
 ## Not yet supported / limitations
 
 - Exact retail edition identification by trusted fingerprint; structural compatibility is not conclusive.
@@ -197,7 +215,7 @@ Reference: [Object 358 script evidence register](research/P1_OBJECT_358_SCRIPT_S
 
 ## Verification
 
-- **GitHub Actions: 78 tests discovered, 76 synthetic tests passed, 2 optional private-integration tests skipped, 0 failures** ([verified workflow run](https://github.com/87otlto-coder/Scummbucket/actions/runs/42418289487)). The user independently completed actual `descumm` checks locally for scripts 201 and 202; CI itself uses mocked output and does not access game files.
+- **GitHub Actions: 83 tests discovered, 81 passed, 2 optional private-integration tests skipped, 0 failures** ([verified workflow run](https://github.com/87otlto-coder/Scummbucket/actions/runs/42420279759)). This includes five *metadata consistency* tests, not gameplay execution tests. The user independently completed the real `descumm` checks locally for scripts 201 and 202; CI uses mocked tool output and no proprietary game files.
 - User-supplied MI2 ZIP passed structural inventory: 110 rooms, 127 palette-cycle records in 21 rooms and 158 multi-state object images.
 - New resource-ID extraction tests cover two distinct scripts sharing a room, exact byte matches in both representations, empty and invalid slots, corrupt links, overwrite refusal and the new CLI.
 - Room 4 `CYCL` chunk exports in both `decoded` and `stored` modes were verified byte-for-byte against the original `MONKEY2.001` source slices.
@@ -237,7 +255,7 @@ Do not commit game archives, extracted graphics, audio, ROMs or other commercial
 
 ## Next P1 acceptance work
 
-1. Run the new independent `verify-descumm` command on original scripts 201 and 202; record verified instruction boundaries, inconclusive matches, and any errors. Then trace the relevant script control flow without claiming playback from disassembly alone.
+1. **Completed for object 358:** Independently confirmed all 17 opcode starts; examined the two actual script reports and documented state selection and conditional sequence logic. **Next:** trace gameplay execution and visually decode image states before claiming rendered behavior or duration.
 2. Expand structured resource-level recovery diagnostics where an isolated malformed chunk can be safely skipped.
 3. Add archive/version identification and signature regression fixtures.
 4. Verify reproducible extraction across more resource classes and strengthen source provenance fields.

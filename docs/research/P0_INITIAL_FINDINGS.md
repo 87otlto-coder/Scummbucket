@@ -83,7 +83,7 @@ Reference layout: ScummVM's [room code](https://github.com/scummvm/scummvm/blob/
 
 - `CYCL` records are present in **21 of 110 rooms**.
 - **127 cycle records** were parsed across those rooms; the other 89 `CYCL` blocks terminate with no active records.
-- Example rooms with records: **4, 7, 16, 22, 23, 24, 27, 28, 35, 36, 38, 46, 47, 51, 52, 53, 64, 81, 85, 89**, and one further room (inspect programmatically when generating the definitive register).
+- Example rooms with records: **4, 7, 16, 22, 23, 24, 27, 28, 35, 36, 38, 46, 47, 51, 52, 53, 64, 81, 85, 89, 109**.
 - Room 24 includes a record with direction-related flag `2`; room 35 includes flag `4`. Their observed effect requires gameplay verification.
 - **Room 64 has an unusual second cycle record** (rate field 65,494; flags 55,558). The parser found a structurally bounded record, but it requires a targeted interpretation check; do not silently normalize, discard or call it corrupt.
 

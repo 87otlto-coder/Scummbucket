@@ -74,7 +74,7 @@ Ten additional synthetic-only linker tests cover valid linking, empty slots and 
 
 - **26 prior synthetic unit tests passed** on the prototype (15 inventory tests + 11 export tests).
 - User-supplied MI2 ZIP passed structural inventory: 110 rooms, 127 palette-cycle records in 21 rooms and 158 multi-state object images.
-- Ten new synthetic linker tests pass independently; full-suite CI validation must be checked for the integrated branch.
+- Ten new synthetic linker tests and one integrated failure-status test are included; the **full 37-test synthetic suite passed in GitHub Actions** on the current feature branch.
 - Room 4 `CYCL` chunk exports in both `decoded` and `stored` modes were verified byte-for-byte against the original `MONKEY2.001` source slices.
 - Four warnings concerning unverified palette-cycle flags are intentionally preserved; they are not parse failures.
 - A ZIP labeled `mi1.zip` did not contain The Secret of Monkey Island and was rejected as unsupported (`GAME_PAIR_NOT_FOUND`).

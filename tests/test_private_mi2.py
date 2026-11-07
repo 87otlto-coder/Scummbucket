@@ -45,6 +45,19 @@ class PrivateMonkey2IntegrationTest(unittest.TestCase):
         self.assertEqual(scene_summary["multistate_object_candidates"], 158)
         self.assertEqual(scene_summary["palette_cycle_records"], 127)
         self.assertEqual(scene_summary["rooms_with_palette_cycle_candidates"], 21)
+        room34 = next(r for r in report["scene_inventory"]["rooms"] if r["room_id"] == 34)
+        object358 = next(o for o in room34["objects"] if o["object_id"] == 358)
+        self.assertEqual(object358["image"]["declared_image_count"], 16)
+        self.assertEqual(object358["image"]["observed_image_count"], 16)
+        candidates = [h for h in room34["script_state_candidates"] if h["object_id"] == 358]
+        self.assertEqual(len(candidates), 17)
+        self.assertEqual(sum(h["operation_candidate"] == "drawObject" for h in candidates), 11)
+        self.assertEqual(sum(h["operation_candidate"] == "setState" for h in candidates), 6)
+        self.assertEqual({h["script_id"] for h in candidates}, {201, 202})
+        self.assertIn(2742765, {h["source_offset"] for h in candidates})
+        self.assertIn(2744442, {h["source_offset"] for h in candidates})
+        self.assertTrue(all(not h["instruction_alignment_verified"] for h in candidates))
+        self.assertFalse(object358["script_control_verified"])
         self.assertEqual(report["directory_links"]["summary"],
                          {"linked": 646, "unused": 142, "failed": 0})
         link = next(e for e in report["directory_links"]["entries"]

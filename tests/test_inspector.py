@@ -33,10 +33,14 @@ def resource(*, room_id=1, target=None, bad_length=False, broken_cycle=False,
     cycled = b"\x01\x00\x00\x01\x2c\x00\x02\x0a\x0b"
     if not broken_cycle:
         cycled += b"\x00\x00"  # zero terminator, optional alignment
-    obim = chunk("OBIM", chunk("IMHD", b"x") + chunk("IM01", b"y") +
+    # Synthetic v5 IMHD/CDHD headers with the SAME explicit object ID.
+    object_id = 99
+    count = 2 if multiple_states else 1
+    obim = chunk("OBIM", chunk("IMHD", struct.pack("<HH", object_id, count) + b"\x00" * 12)
+                 + chunk("IM01", b"y") +
                  (chunk("IM02", b"z") if multiple_states else b""))
-    inner = chunk("ROOM", chunk("RMHD", b"\x00") + chunk("CYCL", cycled) + obim +
-                  chunk("OBCD", b""))
+    obcd = chunk("OBCD", chunk("CDHD", struct.pack("<H", object_id) + b"\x00" * 11))
+    inner = chunk("ROOM", chunk("RMHD", b"\x00") + chunk("CYCL", cycled) + obim + obcd)
     lf = chunk("LFLF", inner)
     # LECF header (8), LOFF (14), LFLF header (8): ROOM begins at offset 30.
     pointer = 30 if target is None else target
@@ -76,6 +80,10 @@ class InspectorTest(unittest.TestCase):
         self.assertEqual(report["resources"]["room_count"], 1)
         self.assertEqual(report["resources"]["cycle_count"], 1)
         self.assertEqual(report["resources"]["multistate_object_images"], 1)
+        self.assertEqual(report["scene_inventory"]["summary"]["paired_objects"], 1)
+        self.assertEqual(report["scene_inventory"]["summary"]["multistate_object_candidates"], 1)
+        self.assertEqual(report["scene_inventory"]["rooms"][0]["objects"][0]["object_id"], 99)
+        self.assertFalse(report["scene_inventory"]["rooms"][0]["objects"][0]["animation_observed"])
         self.assertEqual(report["index"]["DROO"]["slots"], 2)
         self.assertEqual(report["directory_links"]["summary"],
                          {"linked": 1, "unused": 5, "failed": 0})

@@ -350,7 +350,7 @@ def inspect(path: str | Path) -> dict:
     path = Path(path)
     report = {"schema_version": "0.1", "status": "failed", "detected_game": None,
               "input": str(path), "sources": [], "index": {}, "resources": {},
-              "directory_links": {}, "diagnostics": []}
+              "directory_links": {}, "scene_inventory": {}, "diagnostics": []}
     diagnostics: list[Diagnostic] = []
     try:
         left, right, label0, label1 = _read_pair(path)
@@ -367,6 +367,11 @@ def inspect(path: str | Path) -> dict:
         report["directory_links"], link_diagnostics = link_index_resources(
             report["index"], report["resources"], source=label1)
         diagnostics.extend(Diagnostic(**detail) for detail in link_diagnostics)
+        # Local import avoids circular import with scene_inventory's reuse of chunks().
+        from .scene_inventory import build_scene_inventory
+        report["scene_inventory"], scene_diagnostics = build_scene_inventory(
+            decoded1, report["resources"], report["directory_links"], source=label1)
+        diagnostics.extend(Diagnostic(**detail) for detail in scene_diagnostics)
         report["detected_game"] = {"id": "monkey2", "format": "SCUMM v5-style DOS",
                                    "edition_confidence": "structural; exact retail edition unverified"}
         report["status"] = ("partial" if any(d.severity in ("error", "fatal") for d in diagnostics)

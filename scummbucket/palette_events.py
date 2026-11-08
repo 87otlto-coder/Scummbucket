@@ -163,6 +163,8 @@ def replay_event_palettes(initial_palette: bytes, events: list[dict], *,
 
     last_tick = 0
     for ev in events:
+        _require(isinstance(ev, dict), "EVENT_REPLAY_INVALID",
+                 "Every event must be a JSON object")
         tick = ev.get("counter_tick")
         _require(type(tick) is int and last_tick < tick < duration_seconds * counter_rate,
                  "EVENT_SEQUENCE_INVALID", "Event ticks must be strictly increasing in range")
@@ -171,35 +173,39 @@ def replay_event_palettes(initial_palette: bytes, events: list[dict], *,
     output = []
     palette = bytearray(initial_palette)
     cursor = 0
+
+    def apply_event(event: dict):
+        _require(isinstance(event.get("palette_patches"), list),
+                 "EVENT_PATCHES_INVALID", "Missing ordered palette patch list")
+        _require(sha256(palette).hexdigest() == event["palette_before_sha256"],
+                 "EVENT_BEFORE_HASH_MISMATCH", "Event baseline differs before replay")
+        used = set()
+        for entry in event["palette_patches"]:
+            i = entry["index"]
+            _require(type(i) is int and 0 <= i <= 255 and i not in used,
+                     "EVENT_PATCH_INDEX_INVALID", "Patch index invalid or repeated")
+            used.add(i)
+            before = palette[3*i:3*i+3]
+            try:
+                old = bytes.fromhex(entry["before_rgb_hex"])
+                new = bytes.fromhex(entry["after_rgb_hex"])
+            except (ValueError, TypeError) as exc:
+                raise SequenceError("EVENT_PATCH_COLOR_INVALID",
+                                    "RGB patch must be 6 hex digits") from exc
+            _require(len(old) == 3 and len(new) == 3,
+                     "EVENT_PATCH_COLOR_INVALID",
+                     "RGB patch must contain exactly three bytes")
+            _require(before == old, "EVENT_PATCH_BEFORE_MISMATCH",
+                     f"Palette color {i} differs from event's prior value")
+            palette[3*i:3*i+3] = new
+        _require(sha256(palette).hexdigest() == event["palette_after_sha256"],
+                 "EVENT_AFTER_HASH_MISMATCH",
+                 f"Event at counter {event['counter_tick']} produced incorrect RGB palette")
+
     for frame in range(fps * duration_seconds):
         tick = frame * counter_rate // fps
         while cursor < len(events) and events[cursor]["counter_tick"] <= tick:
-            event = events[cursor]
-            _require(sha256(palette).hexdigest() == event["palette_before_sha256"],
-                     "EVENT_BEFORE_HASH_MISMATCH", "Event baseline differs before replay")
-            used = set()
-            for entry in event["palette_patches"]:
-                i = entry["index"]
-                _require(type(i) is int and 0 <= i <= 255 and i not in used,
-                         "EVENT_PATCH_INDEX_INVALID",
-                         "Palette patch index invalid or repeated")
-                used.add(i)
-                before = palette[3*i:3*i+3]
-                try:
-                    old = bytes.fromhex(entry["before_rgb_hex"])
-                    new = bytes.fromhex(entry["after_rgb_hex"])
-                except (ValueError, TypeError) as exc:
-                    raise SequenceError("EVENT_PATCH_COLOR_INVALID",
-                                        "RGB patch must be 6 hex digits") from exc
-                _require(len(old) == 3 and len(new) == 3,
-                         "EVENT_PATCH_COLOR_INVALID",
-                         "RGB patch must contain exactly 3 bytes")
-                _require(before == old, "EVENT_PATCH_BEFORE_MISMATCH",
-                         f"Palette color {i} differs from event's prior value")
-                palette[3*i:3*i+3] = new
-            _require(sha256(palette).hexdigest() == event["palette_after_sha256"],
-                     "EVENT_AFTER_HASH_MISMATCH",
-                     f"Event at counter {event['counter_tick']} produced incorrect RGB palette")
+            apply_event(events[cursor])
             cursor += 1
         output.append({
             "frame_index": frame,
@@ -208,6 +214,12 @@ def replay_event_palettes(initial_palette: bytes, events: list[dict], *,
             "modeled_counter_tick": tick,
             "palette_sha256": sha256(palette).hexdigest(),
         })
+    # Verify all remaining events, including ticks between the final output
+    # sample and the exclusive duration boundary. Otherwise low-FPS checks
+    # could silently miss corrupt events near the end of the timeline.
+    while cursor < len(events):
+        apply_event(events[cursor])
+        cursor += 1
     return output
 
 

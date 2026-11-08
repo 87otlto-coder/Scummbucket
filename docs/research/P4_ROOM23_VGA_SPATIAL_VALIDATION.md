@@ -71,6 +71,27 @@ All **eight cycle groups** contain video pixels above the 20/255 threshold, supp
 
 This is **stronger evidence than the previous hypothetical snapshot preview**, but is not a byte-for-byte palette trace or a frame-perfect timing verification.
 
+## Measured video cadence versus CYCL rates (additional temporal analysis)
+
+The same 324 × 208 recording was also decoded at its full **30 fps** (623 frames). For each pair of source palette indices, the pixels originally using the lower or upper entry were grouped by source location. The **median RGB** of each group was compared to the original `CLUT` pair in its normal order versus its swapped order. A three-frame majority filter suppressed isolated video-compression classification errors. Every switch between the two resulting color orders was recorded as a **video-observed transition**, without trying to infer individual engine instructions.
+
+| Source CYCL ID | Raw rate | Engine delay `16384 // rate` | Observed swap intervals | Median observed seconds | Predicted seconds at *hypothetical* 60 counter units/sec |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 230 | 71 | 17 | **1.200** | 1.183 |
+| 2 | 307 | 53 | 23 | **0.867** | 0.883 |
+| 3 | 153 | 107 | 11 | **1.800** | 1.783 |
+| 4 | 384 | 42 | 29 | **0.700** | 0.700 |
+| 5 | 460 | 35 | 35 | **0.600** | 0.583 |
+| 6 | 384 | 42 | 29 | **0.700** | 0.700 |
+| 7 | 230 | 71 | 17 | **1.200** | 1.183 |
+| 8 | 307 | 53 | 23 | **0.867** | 0.883 |
+
+The observed median intervals are within **one 30-fps frame (33.3 ms)** of the 60-counter-unit/sec predictions for every range; the greatest absolute median discrepancy is approximately **16.7 ms**. Notably, pairs **1 and 7** share near-identical transition times, as do **4 and 6**, matching their shared source rates. Individual intervals are less stable because recording frame rate, engine scheduling, captured frame duplication, phase and potential drop/repeat behavior introduce jitter; we do not assume one video frame equals one SCUMM timer unit.
+
+**Conclusion from the video:** A 60-counter-unit/sec model fits the observed water shimmer extraordinarily well, and all eight palette pairs visibly alternate. This upgrades the evidence for real water animation and supports plausible real-time cadence. It does **not** independently establish the actual values of `VAR_TIMER` or `VAR_TIMER_NEXT`, whether scripts intervene, exact sub-frame transition instants, or millisecond-perfect export timing. A real engine-state trace remains the necessary final cross-check.
+
+The video source's classification and alignment were made from the **VGA-appearing** 1× recording and original indexed artwork. The captured renderer configuration is supported by a user-supplied settings screenshot but not cryptographically authenticated by the video itself. The EGA-like capture is intentionally excluded from this timing estimate.
+
 ## Reproduce the source-coordinate map locally
 
 Run from the Windows checkout, using the already tested authorized game archive:
@@ -105,4 +126,4 @@ Recommended follow-ups:
 4. Investigate ship-light or cabin-window changes **separately**: the current eight CYCL ranges are not present in the examined light-pixel region, but other visual mechanisms have not been ruled out.
 5. Expand to room 109, and subsequently test a mixed object/script/palette background.
 
-**Conclusion:** Room 23 is now a **strong runtime-observed candidate for water animation associated with CYCL**, supported by direct source spatial mapping and temporal video correlation. **P4's timing-accurate animated-background reconstruction exit criterion is not yet met.**
+**Conclusion:** Room 23 is now **strongly corroborated as a palette-animated water scene**, supported by original indexed-source locations, close video pixel correspondence and an observed swap cadence consistent with an effective ~60 counter-unit/second model. **Exact engine timer values, script interference and pixel-perfect rendering remain to be verified**; P4's timing-accurate export exit criterion is not yet met.

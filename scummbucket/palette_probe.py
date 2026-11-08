@@ -298,9 +298,20 @@ def palette_probe(input_path: str | Path, output_dir: str | Path, *,
                  "PALETTE_CYCLE_INVALID", "Cannot model a cycle with invalid rate")
         histogram = Counter(bg["indexed_pixels"])
         report["summary"]["cycle_records"] = len(cycles)
+        color_membership = Counter(
+            color for c in cycles
+            for color in range(c["start_color"], c["end_color"] + 1))
+        if not cycles:
+            problem("NO_PALETTE_CYCLES",
+                    "Room has no CYCL definitions; all preview snapshots will be identical",
+                    severity="warning")
+        if any(count > 1 for count in color_membership.values()):
+            problem("CYCLE_RANGES_OVERLAP",
+                    "Multiple cycles address the same palette entries; "
+                    "simulation order may matter",
+                    severity="warning")
         report["summary"]["visible_cycle_pixels"] = sum(
-            sum(histogram[i] for i in range(c["start_color"], c["end_color"] + 1))
-            for c in cycles)
+            histogram[i] for i in color_membership)
         report["source"] = {"resource_name": label,
                             "resource_sha256": sha256(raw).hexdigest(),
                             **bg["source"],

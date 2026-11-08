@@ -74,6 +74,39 @@ class PaletteCycleMathTest(unittest.TestCase):
             advance_palette(pal, cycles)
             self.assertEqual(pal[5 * 3], expected)
 
+    def test_explicit_counter_delta_changes_event_schedule(self):
+        palette = bytearray(768)
+        palette[5 * 3:5 * 3 + 3] = b"\xff\x00\x00"
+        palette[6 * 3:6 * 3 + 3] = b"\x00\x00\xff"
+        cycles, _ = prepare_cycles([{
+            "id": 1, "rate_raw": 4096, "flags": 0,
+            "start_color": 5, "end_color": 6, "offset": 0}])
+        snapshots = simulate_palette_snapshots(bytes([5, 6]), bytes(palette), cycles,
+                                               [0, 1, 2, 3], counter_increment=2)
+        self.assertEqual([s["visible_changed_pixels"] for s in snapshots], [0, 0, 2, 2])
+        self.assertEqual([s["cumulative_counter_units"] for s in snapshots],
+                         [0, 2, 4, 6])
+        self.assertEqual(snapshots[2]["total_rotation_events"], 1)
+
+    def test_single_update_never_rotates_more_than_once(self):
+        palette = bytearray(768)
+        palette[5 * 3:5 * 3 + 3] = b"\x01\x00\x00"
+        palette[6 * 3:6 * 3 + 3] = b"\x02\x00\x00"
+        cycles, _ = prepare_cycles([{
+            "id": 1, "rate_raw": 4096, "flags": 0,
+            "start_color": 5, "end_color": 6, "offset": 0}])
+        changed = advance_palette(palette, cycles, delta=13)
+        self.assertEqual(len(changed), 1)
+        self.assertEqual(cycles[0]["rotation_events"], 1)
+        self.assertEqual(cycles[0]["counter"], 1)
+
+    def test_invalid_delta_rejected(self):
+        for delta in (-1, 65536, True, 2.5):
+            with self.subTest(delta=delta):
+                with self.assertRaises(PaletteProbeError) as context:
+                    advance_palette(bytearray(768), [], delta=delta)
+                self.assertEqual(context.exception.code, "COUNTER_DELTA_INVALID")
+
     def test_zero_engine_delay_flagged_and_not_rotated(self):
         cycles, findings = prepare_cycles([{
             "id": 3, "rate_raw": 65535, "flags": 0xD906,
@@ -165,6 +198,31 @@ class PaletteBackgroundTest(unittest.TestCase):
         self.assertTrue(any(e["code"] == "CYCLE_FLAGS_UNVERIFIED"
                             for e in result["diagnostics"]))
         self.assertEqual(result["cycles"][0]["nonstandard_flag_bits"], 4)
+
+    def test_cli_explicit_increment_changes_schedule(self):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = main(["palette-probe", str(self.archive), "--room", "1",
+                         "--ticks", "0", "1", "2", "--counter-increment", "4",
+                         "--output-dir", str(self.dest)])
+        self.assertEqual(code, 0)
+        report = json.loads((self.dest / "manifest.json").read_text())
+        self.assertEqual(report["selection"]["counter_increment"], 4)
+        self.assertEqual(
+            [f["visible_changed_pixels_vs_initial"] for f in report["snapshots"]],
+            [0, 64, 0])
+        self.assertEqual(
+            [f["cumulative_counter_units"] for f in report["snapshots"]],
+            [0, 4, 8])
+        self.assertIn("cumulative counter units", output.getvalue())
+
+    def test_invalid_counter_increment_is_reported(self):
+        report = palette_probe(self.archive, self.dest, room_id=1,
+                               ticks=[0], counter_increment=0)
+        self.assertEqual(report["status"], "failed")
+        self.assertIn("COUNTER_INCREMENT_INVALID",
+                      [d["code"] for d in report["diagnostics"]])
+        self.assertFalse(self.dest.exists())
 
     def test_existing_manifest_refuses_overwrite(self):
         self.dest.mkdir()

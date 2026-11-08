@@ -48,7 +48,11 @@ cycle:              1  2  3  4  5  6  7  8   total
 60 units:           3  4  2  4  4  4  3  4     28
 ```
 
-This is a **specific testable prediction**, not a claim that the actual observed engine animation has already dropped four rotations. Normal game state may have nonzero initial cycle counter remainders, changed rates or game scripts.
+This is a **specific testable prediction**, not a claim that the actual observed engine animation has already dropped four rotations.
+
+An independently encoded, 4-second **one-update/sec** private GIF was also constructed from the original indexed Room 23 PNG and source cycle metadata (Pillow RGB decoded-frame and 1,000-ms-delay round-trip verified). File: `room23-onehz-stress-preview-20261108.gif`, 121,854 bytes, SHA-256 `fa6510463a7bebc4f49d7b3a413f3b324b561c8892b02b6200ee871fa84a0caf`. Its four visible frames represent t=0,1,2,3 seconds; the t=4 check compares palette states after four full callbacks but is not an exported GIF frame.
+
+With **identical zero-offset cycle baselines**, the synthetic 1-Hz palette differs from the 1-counter-unit model by exactly 0, 0, **65**, **124**, **124** native RGB pixel positions at t=0,1,2,3,4 seconds respectively. All those disagreements remain inside the source water-cycle region; they are **model disagreements**, not engine-captured screen differences. They demonstrate that once the update delta exceeds the shortest 35-unit delay, changing callback cadence can alter the accumulated palette rotation sequence, not merely shift the times intermediate states become visible. Normal game state may have nonzero initial cycle counter remainders, changed rates or game scripts.
 
 From Room 23, in the **ScummVM debugger**:
 

@@ -196,6 +196,10 @@ def _decode_stripmap(data: bytes, smap, *, width: int, height: int,
             code, data[position + 1:next_pos], height)
         _need(consumed <= next_pos - position - 1, "STRIP_CONSUMPTION_OVERFLOW",
               "Strip decoded beyond its bounded compressed data", offset=position)
+        _need(not any(data[position + 1 + consumed:next_pos]),
+              "STRIP_TRAILING_NONZERO",
+              "Compressed strip has unexpected nonzero trailing bytes",
+              offset=position + 1 + consumed)
         for y in range(height):
             for x in range(8):
                 idx = indices[y * 8 + x]
@@ -231,7 +235,10 @@ def _decode_zplane(data: bytes, plane, *, width: int, height: int) -> bytes:
     for strip, relative in enumerate(offsets):
         start = plane.offset + relative
         end = plane.offset + (offsets[strip + 1] if strip + 1 < strips else plane.length)
-        scanlines, _ = decode_mask_strip(data[start:end], height)
+        scanlines, consumed = decode_mask_strip(data[start:end], height)
+        _need(not any(data[start + consumed:end]), "MASK_TRAILING_NONZERO",
+              "Depth-mask strip contains nonzero trailing bytes",
+              offset=start + consumed)
         for y, bits in enumerate(scanlines):
             for x in range(8):
                 mask[y * width + strip * 8 + x] = 255 if bits & (0x80 >> x) else 0

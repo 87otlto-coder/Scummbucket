@@ -1,6 +1,6 @@
 # P4 — Comparing simulated MI2 palette cycles with actual ScummVM execution
 
-**Status:** Comparison pipeline implemented and tested synthetically. **No real ScummVM palette trace has been captured or verified.**
+**Status:** Comparison pipeline and an optional pinned ScummVM capture bridge have synthetic tests. **No real ScummVM palette trace has been captured or verified.** See [instrumented ScummVM trace capture](P4_SCUMMVM_ENGINE_TRACE_CAPTURE.md) for the verified source anchor, guarded patcher and strict log importer.
 
 **Target:** Fingerprinted original DOS Monkey Island 2 archive, room 23 first and room 109 second.
 

@@ -84,7 +84,7 @@ A separate optional private test can reconstruct the user's fingerprinted origin
 
 ## Limitations and next direction
 
-The current command renders **PNG frames from a saved event bundle**, not a GIF directly. A later adapter may use the same saved patches for GIF/WebP, with variable segment durations and explicit loop policy.
+The `render-events` command renders **PNG frames from a saved event bundle**. The new [`render-event-gif` preview exporter](P4_EVENT_BUNDLE_GIF.md) consumes that same event bundle directly and writes a play-once GIF with modeled event-boundary durations and RGB read-back verification. Animated WebP remains a possible later extension.
 
 Actual ScummVM timer/event tracing, object-state changes, depth/foreground masks, actors and other environmental animation mechanisms remain outstanding. Room 23's water shimmer is well supported; comprehensive scene reconstruction is not.
 

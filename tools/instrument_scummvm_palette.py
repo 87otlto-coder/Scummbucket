@@ -15,13 +15,15 @@ PINNED_TAG = "v2026.4.0"
 PINNED_CPP_BLOB = "d1baa70b008c425f5b2b6693509e738d81e5af19"
 TARGET_RELATIVE = Path("engines/scumm/scumm.cpp")
 BACKUP_SUFFIX = ".scummbucket-p4-original"
-MARKER = "SCUMMBUCKET_P4_PALETTE_TRACE_V1"
+MARKER = "SCUMMBUCKET_P4_PALETTE_TRACE_V2"
+LEGACY_MARKER = "SCUMMBUCKET_P4_PALETTE_TRACE_V1"
+LOG_FILENAME = "scummbucket-p4-room23.raw.log"
 ANCHOR = ("void ScummEngine::scummLoop_handleEffects() {\n"
           "\tif (_game.version >= 4 && _game.heversion <= 62)\n"
           "\t\tcyclePalette();\n"
           "\tpalManipulate();\n")
 
-HOOK = r'''void ScummEngine::scummLoop_handleEffects() {
+LEGACY_HOOK = r'''void ScummEngine::scummLoop_handleEffects() {
 	// SCUMMBUCKET_P4_PALETTE_TRACE_V1: private, opt-in instrumentation.
 	// Run only on original DOS MI2 VGA and only when the environment variable
 	// SCUMMBUCKET_PALETTE_TRACE_PATH points to a NEW writable file.
@@ -83,9 +85,87 @@ HOOK = r'''void ScummEngine::scummLoop_handleEffects() {
 	palManipulate();
 '''
 
+HOOK = r'''void ScummEngine::scummLoop_handleEffects() {
+	// SCUMMBUCKET_P4_PALETTE_TRACE_V2: standalone instrumented engine only.
+	// ScummVM deliberately bans C stdio/getenv from engine code.
+	// This opt-in research build writes one fixed file in its working directory.
+	static Common::DumpFile sbP4Trace;
+	static bool sbP4Attempted = false;
+	static unsigned sbP4Count = 0;
+	const bool sbP4Eligible = _game.id == GID_MONKEY2 && _game.version == 5 &&
+		_game.platform == Common::kPlatformDOS && _currentRoom == 23 &&
+		!_enableEGADithering;
+
+	if (sbP4Trace.isOpen() && !sbP4Eligible) {
+		const Common::String ending = Common::String::format("SBP4|END|%u|room_exit\n", sbP4Count);
+		sbP4Trace.write(ending.c_str(), static_cast<uint32>(ending.size()));
+		sbP4Trace.flush();
+		sbP4Trace.close();
+	}
+
+	if (sbP4Eligible && !sbP4Attempted) {
+		sbP4Attempted = true;
+		const Common::Path path("scummbucket-p4-room23.raw.log");
+		if (Common::FSNode(path).exists()) {
+			warning("ScummBucket P4: trace file already exists; refusing to overwrite");
+		} else if (!sbP4Trace.open(path)) {
+			warning("ScummBucket P4: failed to open trace output in engine working directory");
+		} else {
+			char paletteHex[1536];
+			const char hexDigits[] = "0123456789abcdef";
+			for (unsigned k = 0; k < 768; ++k) {
+				const byte value = _currentPalette[k];
+				paletteHex[k * 2] = hexDigits[value >> 4];
+				paletteHex[k * 2 + 1] = hexDigits[value & 15];
+			}
+			const Common::String beginning = Common::String::format("SBP4|BEGIN|23|%u|",
+				static_cast<unsigned>(_system->getMillis()));
+			sbP4Trace.write(beginning.c_str(), static_cast<uint32>(beginning.size()));
+			sbP4Trace.write(paletteHex, 1536);
+			sbP4Trace.write("\n", 1);
+			sbP4Trace.flush();
+		}
+	}
+
+	if (_game.version >= 4 && _game.heversion <= 62)
+		cyclePalette();
+
+	// Capture immediately AFTER cyclePalette() and BEFORE palManipulate().
+	if (sbP4Eligible && sbP4Trace.isOpen()) {
+		++sbP4Count;
+		const int sbTimer = VAR_TIMER != 0xFF ? VAR(VAR_TIMER) : -1;
+		const int sbTimerNext = VAR_TIMER_NEXT != 0xFF ? VAR(VAR_TIMER_NEXT) : -1;
+		const Common::String sample = Common::String::format("SBP4|SAMPLE|%u|%d|%d|%u|",
+			sbP4Count, sbTimer, sbTimerNext,
+			static_cast<unsigned>(_system->getMillis()));
+		sbP4Trace.write(sample.c_str(), static_cast<uint32>(sample.size()));
+		char paletteHex[1536];
+		const char hexDigits[] = "0123456789abcdef";
+		for (unsigned k = 0; k < 768; ++k) {
+			const byte value = _currentPalette[k];
+			paletteHex[k * 2] = hexDigits[value >> 4];
+			paletteHex[k * 2 + 1] = hexDigits[value & 15];
+		}
+		sbP4Trace.write(paletteHex, 1536);
+		sbP4Trace.write("\n", 1);
+		if (sbP4Count == 256) {
+			const Common::String ending("SBP4|END|256|limit\n");
+			sbP4Trace.write(ending.c_str(), static_cast<uint32>(ending.size()));
+			sbP4Trace.flush();
+			sbP4Trace.close();
+		} else {
+			sbP4Trace.flush();
+		}
+	}
+	palManipulate();
+'''
+
 INCLUDE_ANCHOR = '#include "common/config-manager.h"\n'
-INCLUDE_REPLACE = ('// SCUMMBUCKET_P4_PALETTE_TRACE_V1\n'
-                   '#include <cstdio>\n#include <cstdlib>\n'
+LEGACY_INCLUDE_REPLACE = ('// SCUMMBUCKET_P4_PALETTE_TRACE_V1\n'
+                          '#include <cstdio>\n#include <cstdlib>\n'
+                          '#include "common/config-manager.h"\n')
+INCLUDE_REPLACE = ('// SCUMMBUCKET_P4_PALETTE_TRACE_V2\n'
+                   '#include "common/file.h"\n'
                    '#include "common/config-manager.h"\n')
 
 
@@ -98,8 +178,8 @@ def git_blob_sha(content: bytes) -> str:
                         b"\0" + content).hexdigest()
 
 
-def patch_source(raw: bytes) -> bytes:
-    """Return patched source only if source blob and exact anchors are pinned."""
+def patch_source(raw: bytes, *, legacy: bool = False) -> bytes:
+    """Produce the exact pinned hook; legacy exists only for safe v1 upgrades."""
     newline = b"\r\n" if b"\r\n" in raw else b"\n"
     source = raw.replace(b"\r\n", b"\n")
     if git_blob_sha(source) != PINNED_CPP_BLOB:
@@ -108,9 +188,36 @@ def patch_source(raw: bytes) -> bytes:
     content = source.decode("utf-8")
     if content.count(ANCHOR) != 1 or content.count(INCLUDE_ANCHOR) != 1:
         raise PatchError("SOURCE_ANCHOR_MISMATCH: pinned palette hook anchors not unique")
-    patched = content.replace(ANCHOR, HOOK, 1).replace(INCLUDE_ANCHOR, INCLUDE_REPLACE, 1)
+    selected_hook = LEGACY_HOOK if legacy else HOOK
+    selected_include = LEGACY_INCLUDE_REPLACE if legacy else INCLUDE_REPLACE
+    patched = content.replace(ANCHOR, selected_hook, 1)
+    patched = patched.replace(INCLUDE_ANCHOR, selected_include, 1)
     binary = patched.encode("utf-8")
     return binary.replace(b"\n", newline) if newline == b"\r\n" else binary
+
+
+def _read_pinned_backup(backup: Path) -> bytes:
+    if not backup.is_file():
+        raise PatchError(f"BACKUP_MISSING: original source backup not found: {backup}")
+    original = backup.read_bytes()
+    if git_blob_sha(original.replace(b"\r\n", b"\n")) != PINNED_CPP_BLOB:
+        raise PatchError("BACKUP_INVALID: original backup has unexpected version")
+    return original
+
+
+def _replace_using_temporary(target: Path, patched: bytes) -> None:
+    """Avoid leaving partially overwritten C++ source if a write fails."""
+    temporary = target.with_name(target.name + ".scummbucket-p4-staging")
+    if temporary.exists() or temporary.is_symlink():
+        raise PatchError(f"PATCH_STAGING_COLLISION: {temporary}")
+    try:
+        with temporary.open("xb") as f:
+            f.write(patched)
+        os.replace(temporary, target)
+    except OSError:
+        if temporary.exists():
+            temporary.unlink()
+        raise
 
 
 def apply_patch(scummvm_root: Path, *, check: bool = False, restore: bool = False) -> str:
@@ -118,19 +225,32 @@ def apply_patch(scummvm_root: Path, *, check: bool = False, restore: bool = Fals
     backup = target.with_name(target.name + BACKUP_SUFFIX)
     if not target.is_file() or target.is_symlink() or backup.is_symlink():
         raise PatchError(f"SOURCE_MISSING_OR_SYMLINK: {target}")
+
+    raw = target.read_bytes()
     if restore:
-        if not backup.is_file():
-            raise PatchError("BACKUP_MISSING: cannot restore without original backup")
-        original = backup.read_bytes()
-        if git_blob_sha(original.replace(b"\r\n", b"\n")) != PINNED_CPP_BLOB:
-            raise PatchError("BACKUP_INVALID: original backup has unexpected version")
-        if target.read_bytes() != patch_source(original):
+        original = _read_pinned_backup(backup)
+        if raw not in (patch_source(original), patch_source(original, legacy=True)):
             raise PatchError("PATCHED_SOURCE_CHANGED: refusing to erase further edits")
         os.replace(backup, target)
         return f"RESTORED: {target}"
-    raw = target.read_bytes()
+
     if MARKER.encode() in raw:
-        raise PatchError("ALREADY_INSTRUMENTED: restore first; no double patch")
+        original = _read_pinned_backup(backup)
+        if raw != patch_source(original):
+            raise PatchError("PATCHED_SOURCE_CHANGED: v2 source differs from generated hook")
+        if check:
+            return f"PATCH_ALREADY_CURRENT: {target}"
+        raise PatchError("ALREADY_INSTRUMENTED: v2 hook is already installed")
+
+    if LEGACY_MARKER.encode() in raw:
+        original = _read_pinned_backup(backup)
+        if raw != patch_source(original, legacy=True):
+            raise PatchError("PATCHED_SOURCE_CHANGED: legacy v1 source differs from generated hook")
+        if check:
+            return f"UPGRADE_APPLICABLE: {target} (v1 -> v2)"
+        _replace_using_temporary(target, patch_source(original))
+        return f"PATCH_UPGRADED_V1_TO_V2: {target} (original backup preserved: {backup})"
+
     patched = patch_source(raw)
     if backup.exists():
         raise PatchError(f"BACKUP_COLLISION: {backup}")
@@ -139,13 +259,11 @@ def apply_patch(scummvm_root: Path, *, check: bool = False, restore: bool = Fals
     with backup.open("xb") as f:
         f.write(raw)
     try:
-        with target.open("wb") as f:
-            f.write(patched)
+        _replace_using_temporary(target, patched)
     except OSError:
         os.replace(backup, target)
         raise
     return f"PATCH_APPLIED: {target} (original backup: {backup})"
-
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__)

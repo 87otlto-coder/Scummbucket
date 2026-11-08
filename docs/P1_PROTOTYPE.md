@@ -248,6 +248,21 @@ $out = "C:\Users\87otl\ScummBucket\exports\room23-palette-map-$stamp"
 python -m scummbucket palette-map "D:\old" --room 23 --output-dir "$out"
 ```
 
+### Experimental native indexed PNG animation sequence (P4 research)
+
+The `palette-sequence` command is the first **actual palette-driven background frame exporter**, separate from the `palette-probe` still-frame experiment. It exports one 8-bit indexed PNG per output frame, leaving the source pixel-index buffer identical while changing only each PNG's `PLTE` RGB palette. The original source-indexed PNG and initial 768-byte `CLUT` are preserved alongside per-frame palette/rotation hashes in `manifest.json`.
+
+```powershell
+cd "C:\Users\87otl\ScummBucket"
+$stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+$out = "C:\Users\87otl\ScummBucket\exports\room23-sequence-$stamp"
+python -m scummbucket palette-sequence "D:\old" --room 23 --fps 30 --duration-seconds 4 --counter-rate 60 --output-dir "$out"
+```
+
+The expected output for the fingerprinted room 23 is **120 indexed PNG frames at 320×144**, plus the original indexed image, RGB palette and manifest. It applies a **video-calibrated hypothesis of about 60 palette counter units per second** using one modeled cycle update per output frame. It is **not yet timing-verified against internal ScummVM timers**; original-game integration runs are opt-in and currently pending for this new exporter. Scripts, masks, objects, actor sprites, full-scene compositing, exact runtime schedule, EGA and animated WebP remain outside this implementation.
+
+See [P4 native indexed palette-sequence export](research/P4_PALETTE_SEQUENCE_EXPORT.md) for limitations, checks, source evidence and reproducible private regression.
+
 A separate **`verify-palette-trace`** command can compare a strict, externally recorded ScummVM palette trace against the decoded source palette and actual captured timer variable values, reporting the first mismatch and affected palette indices. The trace file must include full RGB palette bytes, game fingerprint, engine revision and an exact `cyclePalette` capture point. Only **synthetic trace comparisons** have been tested to date. No real engine palette-state trace or exact playback timing has been verified. See [runtime verification procedure](research/P4_RUNTIME_PALETTE_VERIFICATION.md).
 
 See the [palette-cycle candidate register and exact observations](research/P4_PALETTE_CYCLE_CANDIDATES.md). The four existing CYCLE_FLAGS_UNVERIFIED warnings remain present.
@@ -258,13 +273,13 @@ See the [palette-cycle candidate register and exact observations](research/P4_PA
 - Automatic archive-wide or arbitrary byte-range extraction. Export selection deliberately requires a room, and may optionally specify a chunk tag.
 - Directory IDs now locate global scripts, costumes and sounds; scene inventory pairs object IDs and records nearby resources by storage. **Full bytecode interpretation, instruction-aligned script-to-object dependencies, and verified animation playback remain unimplemented.**
 - Recovery of individual malformed resource chunks when the outer room structure fails validation: the current inspector stops safely for that input.
-- Complete room/background, character costume, animation playback, script interpreter, or audio decoding. The limited P2 `OBIM` image-state decoder and the P4 research-only indexed-background/palette probe remain **experimental**.
+- Complete room/background and depth-mask compositing, character costume animation, full animation playback, script interpreter, or audio decoding. The limited P2 `OBIM` image-state decoder and P4 indexed-background palette animation **PNG sequence exporter** remain experimental and reference-timing unverified.
 - Monkey Island 1 or other editions/SCUMM versions.
 - Playback/reference comparison against ScummVM or verified original gameplay.
 
 ## Verification
 
-- **GitHub Actions: 137 tests discovered, 134 passed, 3 optional private-integration tests skipped, 0 failures** ([verified workflow run](https://github.com/87otlto-coder/Scummbucket/actions/runs/42471870668)). New coverage-map tests are synthetic; source/video alignment and cadence calculations were performed separately against the authorized private inputs, not in CI. The actual engine palette-trace check remains outstanding.
+- **GitHub Actions: 153 tests discovered, 149 passed, 4 optional private-input tests skipped, 0 failures** ([verified workflow run](https://github.com/87otlto-coder/Scummbucket/actions/runs/42473300343)). The new indexed-PNG sequence and timing tests use synthetic resources; the added original-MI2 export regression is opt-in and was not run in CI. Real ScummVM engine timer and palette tracing remain outstanding.
 - User-supplied MI2 ZIP passed structural inventory: 110 rooms, 127 palette-cycle records in 21 rooms and 158 multi-state object images.
 - New resource-ID extraction tests cover two distinct scripts sharing a room, exact byte matches in both representations, empty and invalid slots, corrupt links, overwrite refusal and the new CLI.
 - Room 4 `CYCL` chunk exports in both `decoded` and `stored` modes were verified byte-for-byte against the original `MONKEY2.001` source slices.

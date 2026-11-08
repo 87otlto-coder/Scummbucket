@@ -61,24 +61,29 @@ def main(argv=None) -> int:
     palette.add_argument("input", help="Original DOS MI2 ZIP or game folder")
     palette.add_argument("--room", type=int, required=True)
     palette.add_argument("--ticks", nargs="+", type=int, required=True,
-                         help="Synthetic counter-unit updates, e.g. 0 35 71 107; NOT milliseconds")
+                         help="Synthetic update indices, e.g. 0 35 71 107; NOT milliseconds")
+    palette.add_argument("--counter-increment", type=int, default=1,
+                         help="Simulated timer counter units added on each update (default 1, not a real runtime measurement)")
     palette.add_argument("--output-dir", required=True, help="New non-overwriting PNG output folder")
     palette.add_argument("--json", action="store_true", help="Print JSON report")
     args = parser.parse_args(argv)
 
     if args.command == "palette-probe":
         report = palette_probe(
-            args.input, args.output_dir, room_id=args.room, ticks=args.ticks)
+            args.input, args.output_dir, room_id=args.room, ticks=args.ticks,
+            counter_increment=args.counter_increment)
         if args.json:
             print(json.dumps(report, indent=2))
         else:
             print(f"Palette probe: {report['status']} ({args.input})")
-            print(f"Room {args.room}: {report['summary']['snapshots']} hypothetical PNG snapshots, "
+            print(f"Room {args.room}, counter increment {args.counter_increment} per update: "
+                  f"{report['summary']['snapshots']} hypothetical PNG snapshots, "
                   f"{report['summary']['cycle_records']} cycle records, "
                   f"{report['summary']['visible_cycle_pixels']} background pixel positions "
                   "using cycled palette indices")
             for snapshot in report["snapshots"]:
-                print(f"  Counter tick {snapshot['synthetic_counter_tick']}: "
+                print(f"  Synthetic update {snapshot['synthetic_update_index']} "
+                      f"(cumulative counter units {snapshot['cumulative_counter_units']}): "
                       f"{snapshot['visible_changed_pixels_vs_initial']} visually changed "
                       f"pixel positions vs initial, {snapshot['cycle_rotation_events']} "
                       "cycle rotation events")

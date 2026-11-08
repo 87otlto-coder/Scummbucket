@@ -1,6 +1,6 @@
 # P4 — Event-bundle GIF preview (event-driven, not FPS-sampled)
 
-**Status:** Implemented on `feature/p4-event-bundle-gif`. Tested with synthetic/controlled palettes; independent replay on the user's Windows Room 23 event bundle remains a local integration check. No real ScummVM engine-state trace has been obtained.
+**Status:** Implemented on `feature/p4-event-bundle-gif`. Synthetic/controlled tests passed, and the user's Room 23 GIF and manifest were independently verified as a modeled replay on 2026-11-08. See [Room 23 GIF verification](P4_ROOM23_EVENT_GIF_VERIFICATION.md). No real ScummVM engine-state trace has been obtained.
 
 ## Why this exporter exists
 
@@ -60,6 +60,6 @@ Synthetic regression tests in `tests/test_palette_event_gif.py` cover event-boun
 
 A separate controlled local smoke test used the uploaded Room 23 initial indexed image with two synthetic color-pair swaps and verified a three-segment, play-once 4-second GIF against full RGB readback. **That test is not a replay of the user's 19-event source timeline.**
 
-The next private verification step is to run the Windows command above on the fingerprinted `room23-events-20261108-143724` folder, inspect the GIF and its manifest, and compare visible shimmer cadence with the earlier ScummVM VGA video. Final engine timing still requires a real timer/palette trace as described in `P4_RUNTIME_PALETTE_VERIFICATION.md`.
+The user has completed the Windows export on the fingerprinted `room23-events-20261108-143724` bundle. The returned 20-frame GIF, manifest and two earlier indexed PNG checkpoints passed independent integrity, duration and spatial verification; details are in [Room 23 GIF verification](P4_ROOM23_EVENT_GIF_VERIFICATION.md). To repeat the optional private-source regression locally, set `SCUMMBUCKET_ROOM23_EVENT_BUNDLE` to that bundle folder and run `python -m unittest discover -s tests -p "test_private_room23_event_gif.py" -v`. Public CI skips this test. Final engine timing still requires a real timer/palette trace as described in `P4_RUNTIME_PALETTE_VERIFICATION.md`.
 
 **P4 is not complete**. This export validates a presentation path for synthetic, source-backed palette changes, not full scene-reconstruction fidelity.

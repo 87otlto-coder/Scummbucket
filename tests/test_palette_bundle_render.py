@@ -93,6 +93,22 @@ class SourceBundleRenderTest(unittest.TestCase):
         self.assertEqual(result["sampling"]["event_states_not_sampled"], 0)
         self.assertEqual(result["frames_written"], 3)
 
+    def test_low_fps_omits_intermediate_states_but_warns_and_retains_source(self):
+        quick = self.root / "faster-source-events"
+        event_report = export_palette_events(
+            self.archive, quick, room_id=1, counter_rate=8, duration_seconds=3)
+        self.assertEqual(event_report["status"], "success", event_report["diagnostics"])
+        target = self.root / "slow-render"
+        result = render_palette_event_bundle(quick, target, fps=1)
+        self.assertEqual(result["status"], "success", result["diagnostics"])
+        self.assertEqual(result["frames_written"], 3)
+        self.assertEqual(result["sampling"]["original_event_ticks"], 5)
+        self.assertEqual(result["sampling"]["omitted_event_ticks"], [4, 12, 20])
+        self.assertIn("EVENT_RENDER_UNSAMPLED_STATES",
+                      [d["code"] for d in result["diagnostics"]])
+        self.assertEqual(
+            len(json.loads((quick / "timeline.json").read_text())["timeline"]["events"]), 5)
+
     def test_missing_or_corrupted_source_sidecars_have_explicit_diagnostics(self):
         png = self.bundle_dir / "room-001_indexed.png"
         corrupt = bytearray(png.read_bytes())

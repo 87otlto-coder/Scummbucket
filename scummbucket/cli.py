@@ -6,6 +6,7 @@ import sys
 from .extraction import extract
 from .descumm_verification import verify_descumm
 from .inspector import inspect
+from .object_images import export_object_images
 
 
 def main(argv=None) -> int:
@@ -46,7 +47,31 @@ def main(argv=None) -> int:
     verifier.add_argument("--descumm", help="Path to official ScummVM Tools descumm executable; defaults to PATH")
     verifier.add_argument("--json", action="store_true", help="Print machine-readable report")
     verifier.add_argument("--output", help="Write report to a new JSON file; never overwrite")
+    pictures = sub.add_parser("images", help="Decode one DOS MI2 OBIM object's image states (P2 experimental)")
+    pictures.add_argument("input", help="ZIP, game folder or MONKEY2.000 input")
+    pictures.add_argument("--room", type=int, required=True, help="Room ID")
+    pictures.add_argument("--object", type=int, required=True, help="Object ID")
+    pictures.add_argument("--output-dir", required=True, help="Folder for RGBA PNG states and separate mask PNGs")
+    pictures.add_argument("--no-masks", action="store_true", help="Skip separate Z-plane mask PNG exports")
+    pictures.add_argument("--json", action="store_true", help="Print complete JSON report")
     args = parser.parse_args(argv)
+
+    if args.command == "images":
+        report = export_object_images(
+            args.input, args.output_dir, room_id=args.room,
+            object_id=args.object, include_masks=not args.no_masks)
+        if args.json:
+            print(json.dumps(report, indent=2))
+        else:
+            print(f"Image-state export: {report['status']} ({args.input})")
+            print("State outcomes: " + ", ".join(
+                f"{k}={v}" for k, v in report["summary"].items()))
+            print("Output: RGBA state images and separate Z-plane masks; "
+                  "pixel fidelity vs ScummVM NOT verified")
+            for diag in report["diagnostics"]:
+                print(f"{diag['severity'].upper()} {diag['code']}: {diag['message']}",
+                      file=sys.stderr)
+        return 0 if report["status"] == "success" else 2
 
     if args.command == "verify-descumm":
         report = verify_descumm(args.input, room_id=args.room, script_id=args.script,

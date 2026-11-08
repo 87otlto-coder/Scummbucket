@@ -48,6 +48,7 @@ python -m scummbucket palette-sequence "C:\path\to\mi2.zip" --room 23 --fps 30 -
 python -m pip install -e ".[gif]"  # Once, for optional GIF encoding
 python -m scummbucket palette-gif "C:\path\to\mi2.zip" --room 23 --fps 30 --duration-seconds 4 --counter-rate 60 --output "C:\Users\87otl\ScummBucket\exports\room23-preview-new.gif"
 python -m scummbucket palette-events "C:\path\to\mi2.zip" --room 23 --duration-seconds 4 --counter-rate 60 --output-dir "C:\Users\87otl\ScummBucket\exports\room23-events-new-output"
+python -m scummbucket render-events "C:\Users\87otl\ScummBucket\exports\room23-events-new-output" --fps 60 --output-dir "C:\Users\87otl\ScummBucket\exports\room23-render60-new-output"
 python -m scummbucket palette-probe "C:\path\to\mi2.zip" --room 23 --ticks 0 1 4 9 --counter-increment 4 --output-dir "C:\Users\87otl\ScummBucket\exports\room23-delta4-new-output"
 python -m scummbucket verify-descumm "C:\path\to\mi2.zip" --room 34 --script 201 --object 358 --descumm "C:\path\to\descumm.exe"
 python -m unittest discover -s tests -v
@@ -96,6 +97,16 @@ The new **`palette-events`** command exports a portable bundle containing one or
 **Its model is intentionally different from the earlier GIF/PNG exports.** It assumes a palette update once per *counter unit* instead of once per output frame. The approximately 60 counter units/sec rate is video-inferred for fingerprinted room 23, but the **engine scheduler has not been measured**. This is a transparent experiment, not a silent replacement or a verified ScummVM runtime trace. The existing `palette-sequence` and `palette-gif` outputs are unchanged.
 
 See [P4 experimental counter-unit palette timeline](docs/research/P4_PALETTE_EVENT_TIMELINE.md). It needs no optional Pillow dependency.
+
+### Render original indexed PNG frames from a saved event bundle
+
+Use **`render-events`** to select a playback FPS **after** exporting a `palette-events` bundle. This command verifies the saved event timeline, exact indexed PNG source, original CLUT, file SHA-256 values, and every palette RGB patch. It **does not need the original game archive**, reinterpret `CYCL`, or rerun the palette model. Result frames are lossless native indexed PNGs plus a `render-manifest.json`, created without overwriting existing files.
+
+The renderer explicitly warns when a selected FPS skips intermediate states that still exist in the source event log. For the verified uploaded four-second room-23 bundle, **15 fps samples 60 frames but misses 5 event states; 30 fps samples 120 frames but misses 2; and 60 fps samples 240 frames and misses none** under the *synthetic* update schedule. At 60 fps, the current 240-frame limit is reached.
+
+The uploaded source bundle was independently checked: the 320×144 indexed background and 768-byte CLUT match their manifest fingerprints, and all **19 recorded event timestamps / 32 modeled rotations** replay with exact before/after palette SHA-256. This establishes **bundle consistency**, not actual ScummVM engine timing. Old GIF and PNG commands use a different hypothetical update-call cadence and have not been silently altered.
+
+See [saved event-bundle renderer and actual room-23 verification](docs/research/P4_EVENT_BUNDLE_RENDER.md). No Pillow dependency is required.
 
 For exact verification against a developer-captured ScummVM palette trace, `verify-palette-trace` compares per-update timer variables and 768-byte RGB palette samples with the source-based model. It reports the first mismatch and differing palette indices; the input must identify its archive fingerprint, engine build and exact capture point. The comparison code is tested using synthetic traces, **but no real ScummVM engine palette trace has been captured or compared yet**. See [P4 runtime trace contract and visual-check instructions](docs/research/P4_RUNTIME_PALETTE_VERIFICATION.md). The four `CYCLE_FLAGS_UNVERIFIED` warnings remain visible.
 

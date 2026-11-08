@@ -1,6 +1,6 @@
 # P4 — Experimental palette-driven GIF preview
 
-**Status:** Exporter implemented, unit-tested with synthetic assets. Public CI passes; actual original-game GIF integration remains **opt-in and unverified** until executed locally.  
+**Status:** Exporter implemented, unit-tested with synthetic assets. An **independent private-file research reconstruction** also produced a real source-backed GIF and verified its pixel/timing readback. The GitHub CLI's own original-game integration test is still **opt-in and pending on the user's Windows checkout**.  
 **Scope:** Original DOS VGA Monkey Island 2 room palette cycling; first reference room 23.
 
 ## What it exports
@@ -79,6 +79,30 @@ The manifest contains:
 - A manifest write failure after writing the verified GIF results in **partial** status; the GIF and its successful source hash remain reported. There is no claim of atomic multi-file commit.
 - The four `CYCLE_FLAGS_UNVERIFIED` warnings and the distinct room-64 `CYCLE_DELAY_ZERO_IN_ENGINE` warning remain visible as archive-wide findings.
 - Original room objects, costumes/actors, depth masks, scrolling, script-controlled lighting and other effects are excluded. This is a palette-only preview, **not** a full-scene renderer.
+
+## Independent private original-game research result (2026-11-08)
+
+A separate read-only research script processed the original user-supplied `MONKEY2.001` data without downloading additional game binaries or executing the new GitHub CLI. It reused the **same source-indexed background, original CLUT and CYCL definition values**, and independently simulated the four-second 30-fps/60-counter-unit sequence.
+
+| Source/model property | Measured result |
+| --- | ---: |
+| Resource SHA-256 | `ad045372e0d49626503bb50fca29a687ec8e01ef75d9b8bca702a366d143819e` |
+| Indexed background SHA-256 | `94b7b2d675778bf73c73a87eca05ab74dca470ad67555faecd03ab112acbcd9f` |
+| Original room dimensions | **320 × 144** |
+| Sampled playback frames | **120** |
+| Time-ordered GIF segments | **18** |
+| Globally unique visible palette states | **16** |
+| Modeled CYCL rotation events | **32** |
+| Preview duration | **4,000 ms** |
+| GIF byte count | **261,439** |
+| GIF SHA-256 | `9dd0fc97c583a0cba3ae6787427874344203f86921b2654fc06bbdec7e9e216b` |
+| Pillow GIF readback | All **18** RGB frames and centisecond durations match the independently generated indexed-source model; no loop extension |
+
+Two of the visual states recur later, explaining why 16 unique states produce **18 necessary playback segments**. No provenance is lost by collapsing only immediately repeated visible states.
+
+**Scope distinction:** This confirms that the original **private game data** can produce a technically consistent 18-segment GIF under the agreed video-calibrated timing hypothesis. It is **not** evidence that the new `python -m scummbucket palette-gif` command itself has completed its opt-in private-archive integration check. The version-controlled private test has been strengthened to assert the exact **18 / 16 / 32** counts when run by the user.
+
+The independently generated preview remains an artifact of this private conversation, **not a file in GitHub**. No game-derived pixels or archive chunks were committed.
 
 ## Verification status
 

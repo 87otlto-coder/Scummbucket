@@ -192,7 +192,8 @@ class PaletteBackgroundTest(unittest.TestCase):
             code = main(argv)
         self.assertEqual(code, 0)
         self.assertIn("hypothetical PNG snapshots", output.getvalue())
-        self.assertIn("runtime", output.getvalue().lower())
+        self.assertIn("real gameplay execution and timing remain unverified",
+                      output.getvalue().lower())
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(main(argv), 2)
 

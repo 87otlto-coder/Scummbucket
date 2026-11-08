@@ -32,8 +32,7 @@ def read_gif(path: Path):
     data = json.loads(manifest.read_text(encoding="utf-8"))
     raw = path.read_bytes()
     digest = sha256(raw).hexdigest()
-    expected_digest = data["files"][0].get("sha256", digest)
-    # The older source-backed exporter uses `name`, not `filename`.
+    expected_digest = data["files"][0]["sha256"]
     assert digest == expected_digest
     frames, durations = [], []
     with Image.open(path) as image:

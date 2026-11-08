@@ -220,19 +220,39 @@ For complete limitations, implementation details and confidence levels, see [P2 
 
 The separate [autonomous palette-animation candidate survey](research/P4_PALETTE_CYCLE_CANDIDATES.md) identifies rooms 23 and 109 as good research controls, while explicitly retaining the four unresolved cycle-flag warnings.
 
+## Early P4 palette-cycle research probe
+
+The optional palette-probe command builds **hypothetical** palette snapshots from a native indexed room background and the room's original CYCL data. It reuses the existing limited strip decoder, independently preserving source palette indices rather than baking the static palette into the pixel buffer.
+
+Source observations from the fingerprinted original DOS MI2 archive:
+- **Room 23:** 320 x 144 indexed background, eight cycle records, **480 pixels using cycled palette indices**; simulated 35 and 71 counter-unit updates change 65 and 373 RGB pixel positions relative to the initial palette.
+- **Room 109:** 320 x 200 indexed background, five cycle records, **65 pixels using cycled indices**; the same hypothetical updates change 50 and 30 positions.
+- ScummVM's cycle setup derives an internal threshold as integer **16384 / raw rate**. The probe simulates **one counter unit per update** and does not assign real milliseconds or infer the engine's actual runtime update cadence.
+
+```powershell
+cd "C:\Users\87otl\ScummBucket"
+$stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+$out = "C:\Users\87otl\ScummBucket\exports\room23-palette-$stamp"
+python -m scummbucket palette-probe "D:\old" --room 23 --ticks 0 35 71 107 --output-dir "$out"
+```
+
+It exports PNG snapshots at the original room dimensions plus a manifest containing source hashes, exact cycle records, synthetic counter units, palette hashes, changed-pixel counts and diagnostics. There is **no claim of real game animation playback**. Actors, objects, room depth masks, script-side cycle changes, game scheduler timing and independent pixel comparison against ScummVM remain unverified.
+
+See the [palette-cycle candidate register and exact observations](research/P4_PALETTE_CYCLE_CANDIDATES.md). The four existing CYCLE_FLAGS_UNVERIFIED warnings remain present.
+
 ## Not yet supported / limitations
 
 - Exact retail edition identification by trusted fingerprint; structural compatibility is not conclusive.
 - Automatic archive-wide or arbitrary byte-range extraction. Export selection deliberately requires a room, and may optionally specify a chunk tag.
 - Directory IDs now locate global scripts, costumes and sounds; scene inventory pairs object IDs and records nearby resources by storage. **Full bytecode interpretation, instruction-aligned script-to-object dependencies, and verified animation playback remain unimplemented.**
 - Recovery of individual malformed resource chunks when the outer room structure fails validation: the current inspector stops safely for that input.
-- Complete room/background, character costume, animation playback, script interpreter, or audio decoding. The limited P2 `OBIM` image-state/CLUT/Z-plane decoder remains **experimental**.
+- Complete room/background, character costume, animation playback, script interpreter, or audio decoding. The limited P2 `OBIM` image-state decoder and the P4 research-only indexed-background/palette probe remain **experimental**.
 - Monkey Island 1 or other editions/SCUMM versions.
 - Playback/reference comparison against ScummVM or verified original gameplay.
 
 ## Verification
 
-- **GitHub Actions: 83 tests discovered, 81 passed, 2 optional private-integration tests skipped, 0 failures** ([verified workflow run](https://github.com/87otlto-coder/Scummbucket/actions/runs/42420279759)). This includes five *metadata consistency* tests, not gameplay execution tests. The user independently completed the real `descumm` checks locally for scripts 201 and 202; CI uses mocked tool output and no proprietary game files.
+- **GitHub Actions: 112 tests discovered, 109 passed, 3 optional private-integration tests skipped, 0 failures** ([verified workflow run](https://github.com/87otlto-coder/Scummbucket/actions/runs/42462828820)). The new synthetic palette probe tests cover actual indexed source decoding, hypothetical color rotation and failure reporting, **not** gameplay animation; no proprietary files run in CI. The user independently completed real `descumm` checks on scripts 201 and 202.
 - User-supplied MI2 ZIP passed structural inventory: 110 rooms, 127 palette-cycle records in 21 rooms and 158 multi-state object images.
 - New resource-ID extraction tests cover two distinct scripts sharing a room, exact byte matches in both representations, empty and invalid slots, corrupt links, overwrite refusal and the new CLI.
 - Room 4 `CYCL` chunk exports in both `decoded` and `stored` modes were verified byte-for-byte against the original `MONKEY2.001` source slices.

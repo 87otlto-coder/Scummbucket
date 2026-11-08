@@ -11,6 +11,7 @@ import unittest
 
 from scummbucket.extraction import extract
 from scummbucket.inspector import inspect, _read_pair, XOR_KEY
+from scummbucket.object_images import export_object_images
 
 
 ARCHIVE = os.environ.get("SCUMMBUCKET_MI2_ARCHIVE")
@@ -86,6 +87,30 @@ class PrivateMonkey2IntegrationTest(unittest.TestCase):
             extracted = (Path(directory) / "script12" / chunk["file"]).read_bytes()
             self.assertEqual(extracted[:4], b"SCRP")
             self.assertEqual(hashlib.sha256(extracted).hexdigest(), EXPECTED_SCRIPT12)
+        # P2 experimental: fingerprint two decoded RGBA states and source-layer metadata.
+        with tempfile.TemporaryDirectory() as directory:
+            images = export_object_images(
+                source, Path(directory) / "object358", room_id=34, object_id=358)
+            self.assertEqual(images["status"], "success", images["diagnostics"])
+            self.assertEqual(images["summary"]["success"], 16)
+            self.assertEqual(len(images["files"]), 64)
+            self.assertEqual(images["source"]["transparent_index"], 5)
+            self.assertEqual(images["rendering_status"],
+                             "pixel_decoded_not_compared_to_reference")
+            pixel_hashes = {
+                "IM01": "6ed884e2b9f282529fcdad7cb1f8ab6097e2c702fb55d21348b0ff0ecc078f68",
+                "IM10": "20bd2c267ee8a9e81337f45c7430700a9c601f3f814fac6e9b5b4c56953b2279",
+            }
+            for state in images["states"]:
+                self.assertEqual(state["metadata"]["width"], 56)
+                self.assertEqual(state["metadata"]["height"], 40)
+                self.assertEqual(state["metadata"]["zplane_tags"],
+                                 ["ZP01", "ZP02", "ZP03"])
+                if state["state_tag"] in pixel_hashes:
+                    self.assertEqual(
+                        state["metadata"]["pixel_rgba_sha256"],
+                        pixel_hashes[state["state_tag"]],
+                        f"Unexpected RGBA pixels for {state['state_tag']}")
         if before is not None:
             self.assertEqual(hashlib.sha256(source.read_bytes()).hexdigest(), before,
                              "Original game archive must remain unchanged")

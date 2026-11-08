@@ -79,7 +79,9 @@ cd "C:\Users\87otl\ScummBucket"
 powershell -NoProfile -ExecutionPolicy Bypass -File ".\tools\run_scummvm_palette_capture.ps1" -Mode stress
 ~~~
 
-Open the debugger from a different room and enter **scumm_vars[19] 60** followed by **room 23**. At approximately one callback per second, collecting all 256 samples takes roughly 4.3 minutes. For a shorter stress capture, return to the debugger after several updates, enter **room 22** and allow a subsequent nonzero-room engine update to close the logger with a room_exit END record. Then exit the patched game.
+**Corrected after the first mislabeled stress attempt:** From a different room, enter **room 23** first; this automatically resumes execution. Once visibly in Room 23, reopen the debugger, enter **scumm_vars[19] 60**, then enter **scumm_vars[19]** to confirm the readback is **60**, then type **continue**. Stay in the running room for ~35–40 seconds to collect many genuine 60/60 updates. You may then reopen the debugger, enter **room 22**, let it resume briefly so the hook emits `END|N|room_exit`, and exit. Initial normal-speed samples before the override are acceptable and should remain in the unaltered log. A full 256 samples at 1 Hz would take ~4.3 minutes, but a shorter room-exit capture is sufficient for this test. 
+
+**The helper's `-Mode stress` is not a timer override.** A previous file labeled stress contained **256/256 timer pairs 6/6** despite being a complete capture. The current helper now reports every observed timer pair and refuses to classify a stress attempt as successful unless the raw log includes at least one genuine **60/60** pair; it emits `CAPTURE_MODE_NOT_OBSERVED` otherwise. More samples at 60 are needed for scientific comparison. See [complete normal-speed trace diagnosis](P4_ROOM23_COMPLETE_6UNIT_TRACE.md).
 
 The earlier 1-Hz debugger test showed that the engine timer override persisted and the water animation became visually abrupt. This experiment now records the **actual ordered RGB palettes**, including transitional timer pairs.
 

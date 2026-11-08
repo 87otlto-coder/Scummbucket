@@ -31,7 +31,7 @@ Reference implementations require independent validation against relevant game e
 
 ## Experimental archive inspector (P1 prototype)
 
-A limited, read-only command-line prototype is available on the P1 feature branch. It currently supports the original DOS Monkey Island 2 `MONKEY2.000` / `MONKEY2.001` pair only. This is an **inventory, diagnostics and selective raw-chunk export tool**, not yet an image, animation or audio decoder.
+A limited, read-only command-line prototype is available on the P1 feature branch. It currently supports the original DOS Monkey Island 2 `MONKEY2.000` / `MONKEY2.001` pair only. This includes P1 inventory, diagnostics and selective raw-chunk export tools, plus an **experimental P2 image-state decoder** for supported DOS v5 OBIM strips and masks. Full room, animation and audio decoding remain unimplemented.
 
 On Windows, the standard local project directory is `C:\Users\87otl\ScummBucket`. From PowerShell, run:
 
@@ -41,6 +41,7 @@ python -m scummbucket inspect "C:\path\to\mi2.zip" --json
 python -m scummbucket extract "C:\path\to\mi2.zip" --room 4 --tag CYCL --output-dir "C:\Users\87otl\ScummBucket\exports\room-004-cycl"
 python -m scummbucket extract-id "C:\path\to\mi2.zip" --directory DSCR --id 12 --output-dir "C:\Users\87otl\ScummBucket\exports\script-012"
 python -m scummbucket scenes "C:\path\to\mi2.zip" --room 34
+python -m scummbucket images "C:\path\to\mi2.zip" --room 34 --object 358 --output-dir "C:\Users\87otl\ScummBucket\exports\object358-new-output"
 python -m scummbucket verify-descumm "C:\path\to\mi2.zip" --room 34 --script 201 --object 358 --descumm "C:\path\to\descumm.exe"
 python -m unittest discover -s tests -v
 ```
@@ -56,6 +57,12 @@ The inspector now resolves index directory IDs to individual room, script, sound
 The optional `verify-descumm` command can check candidate instruction boundaries against the separately installed ScummVM Tools disassembler. The tool is available from [official ScummVM downloads](https://www.scummvm.org/en/downloads/). **The user completed the external verification on Windows:** all 17 candidate instruction starts in local scripts 201 (11) and 202 (6) matched, with zero conflicts or missing starts. This is evidence of instruction alignment, **not** runtime execution or animation timing. The CI tests still use mocked disassembler output; the new optional private integration test can reproduce the real check on a local machine.
 
 For object **358**, the fingerprinted MI2 sample contains **17 independently confirmed opcode starts** across room 34 scripts 201 and 202 (**11 drawObject / 6 setState**). The user-supplied disassembly also establishes **interaction-driven state selection**: `min(15, 3*n-1+r)` for number `n=1..5` and random `r=0..2`. That does **not** establish gameplay execution, rendered appearance or fixed animation timing. See the [original evidence register](docs/research/P1_OBJECT_358_SCRIPT_SURVEY.md), [behavior analysis](docs/research/P1_ROOM34_OBJECT_BEHAVIOR.md) and [machine-readable event metadata](docs/research/P1_ROOM34_OBJECT_EVENTS.json).
+
+### Experimental P2 image export
+
+The `images` command can now decode native-resolution **RGBA PNG object states**, plus separately preserved **Z-plane mask PNGs**, from the subset of original DOS MI2 strip codecs implemented so far. It uses the room's original `CLUT` palette and `TRNS` transparency index without external graphics dependencies. Initial decoding of object 358 yields **16 states (56 × 40 pixels)** and **three mask planes per state**. This is a **research-stage pixel decoder**: output has not yet been compared pixel-for-pixel against a ScummVM reference rendering, masks are not composited into the room, and no animation timing is inferred. See the [P2 image-state research note](docs/research/P2_MI2_OBIM_STATE_DECODING.md).
+
+For our separate **autonomous background-animation investigation**, the [palette-cycle candidate survey](docs/research/P4_PALETTE_CYCLE_CANDIDATES.md) identifies room 23 and room 109 as useful early tests. They are **candidates**, not observed or verified animations. The four `CYCLE_FLAGS_UNVERIFIED` warnings remain unresolved.
 
 See [P1 prototype documentation](docs/P1_PROTOTYPE.md) for supported behavior, failure reporting and remaining limitations. The sample game files must remain outside the repository.
 

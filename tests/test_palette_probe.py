@@ -224,6 +224,26 @@ class PaletteBackgroundTest(unittest.TestCase):
                       [d["code"] for d in report["diagnostics"]])
         self.assertFalse(self.dest.exists())
 
+    def test_zero_delay_cycle_keeps_original_flags_and_new_warning(self):
+        make_zip(self.archive, a=index(), b=fixture(
+            cycle_rate=65494, cycle_flag=0xD906))
+        inv = inspect(self.archive)
+        self.assertEqual(inv["status"], "success", inv["diagnostics"])
+        codes = [d["code"] for d in inv["diagnostics"]]
+        self.assertIn("CYCLE_FLAGS_UNVERIFIED", codes)
+        self.assertIn("CYCLE_DELAY_ZERO_IN_ENGINE", codes)
+        self.assertEqual(
+            inv["resources"]["rooms"][0]["palette_cycles"][0]["rate_raw"], 65494)
+        self.assertEqual(
+            inv["resources"]["rooms"][0]["palette_cycles"][0]["flags"], 0xD906)
+        report = palette_probe(self.archive, self.dest, room_id=1,
+                               ticks=[0, 1, 2])
+        self.assertEqual(report["status"], "success", report["diagnostics"])
+        self.assertIn("CYCLE_DISABLED_ZERO_THRESHOLD",
+                      [x["code"] for x in report["diagnostics"]])
+        self.assertTrue(all(
+            snap["cycle_rotation_events"] == 0 for snap in report["snapshots"]))
+
     def test_existing_manifest_refuses_overwrite(self):
         self.dest.mkdir()
         (self.dest / "manifest.json").write_text("KEEP")

@@ -9,6 +9,7 @@ from .inspector import inspect
 from .object_images import export_object_images
 from .palette_probe import palette_probe
 from .palette_trace import verify_palette_trace
+from .palette_coverage import export_cycle_coverage
 
 
 def main(argv=None) -> int:
@@ -74,7 +75,38 @@ def main(argv=None) -> int:
     trace.add_argument("--trace", required=True, help="JSON trace captured after engine cyclePalette")
     trace.add_argument("--output", help="Write a new JSON verification report; never overwrite")
     trace.add_argument("--json", action="store_true", help="Print complete JSON")
+    coverage = sub.add_parser(
+        "palette-map",
+        help="Export native-coordinate PNG masks for room CYCL palette-index coverage")
+    coverage.add_argument("input", help="Original DOS MI2 game archive or directory")
+    coverage.add_argument("--room", type=int, required=True, help="Room ID (0..255)")
+    coverage.add_argument("--output-dir", required=True,
+                          help="New folder for combined overlay, per-cycle masks and manifest")
+    coverage.add_argument("--json", action="store_true", help="Print full JSON report")
     args = parser.parse_args(argv)
+
+    if args.command == "palette-map":
+        report = export_cycle_coverage(
+            args.input, args.output_dir, room_id=args.room)
+        if args.json:
+            print(json.dumps(report, indent=2))
+        else:
+            print(f"Palette-cycle pixel map: {report['status']} ({args.input})")
+            summary = report["summary"]
+            print(f"Room {args.room}: {summary.get('cycle_records', 0)} cycle definitions, "
+                  f"{summary.get('union_pixel_count', 0)} unique indexed-background "
+                  "pixel positions covered")
+            for cycle in summary.get("cycles", []):
+                print(f"  Cycle {cycle['id']}: colors "
+                      f"{cycle['start_color']}-{cycle['end_color']}, "
+                      f"pixels={cycle['native_pixel_count']}, "
+                      f"bounds={cycle['native_bounds_xyxy_inclusive']}")
+            print("Coordinate coverage only; runtime behavior, timing and "
+                  "other animation mechanisms remain unverified.")
+            for issue in report["diagnostics"]:
+                print(f"{issue['severity'].upper()} {issue['code']}: "
+                      f"{issue['message']}", file=sys.stderr)
+        return 0 if report["status"] == "success" else 2
 
     if args.command == "verify-palette-trace":
         report = verify_palette_trace(args.input, args.trace, room_id=args.room)

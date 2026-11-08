@@ -15,6 +15,7 @@ from .palette_gif import export_palette_gif
 from .palette_events import export_palette_events
 from .palette_bundle_render import render_palette_event_bundle
 from .palette_event_gif import export_palette_event_gif
+from .engine_trace_import import import_scummvm_palette_log
 
 
 def main(argv=None) -> int:
@@ -141,7 +142,38 @@ def main(argv=None) -> int:
                            help="New .gif path; .manifest.json is written beside it")
     event_gif.add_argument("--json", action="store_true",
                            help="Print complete result as JSON")
+    engine_log = sub.add_parser(
+        "import-scummvm-palette-log",
+        help="Import a privately instrumented real-engine palette log to trace schema")
+    engine_log.add_argument("raw_log", help="Completed SBP4 raw log from patched ScummVM")
+    engine_log.add_argument("--resource-file", required=True,
+                            help="The exact original MONKEY2.001 file used during capture")
+    engine_log.add_argument("--engine-commit", required=True,
+                            help="Full 40-character lowercase git rev-parse HEAD from ScummVM")
+    engine_log.add_argument("--expected-source-sha256",
+                            help="Optional expected fingerprint to prevent edition mixing")
+    engine_log.add_argument("--output", required=True,
+                            help="New trace JSON file; existing output is never overwritten")
+    engine_log.add_argument("--json", action="store_true",
+                            help="Print detailed import report")
     args = parser.parse_args(argv)
+
+    if args.command == "import-scummvm-palette-log":
+        report = import_scummvm_palette_log(
+            args.raw_log, args.resource_file, args.output,
+            engine_commit=args.engine_commit,
+            expected_source_sha256=args.expected_source_sha256)
+        if args.json:
+            print(json.dumps(report, indent=2))
+        else:
+            print(f"ScummVM palette log import: {report['status']}")
+            print(f"Samples: {report['samples']}; output: {report['output']}")
+            print("Captured palette/timer values are external evidence, not "
+                  "an authenticated engine execution or completed fidelity test.")
+            for issue in report["diagnostics"]:
+                print(f"{issue['severity'].upper()} {issue['code']}: "
+                      f"{issue['message']}", file=sys.stderr)
+        return 0 if report["status"] == "success" else 2
 
     if args.command == "render-event-gif":
         report = export_palette_event_gif(args.bundle, args.output)

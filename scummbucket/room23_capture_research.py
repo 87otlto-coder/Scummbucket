@@ -149,12 +149,17 @@ def _candidate_phases(source: bytes, records: list[dict], segment: list[dict],
 def compare_room23_palette_capture(source_palette: bytes, records: list[dict],
                                    capture: dict, *, phase_search_limit: int = 500,
                                    min_calibration: int = 3,
-                                   max_calibration: int = 8) -> dict:
-    """Report evidence for room's source-cycled entries, not game-wide fidelity."""
+                                   max_calibration: int = 24) -> dict:
+    """Report phase-selected cycling matches, not complete room fidelity.
+
+    Up to 24 prefix samples may be needed to disambiguate the 60-unit
+    stress regime, where cycle parity patterns repeat more frequently.
+    Held-out samples are never used to select the equivalent phase.
+    """
     _check(len(source_palette) == 768, "RESEARCH_CLUT_INVALID", "Source CLUT must be 768 bytes")
     _check(1 <= phase_search_limit <= 2000, "RESEARCH_PHASE_LIMIT_INVALID", "Phase search must be 1..2000")
-    _check(2 <= min_calibration <= max_calibration <= 12,
-           "RESEARCH_CALIBRATION_INVALID", "Calibration samples must be 2..12")
+    _check(2 <= min_calibration <= max_calibration <= 24,
+           "RESEARCH_CALIBRATION_INVALID", "Calibration samples must be 2..24")
     cycles, issues = prepare_cycles(records)
     _check(bool(cycles) and not any(i["severity"] == "error" for i in issues),
            "RESEARCH_CYCLES_UNSUPPORTED", "Invalid cycle definitions")

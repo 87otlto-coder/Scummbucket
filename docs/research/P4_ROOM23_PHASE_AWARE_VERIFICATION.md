@@ -38,6 +38,39 @@ Expected on the user's supplied original log (SHA-256 `ac8163b6305a35680764fd157
 
 The updated `run_scummvm_palette_capture.ps1` attempts this forensic report automatically on all new captures **before** the ordinary strict importer checks. If a log lacks END, the PowerShell helper still exits nonzero and preserves the raw evidence. The phase-aware report uses a separate `*.phase-research.json` filename.
 
+## Windows validation received (2026-11-08)
+
+The user ran the tests on the current research branch in ordinary PowerShell. The complete reported test suite for `test_room23_capture_research.py` passed **10/10**. They then invoked `analyze-room23-palette-log` using original game directory `D:\old\mi2` and the exact raw log fingerprint above. The CLI produced:
+
+```text
+status: incomplete
+model_comparison_status: matched
+sample_count: 180
+samples_matching_cycling: 180
+samples_matching_full_palette_with_observed_noncycle_baseline: 180
+heldout_samples_matching: 172
+segments: 1-80 (calibration 3 / held-out 77), 81-180 (calibration 5 / held-out 95)
+```
+
+This confirms that the new CLI's on-device source reader and phase-aware replay agree with the independently computed model. **It does not close the missing-END gap or identify the 27,086-ms interruption.**
+
+A subsequent synthetic stress-phase check of the original eight 60-unit cycle patterns showed that short prefixes may be nonunique: an early phase can require **16** samples to select a unique phase within the bounded 500-position search. The default research calibration ceiling has therefore been extended from eight to **24** samples. A dedicated 60-unit regression case was added to require unique phase selection at 16 samples; this **new code and test have not yet been run on the user's Windows machine**.
+
+## Next: collect a 60-unit capture
+
+Use a fresh patched ScummVM process (same successfully built V2 binary; **no rebuild required**). The PowerShell helper automatically produces a phase-aware report before enforcing strict END completeness.
+
+```powershell
+cd "C:\Users\87otl\ScummBucket"
+git pull --ff-only origin research/p4-engine-palette-trace
+python -m unittest discover -s tests -p "test_room23_capture_research.py" -v
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\tools\run_scummvm_palette_capture.ps1" -Mode stress
+```
+
+In **the patched** ScummVM, start in a room other than 23, open debugger and execute `scumm_vars[19] 60` followed by `room 23`. Allow **at least 30–40 actual updates** (roughly 30–40 seconds at one update per second, assuming no other pauses or script overrides). If practical, re-enter debugger, `room 22`, continue briefly and quit to request a clean `END|N|room_exit` record. If END is still absent, **do not edit the raw capture**: the new research analyzer should process complete sample lines and retain `status: incomplete`.
+
+Collect both the PowerShell output and newly created `reports/room23-stress-*.phase-research.json` along with raw log. The stress experiment must distinguish engine-observed cycle state from model prediction; real skipped-rotation counts are not yet confirmed.
+
 ## Method and safeguards
 
 1. Require the exact pinned original DOS VGA `MONKEY2.001` SHA-256. Archive inventory, room indexing and CLUT decoding use the existing extraction engine.

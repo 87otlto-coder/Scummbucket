@@ -55,13 +55,14 @@ Write-Host "Starting patched engine: $exe"
 Write-Host "Private log destination: $raw"
 Write-Host "Capture type: $Mode"
 if ($Mode -eq 'normal') {
-    Write-Host 'In the ScummVM debugger: room 23 ; scumm_vars[19] 6 ; continue'
+    Write-Host 'In the ScummVM debugger: scumm_vars[19] 6 ; room 23'
     Write-Host 'Remain in Room 23 for at least 256 updates, approximately 26 seconds.'
 } else {
-    Write-Host 'In the ScummVM debugger: room 23 ; scumm_vars[19] 60 ; continue'
+    Write-Host 'In the ScummVM debugger: scumm_vars[19] 60 ; room 23'
     Write-Host 'At 1 Hz, 256 updates take about 4.3 minutes. Alternatively, after several updates'
     Write-Host 'change to a nonzero room (for example room 22), then continue to close the log.'
 }
+Write-Host 'Room 23 changes scenes and automatically closes the debugger; do not add continue.'
 Write-Host 'Use the patched ScummVM window, not the normal ScummVM shortcut.'
 Write-Host ''
 

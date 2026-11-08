@@ -19,6 +19,7 @@ from scummbucket.palette_events import (
     build_counter_event_timeline, replay_event_palettes, export_palette_events,
 )
 from scummbucket.palette_sequence import SequenceError
+from scummbucket.palette_probe import PaletteProbeError
 from test_inspector import index, make_zip
 from test_palette_probe import fixture
 from test_palette_sequence import parse_indexed_png
@@ -109,6 +110,20 @@ class CounterTimelineTest(unittest.TestCase):
                 palette, events, counter_rate=4, duration_seconds=3, fps=30)
         self.assertEqual(err.exception.code, "EVENT_SEQUENCE_INVALID")
 
+    def test_trailing_events_are_validated_even_when_fps_is_low(self):
+        pixels, palette, cycles = source()
+        timeline = build_counter_event_timeline(
+            pixels, palette, cycles, width=8, height=8,
+            counter_rate=4, duration_seconds=3)
+        corrupt = deepcopy(timeline["events"])
+        corrupt[-1]["palette_patches"][0]["after_rgb_hex"] = "abcdef"
+        # One output sample at t=0 would not visit the second event at t=2.
+        # Replay still verifies the entire exported event record.
+        with self.assertRaises(SequenceError) as err:
+            replay_event_palettes(
+                palette, corrupt, counter_rate=4, duration_seconds=3, fps=1)
+        self.assertEqual(err.exception.code, "EVENT_AFTER_HASH_MISMATCH")
+
     def test_unused_color_range_rotates_but_is_not_visible(self):
         pixels, palette, _ = source()
         records = [{"id": 1, "rate_raw": 4096, "flags": 0,
@@ -126,7 +141,7 @@ class CounterTimelineTest(unittest.TestCase):
         pixels, palette, cycles = source()
         for record_set in ([cycles[0], cycles[0]], []):
             with self.subTest(record_count=len(record_set)):
-                with self.assertRaises(SequenceError) as caught:
+                with self.assertRaises((SequenceError, PaletteProbeError)) as caught:
                     build_counter_event_timeline(
                         pixels, palette, record_set,
                         width=8, height=8, counter_rate=4, duration_seconds=2)

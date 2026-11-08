@@ -200,8 +200,13 @@ def _decode_stripmap(data: bytes, smap, *, width: int, height: int,
             for x in range(8):
                 idx = indices[y * 8 + x]
                 at = (y * width + strip * 8 + x) * 4
-                image[at:at + 3] = palette[idx * 3:idx * 3 + 3]
-                image[at + 3] = 0 if has_transparency and idx == transparent_color else 255
+                if has_transparency and idx == transparent_color:
+                    # Zero the invisible RGB channels, too, to avoid colored
+                    # halos if a later scaling filter samples transparent pixels.
+                    image[at:at + 4] = b"\x00\x00\x00\x00"
+                else:
+                    image[at:at + 3] = palette[idx * 3:idx * 3 + 3]
+                    image[at + 3] = 255
         strip_records.append({
             "strip": strip, "source_offset": position, "codec": code,
             "compressed_length": next_pos - position - 1,

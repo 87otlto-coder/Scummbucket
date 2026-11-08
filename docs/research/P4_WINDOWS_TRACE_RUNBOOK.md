@@ -1,6 +1,6 @@
 # P4 Room 23 — Windows capture runbook (ScummVM v2026.4.0)
 
-**Status, 2026-11-08:** Setup, build and capture helpers are committed. Full Windows compilation and actual ScummVM palette capture remain **unverified**, pending execution on the test machine. The existing hook and importer passed synthetic tests. Game assets remain outside Git.
+**Status, 2026-11-08:** The first actual MSYS2 UCRT64 build of the V1 hook reached the SCUMM engine compiler, then failed because `common/forbidden.h` blocks `FILE`, `fprintf`, `fopen`, `fclose`, `fputc`, and `getenv` in engine code. The V2 hook now uses ScummVM-native `Common::DumpFile`; guarded in-place V1-to-V2 upgrades are supported. **The corrected V2 full Windows compile and real engine capture are not yet verified.** Game assets remain outside Git.
 
 This runbook uses a separate experimental ScummVM checkout so the original ScummVM installation and original game archives stay untouched.
 
@@ -20,9 +20,9 @@ python -m unittest discover -s tests -p "test_palette_trace.py" -v
 powershell -NoProfile -ExecutionPolicy Bypass -File ".\tools\setup_scummvm_trace.ps1"
 ~~~
 
-This script clones ScummVM v2026.4.0 into C:\Users\87otl\ScummVM-P4-Trace, checks both the exact tag commit and the original C++ blob fingerprint, and installs only the guarded palette hook, retaining an original-source backup. Rerunning after a successful patch is safe. An existing different checkout is refused, not overwritten.
+This script clones ScummVM v2026.4.0 into C:\Users\87otl\ScummVM-P4-Trace, checks both the exact tag commit and the original C++ blob fingerprint, and installs only the guarded palette hook, retaining an original-source backup. It can also **upgrade the failed V1 hook to V2 in an existing checkout**, if source and backup match the exact generated files; no new clone is needed. An existing different checkout is refused, not overwritten.
 
-Expected: PATCH_APPLICABLE, PATCH_APPLIED, and the full pinned commit SHA. Stop if the tests or patch guard fail.
+Expected in a fresh checkout: `PATCH_APPLICABLE`, `PATCH_APPLIED`, and the pinned commit SHA. Expected when repairing the V1 compile failure: `UPGRADE_APPLICABLE`, then `PATCH_UPGRADED_V1_TO_V2`. If V2 is already present, expect `PATCH_ALREADY_CURRENT`. Stop if tests or source guards fail.
 
 ## 2. MSYS2 UCRT64 terminal — minimal SCUMM-only build
 
@@ -59,7 +59,7 @@ In the patched ScummVM window:
 - The room-jump command itself exits the debugger. Do not type continue afterward.
 - Stay in Room 23 for at least 256 callbacks (nominally about 26 seconds), or move to another nonzero room and allow another engine update to close the trace. Then quit the patched ScummVM.
 
-The PowerShell helper waits for ScummVM to exit. It checks for a complete raw log, imports the exact palette samples, and runs the strict model comparator.
+The corrected V2 engine writes a single file named `scummbucket-p4-room23.raw.log` **in the experimental ScummVM checkout's working directory** using `Common::DumpFile` (no `getenv`/C stdio). Before launch the PowerShell helper refuses an existing file; after ScummVM exits it moves the raw log into a uniquely timestamped gitignored export location, preserving even incomplete attempts. It then checks for a complete raw log, imports the exact palette samples, and runs the strict model comparator.
 
 Each run gets new, non-overwriting outputs:
 
@@ -84,7 +84,7 @@ The earlier 1-Hz debugger test showed that the engine timer override persisted a
 
 ## Result handling and limitations
 
-- A compile failure means no full ScummVM build has been verified. Preserve the first error.
+- The first V1 compile failed on forbidden standard-library APIs; that cause is now addressed in V2 but the new full build needs verification. Preserve the **first new** error if one appears.
 - A failed import or mismatch in palette comparison is a research finding, not something to hide or fix by changing the expected data.
 - The capture is limited to DOS VGA Monkey Island 2, Room 23; it does not include final layered compositing, object or actor movement.
 - The captured initial palette may differ from the static room CLUT after script execution; our verifier reports an explicit initial-state mismatch.

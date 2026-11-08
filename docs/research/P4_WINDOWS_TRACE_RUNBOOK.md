@@ -59,13 +59,14 @@ In the patched ScummVM window:
 - The room-jump command itself exits the debugger. Do not type continue afterward.
 - Stay in Room 23 for at least 256 callbacks (nominally about 26 seconds), or move to another nonzero room and allow another engine update to close the trace. Then quit the patched ScummVM.
 
-The corrected V2 engine writes a single file named `scummbucket-p4-room23.raw.log` **in the experimental ScummVM checkout's working directory** using `Common::DumpFile` (no `getenv`/C stdio). Before launch the PowerShell helper refuses an existing file; after ScummVM exits it moves the raw log into a uniquely timestamped gitignored export location, preserving even incomplete attempts. It then checks for a complete raw log, imports the exact palette samples, and runs the strict model comparator.
+The corrected V2 engine writes a single file named `scummbucket-p4-room23.raw.log` **in the experimental ScummVM checkout's working directory** using `Common::DumpFile` (no `getenv`/C stdio). Before launch the PowerShell helper refuses an existing file; after ScummVM exits it moves the raw log into a uniquely timestamped gitignored export location, preserving even incomplete attempts. It **first attempts a separate bounded phase-aware forensic analysis for both complete and incomplete logs**, saved as `*.phase-research.json`. It then checks for an explicit END record; only completed logs proceed to the strict importer and baseline verifier. The phase-aware report does not repair or replace the raw data. See [research procedure](P4_ROOM23_PHASE_AWARE_VERIFICATION.md).
 
 Each run gets new, non-overwriting outputs:
 
 - exports/room23-normal-TIMESTAMP.raw.log
-- reports/room23-normal-TIMESTAMP.trace.json
-- reports/room23-normal-TIMESTAMP.verify.json
+- reports/room23-normal-TIMESTAMP.phase-research.json (forensic, even if END is missing)
+- reports/room23-normal-TIMESTAMP.trace.json (strict import when END present)
+- reports/room23-normal-TIMESTAMP.verify.json (strict baseline when import succeeds)
 
 If no hook log appears, the eligible engine/capture conditions may not have been reached. If the log lacks an END record, it remains evidence of an incomplete run, not a success.
 

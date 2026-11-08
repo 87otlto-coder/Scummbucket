@@ -112,9 +112,8 @@ class PaletteTraceTest(unittest.TestCase):
         self.assertEqual([s["timer"] for s in outcome["samples"]], [6, 60])
         self.assertEqual([s["counter_delta"] for s in outcome["samples"]],
                          [60, 60])
-        # These two callbacks would advance VAR_TIMER_TOTAL by only
-        # 6 + 60, *not* by the modeled palette counter total of 120.
-        self.assertEqual(6 + 60, 66)
+        # Cumulative SCUMM time would advance by 6 + 60 units,
+        # while palette increments would total 60 + 60 units.
         self.assertFalse(outcome["trace_authenticated"])
 
     def test_first_palette_mismatch_reports_differing_indices(self):

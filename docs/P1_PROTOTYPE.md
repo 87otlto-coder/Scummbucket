@@ -282,6 +282,20 @@ The **60 counter units/second** cadence remains a video-calibrated hypothesis fo
 
 See [P4 GIF preview and verification boundaries](research/P4_PALETTE_GIF_PREVIEW.md).
 
+### Experimental counter-unit animation event bundle
+
+The **`palette-events`** command exports the original indexed room bitmap and source `CLUT` just once, plus a portable `timeline.json` of modeled palette updates. Unlike existing GIF/PNG exporters, this new experimental timeline advances once per **hypothetical counter unit** independently of output FPS. Its RGB patch sequence can be replayed and independently verified at **15, 30 and 60 fps** from the source palette without reinterpreting `CYCL` a second time.
+
+```powershell
+Push-Location "C:\Users\87otl\ScummBucket"
+$stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+$out = "C:\Users\87otl\ScummBucket\exports\room23-events-$stamp"
+python -m scummbucket palette-events "D:\old" --room 23 --duration-seconds 4 --counter-rate 60 --output-dir "$out"
+Pop-Location
+```
+
+**Timing boundary:** This model deliberately differs from the original PNG/GIF assumption of one engine-like update per exported frame. Both are **explicitly unverified schedules**. We do not silently change existing exports or claim that a frame-rate-independent model implies a verified real-game schedule. The existing video evidence supports the approximate **counter rate**, not the exact engine-call cadence. The optional original-game test expects 32 modeled room-23 rotations and remains pending on the user's machine. See [P4 event timeline and replay contract](research/P4_PALETTE_EVENT_TIMELINE.md).
+
 A separate **`verify-palette-trace`** command can compare a strict, externally recorded ScummVM palette trace against the decoded source palette and actual captured timer variable values, reporting the first mismatch and affected palette indices. The trace file must include full RGB palette bytes, game fingerprint, engine revision and an exact `cyclePalette` capture point. Only **synthetic trace comparisons** have been tested to date. No real engine palette-state trace or exact playback timing has been verified. See [runtime verification procedure](research/P4_RUNTIME_PALETTE_VERIFICATION.md).
 
 See the [palette-cycle candidate register and exact observations](research/P4_PALETTE_CYCLE_CANDIDATES.md). The four existing CYCLE_FLAGS_UNVERIFIED warnings remain present.
@@ -292,13 +306,13 @@ See the [palette-cycle candidate register and exact observations](research/P4_PA
 - Automatic archive-wide or arbitrary byte-range extraction. Export selection deliberately requires a room, and may optionally specify a chunk tag.
 - Directory IDs now locate global scripts, costumes and sounds; scene inventory pairs object IDs and records nearby resources by storage. **Full bytecode interpretation, instruction-aligned script-to-object dependencies, and verified animation playback remain unimplemented.**
 - Recovery of individual malformed resource chunks when the outer room structure fails validation: the current inspector stops safely for that input.
-- Complete room/background and depth-mask compositing, character costume animation, full-scene animation playback, script interpreter, or audio decoding. The limited P2 `OBIM` image-state decoder and P4 palette-driven **PNG sequence and GIF preview exporters** remain experimental and reference-timing unverified.
+- Complete room/background and depth-mask compositing, character costume animation, full-scene animation playback, script interpreter, or audio decoding. The limited P2 `OBIM` image-state decoder and P4 palette-driven **PNG sequence, GIF preview and event-timeline exporters** remain experimental and reference-timing unverified.
 - Monkey Island 1 or other editions/SCUMM versions.
 - Playback/reference comparison against ScummVM or verified original gameplay.
 
 ## Verification
 
-- **GitHub Actions: 169 tests discovered, 164 passed, 5 optional private-input tests skipped, 0 failures** ([verified workflow run](https://github.com/87otlto-coder/Scummbucket/actions/runs/42477263435)). GIF encoding and roundtrip tests run with the optional Pillow dependency in CI, using synthetic assets. The new original-MI2 GIF integration test is private and skipped without explicit local input. Real ScummVM timer/palette tracing remains outstanding.
+- **GitHub Actions: 180 tests discovered, 174 passed, 6 optional private-input tests skipped, 0 failures** ([verified workflow run](https://github.com/87otlto-coder/Scummbucket/actions/runs/42479068539)). Synthetic tests now include output-FPS-independent counter timelines, replay patch/hash integrity across 15/30/60 fps, hidden events and error paths. Original-game event-bundle integration is opt-in and pending. Real ScummVM timer/palette tracing remains outstanding.
 - User-supplied MI2 ZIP passed structural inventory: 110 rooms, 127 palette-cycle records in 21 rooms and 158 multi-state object images.
 - New resource-ID extraction tests cover two distinct scripts sharing a room, exact byte matches in both representations, empty and invalid slots, corrupt links, overwrite refusal and the new CLI.
 - Room 4 `CYCL` chunk exports in both `decoded` and `stored` modes were verified byte-for-byte against the original `MONKEY2.001` source slices.

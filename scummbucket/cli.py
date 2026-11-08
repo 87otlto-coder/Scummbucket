@@ -14,6 +14,7 @@ from .palette_sequence import export_palette_sequence
 from .palette_gif import export_palette_gif
 from .palette_events import export_palette_events
 from .palette_bundle_render import render_palette_event_bundle
+from .palette_event_gif import export_palette_event_gif
 
 
 def main(argv=None) -> int:
@@ -132,7 +133,35 @@ def main(argv=None) -> int:
                               help="New folder for indexed PNG frames and render manifest")
     event_render.add_argument("--json", action="store_true",
                               help="Print complete result as JSON")
+    event_gif = sub.add_parser(
+        "render-event-gif",
+        help="Export play-once GIF from saved palette event boundaries, no archive")
+    event_gif.add_argument("bundle", help="Folder containing timeline.json and indexed source")
+    event_gif.add_argument("--output", required=True,
+                           help="New .gif path; .manifest.json is written beside it")
+    event_gif.add_argument("--json", action="store_true",
+                           help="Print complete result as JSON")
     args = parser.parse_args(argv)
+
+    if args.command == "render-event-gif":
+        report = export_palette_event_gif(args.bundle, args.output)
+        if args.json:
+            print(json.dumps(report, indent=2))
+        else:
+            summary = report.get("summary", {})
+            print(f"Palette event GIF: {report['status']} ({args.bundle})")
+            print(f"GIF frames: {summary.get('gif_frames_written', 0)} "
+                  f"from {summary.get('original_event_ticks', 'unknown')} saved event ticks; "
+                  f"visible boundaries: {summary.get('visible_event_boundaries', 'unknown')}")
+            print(f"Output: {report['output']}")
+            print(f"Manifest: {report['manifest']}")
+            print("Source data: saved event bundle only; no game archive reopened.")
+            print("Timing: synthetic palette events, not an observed engine clock; "
+                  "GIF plays once.")
+            for issue in report["diagnostics"]:
+                print(f"{issue['severity'].upper()} {issue['code']}: "
+                      f"{issue['message']}", file=sys.stderr)
+        return 0 if report["status"] == "success" else 2
 
     if args.command == "render-events":
         report = render_palette_event_bundle(

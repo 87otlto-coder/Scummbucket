@@ -66,6 +66,34 @@ Expected if override holds: `VAR_TIMER_NEXT=1` and `VAR_TIMER=1` at next sample;
 
 This tests the *causal relation of the scheduling variable and callback cadence*, not automatically the exact observed 768-byte palettes or captured frame timing. Even a clear 10-Hz / 60-Hz screen difference remains distinct from an authenticated engine palette trace.
 
+## Actual follow-up experiment: live timer override confirmed
+
+The user provided another unmodified ScummVM debugger transcript on 2026-11-08:
+
+```text
+scumm_vars[47]       => 19206
+debug_countdown 1    => 1
+scumm_vars[47]       => 19206
+debug_countdown      => 0
+continue
+...
+scumm_vars[19] 1     => 1
+scumm_vars[19]       => 1
+continue
+scumm_vars[19]       => 1
+scumm_vars[46]       => 1
+scumm_vars[47]       => 20345
+continue
+scumm_vars[19] 6     => 6
+continue
+```
+
+**Confirmed:** The debugger variable edit from `VAR_TIMER_NEXT=6` to `1` persisted across an actual game-running interval, and `VAR_TIMER` was observed as `1` after gameplay resumed. This verifies that the SCUMM scheduler **responded to the override**, not merely that the debugger accepted the edit. `VAR_TIMER_TOTAL` advanced by 1,139 counter units; without timed wall-clock measurements, this is **not** a direct measurement of the update frequency.
+
+**Countdown nuance:** The debugger's own `debug_countdown` changed from 1 to 0 without a recorded `continue`, **while `VAR_TIMER_TOTAL` remained 19,206**. We cannot identify the precise call that consumed the countdown from this transcript. It is evidence that countdown expiry and actual SCUMM gameplay time are not equivalent, and makes `debug_countdown` even less trustworthy as a per-SCUMM-update stepping signal in this environment. Avoid claiming the counter necessarily decremented because the SCUMM main loop advanced. A crash was separately reported when further debugger manipulation was attempted, without a reproducing stack trace.
+
+**Next controlled test, if desired:** Set `scumm_vars[19] 12`, resume Room 23, observe the animation for several seconds, and reopen the debugger to check `scumm_vars[19]` and `scumm_vars[46]`. A persistent 12/12 result would confirm an additional timer regime (nominal ~5 updates/sec), then restore `scumm_vars[19] 6`. Do not equate subjective smoothness or the unchanged ~60 counter-units/sec nominal timebase with an authenticated palette trace.
+
 ## Links (pinned source)
 
 - https://github.com/scummvm/scummvm/blob/v2026.4.0/gui/debugger.cpp

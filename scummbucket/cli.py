@@ -11,6 +11,7 @@ from .palette_probe import palette_probe
 from .palette_trace import verify_palette_trace
 from .palette_coverage import export_cycle_coverage
 from .palette_sequence import export_palette_sequence
+from .palette_gif import export_palette_gif
 
 
 def main(argv=None) -> int:
@@ -97,7 +98,45 @@ def main(argv=None) -> int:
     sequence.add_argument("--counter-rate", type=int, default=60,
                           help="ASSUMED palette counter units/second (default 60, room23 video estimate)")
     sequence.add_argument("--json", action="store_true", help="Print complete JSON export report")
+    gif = sub.add_parser(
+        "palette-gif",
+        help="Export a play-once GIF preview from modeled room CYCL palette changes")
+    gif.add_argument("input", help="Authorized original MI2 archive or game directory")
+    gif.add_argument("--room", type=int, required=True, help="Room ID (0..255)")
+    gif.add_argument("--output", required=True, help="New .gif output (JSON manifest written beside it)")
+    gif.add_argument("--fps", type=int, default=30, help="Source sampling FPS (default 30)")
+    gif.add_argument("--duration-seconds", type=int, default=4, help="Duration (default 4 seconds)")
+    gif.add_argument("--counter-rate", type=int, default=60,
+                     help="ASSUMED palette counter units/second; 60 derived from room-23 video")
+    gif.add_argument("--json", action="store_true", help="Print detailed result as JSON")
     args = parser.parse_args(argv)
+
+    if args.command == "palette-gif":
+        report = export_palette_gif(
+            args.input, args.output, room_id=args.room,
+            fps=args.fps, duration_seconds=args.duration_seconds,
+            counter_rate=args.counter_rate)
+        if args.json:
+            print(json.dumps(report, indent=2))
+        else:
+            summary = report["summary"]
+            print(f"Palette GIF: {report['status']} ({args.input})")
+            print(f"Room {args.room}: {summary['gif_frames_written']} GIF frames "
+                  f"from {summary['source_frames_sampled']} sampled frames; "
+                  f"{summary['unique_visual_states']} unique visual states")
+            print(f"{summary['palette_rotation_events']} modeled rotation events; "
+                  f"{summary['cycle_definitions']} source CYCL definitions; "
+                  f"{summary['unique_source_cycle_pixels']} covered background pixels")
+            print(f"Output: {report['output']}")
+            print(f"Manifest: {report['manifest']}")
+            print(f"Timing: {report['timing']['model']}; no verified engine clock "
+                  "or seamless loop. GIF plays once.")
+            print("GIF is a preview; indexed background, masks and game scripts "
+                  "remain separate source mechanisms.")
+            for issue in report["diagnostics"]:
+                print(f"{issue['severity'].upper()} {issue['code']}: "
+                      f"{issue['message']}", file=sys.stderr)
+        return 0 if report["status"] == "success" else 2
 
     if args.command == "palette-sequence":
         report = export_palette_sequence(

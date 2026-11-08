@@ -111,6 +111,20 @@ The comparator reports per-update palette SHA-256, number of differing palette e
 
 For the executable contract, Windows commands and non-compiling screenshot observation alternative, consult [P4 Runtime Palette Verification](P4_RUNTIME_PALETTE_VERIFICATION.md).
 
+## Real VGA video spatial and timing correspondence (2026-11-08)
+
+The user supplied an approximately 20.8-second ScummVM recording with VGA-looking artwork. **Independent source-coordinate mapping** placed the eight CYCL color pairs (indices 176–191) onto all **480** native room-23 background pixels using those indices. They form sparse horizontal water highlights. No covered source pixel was found in an **approximate** cabin-window study rectangle; this does not rule out other ship-light mechanisms.
+
+After fixed-grid alignment, 19 sampled VGA video frames showed color changes at **457/480 (95.2%)** cycle positions, versus **378/26,469 (1.43%)** of the non-cycle comparison pixels, using the same 20/255 RGB-channel threshold. This strongly corroborates the palette-driven water shimmer.
+
+Full-frame 30-fps analysis also identified alternating source palette pairs. Their median observed swap intervals were **1.20, 0.867, 1.80, 0.70, 0.60, 0.70, 1.20, and 0.867 seconds** for cycles 1–8. They agree within one capture frame with the source-derived delay thresholds `71, 53, 107, 42, 35, 42, 71, 53` divided by **a hypothesized effective 60 counter units per second**. This is a video-derived cadence estimate, **not directly captured internal SCUMM timer values**.
+
+The new `palette-map` command exports a **source-native transparent overlay, one grayscale pixel mask per CYCL range, and source-hashed manifest**. Synthetic tests verify exact mask union behavior and reject invalid sources; optional original MI2 integration checks remain skipped in public CI.
+
+See [room-23 spatial/video validation and method](P4_ROOM23_VGA_SPATIAL_VALIDATION.md) for the video SHA-256, alignment, exact pixel counts, capture settings, individual cycle results, uncertainty and reproducibility command. No original game art, screenshot or video was committed to GitHub.
+
+**Evidence level:** Source palette-cycle indices and scene pixel positions are directly decoded; time-varying water pixels are visually observed and strongly spatially correlated; effective cadence is estimated from the recording. Exact runtime palette values, script overrides and animation-export timing remain unverified.
+
 ## Proposed verification experiment
 
 1. **Completed:** Inspected room-23 CYCL ranges, raw rates and original indexed pixels. All eight ranges are used by the background.
@@ -121,4 +135,4 @@ For the executable contract, Windows commands and non-compiling screenshot obser
 6. Repeat with room 109 and then a more complex mixed-mechanism room (51 or 28).
 7. Keep reports for absent colors, ineffective cycles, unsupported flags, invalid offsets, and unverified timing. Report those as explicit uncertainties or failures, not as "no animation."
 
-**P4 exit criterion is not met:** no continuous background animation has yet been observed and reconstructed. The CYCL room shortlist gives us reproducible targets for doing that.
+**P4 exit criterion is not met:** room-23 water shimmer has now been visibly observed and strongly correlated with the original CYCL pixel locations and predicted rates. An **engine-state-verified and timing-accurate reconstruction/export** remains outstanding; the room-109 candidate is not yet independently observed.

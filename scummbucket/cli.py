@@ -10,6 +10,7 @@ from .object_images import export_object_images
 from .palette_probe import palette_probe
 from .palette_trace import verify_palette_trace
 from .palette_coverage import export_cycle_coverage
+from .palette_sequence import export_palette_sequence
 
 
 def main(argv=None) -> int:
@@ -83,7 +84,45 @@ def main(argv=None) -> int:
     coverage.add_argument("--output-dir", required=True,
                           help="New folder for combined overlay, per-cycle masks and manifest")
     coverage.add_argument("--json", action="store_true", help="Print full JSON report")
+    sequence = sub.add_parser(
+        "palette-sequence",
+        help="Export native indexed PNG frames using modeled palette rotations (not engine-verified timing)")
+    sequence.add_argument("input", help="Original MI2 archive, game directory or index file")
+    sequence.add_argument("--room", type=int, required=True)
+    sequence.add_argument("--output-dir", required=True,
+                          help="New folder for indexed frames, original CLUT and manifest")
+    sequence.add_argument("--fps", type=int, default=30, help="Output playback FPS (1..60; default 30)")
+    sequence.add_argument("--duration-seconds", type=int, default=4,
+                          help="Whole-second duration; maximum 240 frames total")
+    sequence.add_argument("--counter-rate", type=int, default=60,
+                          help="ASSUMED palette counter units/second (default 60, room23 video estimate)")
+    sequence.add_argument("--json", action="store_true", help="Print complete JSON export report")
     args = parser.parse_args(argv)
+
+    if args.command == "palette-sequence":
+        report = export_palette_sequence(
+            args.input, args.output_dir, room_id=args.room,
+            fps=args.fps, duration_seconds=args.duration_seconds,
+            counter_rate=args.counter_rate)
+        if args.json:
+            print(json.dumps(report, indent=2))
+        else:
+            print(f"Palette animation sequence: {report['status']} ({args.input})")
+            summary = report["summary"]
+            print(f"Room {args.room}: {summary['frames_written']}/"
+                  f"{summary['frames_requested']} frames at {args.fps} fps, "
+                  f"{summary['cycle_records']} cycles, "
+                  f"{summary['unique_cycled_source_pixels']} source pixel positions")
+            print(f"Timing: {report['timing']['model']}; "
+                  f"assumed {args.counter_rate} counter units/second")
+            print("Frames are lossless indexed PNGs with changing PLTE chunks. "
+                  "The original indexed background and CLUT are exported separately.")
+            print("Not engine-clock verified; actor/object overlays, scene masks "
+                  "and script changes are not included.")
+            for issue in report["diagnostics"]:
+                print(f"{issue['severity'].upper()} {issue['code']}: "
+                      f"{issue['message']}", file=sys.stderr)
+        return 0 if report["status"] == "success" else 2
 
     if args.command == "palette-map":
         report = export_cycle_coverage(

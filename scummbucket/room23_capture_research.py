@@ -7,6 +7,7 @@ Only palette states at the post-cyclePalette hook are compared; not screen frame
 from __future__ import annotations
 
 import hashlib
+from collections import Counter
 from pathlib import Path
 import re
 from statistics import median
@@ -242,7 +243,17 @@ def compare_room23_palette_capture(source_palette: bytes, records: list[dict],
             not _entries_differ(source_palette, current_first, cycled))
         boundary["changed_cycling_indices_across_gap"] = len(
             _entries_differ(previous_last, current_first, cycled))
+    timer_counts = Counter((row["var_timer"], row["var_timer_next"]) for row in samples)
+    timer_pairs = [{
+        "var_timer": timer, "var_timer_next": timer_next,
+        "count": count,
+        "first_sequence": next(row["sequence"] for row in samples
+                               if (row["var_timer"], row["var_timer_next"]) == (timer, timer_next)),
+        "last_sequence": next(row["sequence"] for row in reversed(samples)
+                              if (row["var_timer"], row["var_timer_next"]) == (timer, timer_next)),
+    } for (timer, timer_next), count in sorted(timer_counts.items())]
     return {
+        "timer_pair_distribution": timer_pairs,
         "model_comparison_status": report_status,
         "capture_complete": bool(capture["complete"]),
         "stop_reason": capture["stop_reason"],

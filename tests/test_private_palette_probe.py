@@ -12,6 +12,7 @@ import unittest
 
 from scummbucket.inspector import XOR_KEY, inspect, _read_pair
 from scummbucket.palette_coverage import analyze_cycle_coverage
+from scummbucket.palette_sequence import export_palette_sequence
 from scummbucket.palette_probe import (
     decode_room_background_indexed, palette_probe,
 )
@@ -22,6 +23,36 @@ EXPECTED_RESOURCE_SHA256 = "ad045372e0d49626503bb50fca29a687ec8e01ef75d9b8bca702
 
 @unittest.skipUnless(ARCHIVE, "Private original-game archive not provided")
 class PrivatePaletteProbeTest(unittest.TestCase):
+    def test_room23_native_indexed_sequence_first_rotation_and_manifest(self):
+        source = Path(ARCHIVE)
+        with tempfile.TemporaryDirectory() as tempdir:
+            result = export_palette_sequence(
+                source, Path(tempdir) / "frames", room_id=23,
+                fps=30, duration_seconds=4, counter_rate=60)
+            self.assertEqual(result["status"], "success", result["diagnostics"])
+            self.assertEqual(result["provenance"]["resource_sha256"],
+                             EXPECTED_RESOURCE_SHA256)
+            self.assertEqual(result["provenance"]["native_size"], [320, 144])
+            self.assertEqual(result["summary"]["frames_requested"], 120)
+            self.assertEqual(result["summary"]["frames_written"], 120)
+            self.assertEqual(result["summary"]["cycle_records"], 8)
+            self.assertEqual(result["summary"]["unique_cycled_source_pixels"], 480)
+            self.assertEqual(result["timing"]["model"],
+                             "video_calibrated_60_units_per_second_hypothesis")
+            self.assertFalse(result["timing"]["engine_timer_values_observed"])
+            self.assertFalse(result["timing"]["seamless_loop_verified"])
+            self.assertEqual(result["frames"][0]["counter_delta"], 0)
+            self.assertEqual(result["frames"][18]["cumulative_counter_units"], 36)
+            self.assertEqual(result["frames"][36]["cumulative_counter_units"], 72)
+            self.assertTrue(any(event["cycle_id"] == 5
+                                for event in result["frames"][18]["rotations_this_frame"]))
+            self.assertTrue(any(event["cycle_id"] == 1
+                                for event in result["frames"][36]["rotations_this_frame"]))
+            self.assertNotEqual(result["frames"][0]["palette_sha256"],
+                                result["frames"][36]["palette_sha256"])
+            self.assertEqual(len(result["files"]), 122)
+            self.assertTrue((Path(tempdir) / "frames" / "manifest.json").is_file())
+
     def test_room23_and_109_indexed_pixel_fingerprints_and_visible_cycles(self):
         source = Path(ARCHIVE)
         report = inspect(source)

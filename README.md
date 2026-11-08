@@ -45,6 +45,8 @@ python -m scummbucket images "C:\path\to\mi2.zip" --room 34 --object 358 --outpu
 python -m scummbucket palette-probe "C:\path\to\mi2.zip" --room 23 --ticks 0 35 71 107 --output-dir "C:\Users\87otl\ScummBucket\exports\room23-palette-new-output"
 python -m scummbucket palette-map "C:\path\to\mi2.zip" --room 23 --output-dir "C:\Users\87otl\ScummBucket\exports\room23-palette-map-new-output"
 python -m scummbucket palette-sequence "C:\path\to\mi2.zip" --room 23 --fps 30 --duration-seconds 4 --counter-rate 60 --output-dir "C:\Users\87otl\ScummBucket\exports\room23-sequence-new-output"
+python -m pip install -e ".[gif]"  # Once, for optional GIF encoding
+python -m scummbucket palette-gif "C:\path\to\mi2.zip" --room 23 --fps 30 --duration-seconds 4 --counter-rate 60 --output "C:\Users\87otl\ScummBucket\exports\room23-preview-new.gif"
 python -m scummbucket palette-probe "C:\path\to\mi2.zip" --room 23 --ticks 0 1 4 9 --counter-increment 4 --output-dir "C:\Users\87otl\ScummBucket\exports\room23-delta4-new-output"
 python -m scummbucket verify-descumm "C:\path\to\mi2.zip" --room 34 --script 201 --object 358 --descumm "C:\path\to\descumm.exe"
 python -m unittest discover -s tests -v
@@ -77,6 +79,14 @@ The new `palette-sequence` command exports a room's **native 8-bit indexed PNG f
 For the fingerprinted room 23, a **four-second, 30 fps, 60-counter-unit/sec** configuration requests 120 PNG frames. The 60-unit model comes from the supplied VGA gameplay video and is **video-calibrated, not independently engine-timer verified**. The exporter models one palette update per output frame, doesn't assert seamless looping and does **not** composite actors, objects, depth masks or script-driven lighting. No animated WebP/APNG container is generated in this first pass. No extra graphics dependency is required.
 
 Read [the P4 PNG sequence-export scope and acceptance criteria](docs/research/P4_PALETTE_SEQUENCE_EXPORT.md). Public CI tests the encoder, synthetic timing, manifest and failure paths; the optional original-archive regression has not yet been executed locally in this review.
+
+### GIF preview and palette-event timeline
+
+The optional **`palette-gif`** command exports a playable-once native-resolution GIF and an adjacent JSON manifest (install once with `python -m pip install -e ".[gif]"`). It reuses the indexed-background model from the PNG exporter. Consecutive sampled frames rendering identically are merged into one GIF segment with the correct accumulated duration; **nonadjacent recurrences remain separate**. The JSON manifest preserves every modeled palette rotation, including visually ineffective rotations, together with exact sample timing fractions, resource hashes, original indexed-pixel and CLUT fingerprints, warnings and limits.
+
+The GIF writer is Pillow's maintained LZW encoder; after encoding, ScummBucket reopens the GIF and compares **every RGB frame and GIF duration** to the indexed-color source model. An encoder mismatch or missing library is an explicit failure. GIF playback timing has **10 ms resolution** and may be clamped by some viewers. **The GIF is a nonlooping convenience preview, not an authoritative indexed resource or a verified engine-timer capture.** The prior 120 PNG frames included 16 unique full-palette states; that does not imply the GIF will have exactly 16 frame segments, because states can recur later.
+
+See [P4 GIF preview implementation and verification status](docs/research/P4_PALETTE_GIF_PREVIEW.md). The original archive is not modified and no game-derived image files are committed to the repository.
 
 For exact verification against a developer-captured ScummVM palette trace, `verify-palette-trace` compares per-update timer variables and 768-byte RGB palette samples with the source-based model. It reports the first mismatch and differing palette indices; the input must identify its archive fingerprint, engine build and exact capture point. The comparison code is tested using synthetic traces, **but no real ScummVM engine palette trace has been captured or compared yet**. See [P4 runtime trace contract and visual-check instructions](docs/research/P4_RUNTIME_PALETTE_VERIFICATION.md). The four `CYCLE_FLAGS_UNVERIFIED` warnings remain visible.
 

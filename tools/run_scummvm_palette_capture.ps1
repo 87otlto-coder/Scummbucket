@@ -44,15 +44,29 @@ New-Item -ItemType Directory -Force -Path $exportDir, $reportDir | Out-Null
 $raw = Join-Path $exportDir "room23-$Mode-$stamp.raw.log"
 $trace = Join-Path $reportDir "room23-$Mode-$stamp.trace.json"
 $report = Join-Path $reportDir "room23-$Mode-$stamp.verify.json"
-if (Test-Path -LiteralPath $raw) { throw "Output collision: $raw" }
+
+# The v2 ScummVM-native hook cannot read arbitrary environment variables.
+# It creates exactly this private filename relative to the patched engine's
+# working directory. We move it into the gitignored exports folder afterwards.
+$engineLog = Join-Path $Checkout 'scummbucket-p4-room23.raw.log'
+foreach ($candidate in @($raw, $trace, $report, $engineLog)) {
+    if (Test-Path -LiteralPath $candidate) {
+        throw "Output collision: $candidate. Preserve or move the existing file before another capture."
+    }
+}
+$hookSource = Join-Path $Checkout 'engines\scumm\scumm.cpp'
+if (-not (Test-Path -LiteralPath $hookSource -PathType Leaf) -or
+    -not (Select-String -LiteralPath $hookSource -SimpleMatch 'SCUMMBUCKET_P4_PALETTE_TRACE_V2' -Quiet)) {
+    throw "ScummVM source lacks the corrected v2 palette hook. Upgrade the patcher and rebuild."
+}
 
 $oldPath = $env:PATH
-$oldCapture = $env:SCUMMBUCKET_PALETTE_TRACE_PATH
 $ucrtBin = 'C:\msys64\ucrt64\bin'
 
 Write-Host ''
 Write-Host "Starting patched engine: $exe"
-Write-Host "Private log destination: $raw"
+Write-Host "Private log destination after process exits: $raw"
+Write-Host "Temporary engine log: $engineLog"
 Write-Host "Capture type: $Mode"
 if ($Mode -eq 'normal') {
     Write-Host 'In the ScummVM debugger: scumm_vars[19] 6 ; room 23'
@@ -67,31 +81,27 @@ Write-Host 'Use the patched ScummVM window, not the normal ScummVM shortcut.'
 Write-Host ''
 
 try {
-    $env:SCUMMBUCKET_PALETTE_TRACE_PATH = $raw
     if (Test-Path -LiteralPath (Join-Path $ucrtBin 'SDL2.dll')) {
         $env:PATH = "$ucrtBin;$oldPath"
     }
-    # ScummVM can use the Windows GUI subsystem. Start-Process -Wait prevents
-    # the verifier from racing the still-running engine or its raw trace file.
+    # A GUI-subsystem executable may return before quitting when directly invoked.
     $engineProcess = Start-Process -FilePath $exe -WorkingDirectory $Checkout -Wait -PassThru
     Write-Host "ScummVM exit code: $($engineProcess.ExitCode)"
 } finally {
     $env:PATH = $oldPath
-    if ($null -eq $oldCapture) {
-        Remove-Item Env:SCUMMBUCKET_PALETTE_TRACE_PATH -ErrorAction SilentlyContinue
-    } else {
-        $env:SCUMMBUCKET_PALETTE_TRACE_PATH = $oldCapture
-    }
 }
 
-if (-not (Test-Path -LiteralPath $raw -PathType Leaf)) {
-    throw 'No trace file was created. Verify that the patched build ran and reached DOS VGA MI2 Room 23.'
+if (-not (Test-Path -LiteralPath $engineLog -PathType Leaf)) {
+    throw "No trace file created at $engineLog. Confirm that the patched engine reached DOS VGA MI2 Room 23."
 }
+
+# Always preserve the attempted capture, including truncated logs on engine crashes.
+Move-Item -LiteralPath $engineLog -Destination $raw -ErrorAction Stop
+Write-Host "Preserved raw trace: $raw"
 $lastLine = Get-Content -LiteralPath $raw -Tail 1
 Write-Host "Raw trace last line: $lastLine"
 if ($lastLine -notmatch '^SBP4[|]END[|][0-9]+[|](limit|room_exit)$') {
     Write-Warning 'Capture is incomplete. Raw log is preserved. No success report will be claimed.'
-    Write-Host "Preserved log: $raw"
     exit 2
 }
 

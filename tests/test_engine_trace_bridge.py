@@ -118,6 +118,8 @@ class EngineImportTest(unittest.TestCase):
         self.assertEqual(len(trace["samples"]), 2)
         self.assertEqual(trace["game_resource_sha256"], SHA)
         self.assertEqual(trace["raw_hook_log_sha256"], sha256(self.raw.read_bytes()).hexdigest())
+        self.assertTrue(trace["import_provenance"]["local_source_file_opened_for_hashing"])
+        self.assertFalse(trace["import_provenance"]["original_resource_decoded_by_importer"])
         self.assertEqual(len(trace["initial_palette_rgb_hex"]), 1536)
 
     def test_mismatched_proprietary_source_does_not_create_trace(self):

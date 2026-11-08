@@ -187,7 +187,7 @@ class GifExporterTest(unittest.TestCase):
         self.assertTrue(report["fidelity"]["rendered_rgb_roundtrip_verified"])
         self.assertEqual(len(report["segments"]), 3)
         self.assertEqual(len(report["palette_events"]), 2)
-        self.assertNotIn("_palette", str(report["segments"]))
+        self.assertTrue(all("_palette" not in segment for segment in report["segments"]))
         self.assertEqual(source_sha, sha256(self.archive.read_bytes()).hexdigest())
         gif = self.gif.read_bytes()
         self.assertEqual(sha256(gif).hexdigest(), report["files"][0]["sha256"])
@@ -243,7 +243,8 @@ class GifExporterTest(unittest.TestCase):
         ]:
             with self.subTest(code=code):
                 result = export_palette_gif(
-                    self.archive, self.gif, **kwargs)
+                    self.archive, self.gif,
+                    **({"room_id": 1} | kwargs))
                 self.assertEqual(result["status"], "failed")
                 self.assertIn(code, [d["code"] for d in result["diagnostics"]])
                 self.assertFalse(self.gif.exists())

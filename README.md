@@ -47,6 +47,7 @@ python -m scummbucket palette-map "C:\path\to\mi2.zip" --room 23 --output-dir "C
 python -m scummbucket palette-sequence "C:\path\to\mi2.zip" --room 23 --fps 30 --duration-seconds 4 --counter-rate 60 --output-dir "C:\Users\87otl\ScummBucket\exports\room23-sequence-new-output"
 python -m pip install -e ".[gif]"  # Once, for optional GIF encoding
 python -m scummbucket palette-gif "C:\path\to\mi2.zip" --room 23 --fps 30 --duration-seconds 4 --counter-rate 60 --output "C:\Users\87otl\ScummBucket\exports\room23-preview-new.gif"
+python -m scummbucket palette-events "C:\path\to\mi2.zip" --room 23 --duration-seconds 4 --counter-rate 60 --output-dir "C:\Users\87otl\ScummBucket\exports\room23-events-new-output"
 python -m scummbucket palette-probe "C:\path\to\mi2.zip" --room 23 --ticks 0 1 4 9 --counter-increment 4 --output-dir "C:\Users\87otl\ScummBucket\exports\room23-delta4-new-output"
 python -m scummbucket verify-descumm "C:\path\to\mi2.zip" --room 34 --script 201 --object 358 --descumm "C:\path\to\descumm.exe"
 python -m unittest discover -s tests -v
@@ -87,6 +88,14 @@ The optional **`palette-gif`** command exports a playable-once native-resolution
 The GIF writer is Pillow's maintained LZW encoder; after encoding, ScummBucket reopens the GIF and compares **every RGB frame and GIF duration** to the indexed-color source model. An encoder mismatch or missing library is an explicit failure. GIF playback timing has **10 ms resolution** and may be clamped by some viewers. **The GIF is a nonlooping convenience preview, not an authoritative indexed resource or a verified engine-timer capture.** The prior 120 PNG frames included 16 unique full-palette states; that does not imply the GIF will have exactly 16 frame segments, because states can recur later.
 
 See [P4 GIF preview implementation and verification status](docs/research/P4_PALETTE_GIF_PREVIEW.md). The original archive is not modified and no game-derived image files are committed to the repository.
+
+### Experimental FPS-independent source palette timeline
+
+The new **`palette-events`** command exports a portable bundle containing one original indexed PNG, the exact original 768-byte `CLUT`, and `timeline.json` with source hashes, indexed-pixel fingerprint, original `CYCL` metadata, ordered model-event ticks and RGB palette changes. It independently verifies replay at **15, 30 and 60 fps** without rerunning the cycle algorithm. Palette rotations that are invisible on this background remain in the event log rather than being discarded.
+
+**Its model is intentionally different from the earlier GIF/PNG exports.** It assumes a palette update once per *counter unit* instead of once per output frame. The approximately 60 counter units/sec rate is video-inferred for fingerprinted room 23, but the **engine scheduler has not been measured**. This is a transparent experiment, not a silent replacement or a verified ScummVM runtime trace. The existing `palette-sequence` and `palette-gif` outputs are unchanged.
+
+See [P4 experimental counter-unit palette timeline](docs/research/P4_PALETTE_EVENT_TIMELINE.md). It needs no optional Pillow dependency.
 
 For exact verification against a developer-captured ScummVM palette trace, `verify-palette-trace` compares per-update timer variables and 768-byte RGB palette samples with the source-based model. It reports the first mismatch and differing palette indices; the input must identify its archive fingerprint, engine build and exact capture point. The comparison code is tested using synthetic traces, **but no real ScummVM engine palette trace has been captured or compared yet**. See [P4 runtime trace contract and visual-check instructions](docs/research/P4_RUNTIME_PALETTE_VERIFICATION.md). The four `CYCLE_FLAGS_UNVERIFIED` warnings remain visible.
 

@@ -12,6 +12,7 @@ from .palette_trace import verify_palette_trace
 from .palette_coverage import export_cycle_coverage
 from .palette_sequence import export_palette_sequence
 from .palette_gif import export_palette_gif
+from .palette_events import export_palette_events
 
 
 def main(argv=None) -> int:
@@ -109,7 +110,42 @@ def main(argv=None) -> int:
     gif.add_argument("--counter-rate", type=int, default=60,
                      help="ASSUMED palette counter units/second; 60 derived from room-23 video")
     gif.add_argument("--json", action="store_true", help="Print detailed result as JSON")
+    events = sub.add_parser(
+        "palette-events",
+        help="Export synthetic counter-unit palette events, original indexed PNG and CLUT")
+    events.add_argument("input", help="Authorized original MI2 archive or game directory")
+    events.add_argument("--room", type=int, required=True)
+    events.add_argument("--counter-rate", type=int, default=60,
+                        help="Assumed counter units per second (default 60, video-derived room 23)")
+    events.add_argument("--duration-seconds", type=int, default=4)
+    events.add_argument("--output-dir", required=True,
+                        help="New folder for source PNG, original CLUT and timeline.json")
+    events.add_argument("--json", action="store_true", help="Print complete JSON report")
     args = parser.parse_args(argv)
+
+    if args.command == "palette-events":
+        report = export_palette_events(
+            args.input, args.output_dir, room_id=args.room,
+            counter_rate=args.counter_rate,
+            duration_seconds=args.duration_seconds)
+        if args.json:
+            print(json.dumps(report, indent=2))
+        else:
+            summary = ((report.get("timeline") or {}).get("summary") or {})
+            print(f"Palette event bundle: {report['status']} ({args.input})")
+            print(f"Room {args.room}: {summary.get('event_ticks', 0)} model event ticks, "
+                  f"{summary.get('modeled_cycle_rotations', 0)} rotations, "
+                  f"{summary.get('background_pixels_in_cycled_index_ranges', 0)} "
+                  "source pixel positions in cycle ranges")
+            print(f"Timing: {report['timing']['model']}; "
+                  "engine update cadence unverified, not a playback recording")
+            print(f"Output: {report['output_dir']}")
+            print("Indexed PNG, original RGB CLUT and replayable JSON timeline; "
+                  "other scene mechanisms excluded.")
+            for issue in report["diagnostics"]:
+                print(f"{issue['severity'].upper()} {issue['code']}: "
+                      f"{issue['message']}", file=sys.stderr)
+        return 0 if report["status"] == "success" else 2
 
     if args.command == "palette-gif":
         report = export_palette_gif(

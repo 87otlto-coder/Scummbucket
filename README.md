@@ -42,6 +42,7 @@ python -m scummbucket extract "C:\path\to\mi2.zip" --room 4 --tag CYCL --output-
 python -m scummbucket extract-id "C:\path\to\mi2.zip" --directory DSCR --id 12 --output-dir "C:\Users\87otl\ScummBucket\exports\script-012"
 python -m scummbucket scenes "C:\path\to\mi2.zip" --room 34
 python -m scummbucket images "C:\path\to\mi2.zip" --room 34 --object 358 --output-dir "C:\Users\87otl\ScummBucket\exports\object358-new-output"
+python -m scummbucket palette-probe "C:\path\to\mi2.zip" --room 23 --ticks 0 35 71 107 --output-dir "C:\Users\87otl\ScummBucket\exports\room23-palette-new-output"
 python -m scummbucket verify-descumm "C:\path\to\mi2.zip" --room 34 --script 201 --object 358 --descumm "C:\path\to\descumm.exe"
 python -m unittest discover -s tests -v
 ```
@@ -62,7 +63,7 @@ For object **358**, the fingerprinted MI2 sample contains **17 independently con
 
 The `images` command can now decode native-resolution **RGBA PNG object states**, plus separately preserved **Z-plane mask PNGs**, from the subset of original DOS MI2 strip codecs implemented so far. It uses the room's original `CLUT` palette and `TRNS` transparency index without external graphics dependencies. Initial decoding of object 358 yields **16 states (56 × 40 pixels)** and **three mask planes per state**. This is a **research-stage pixel decoder**: output has not yet been compared pixel-for-pixel against a ScummVM reference rendering, masks are not composited into the room, and no animation timing is inferred. See the [P2 image-state research note](docs/research/P2_MI2_OBIM_STATE_DECODING.md).
 
-For our separate **autonomous background-animation investigation**, the [palette-cycle candidate survey](docs/research/P4_PALETTE_CYCLE_CANDIDATES.md) identifies room 23 and room 109 as useful early tests. They are **candidates**, not observed or verified animations. The four `CYCLE_FLAGS_UNVERIFIED` warnings remain unresolved.
+For our separate **autonomous background-animation investigation**, the [palette-cycle candidate survey](docs/research/P4_PALETTE_CYCLE_CANDIDATES.md) now includes direct source evidence: **all eight palette-cycle ranges in room 23 and all five in room 109 occur in their decoded native background pixel buffers** (480 and 65 pixel positions, respectively). The experimental `palette-probe` command reuses the limited background strip decoder, rotates copied palette entries under a **hypothetical one-counter-unit-per-update schedule**, and exports labeled PNG snapshots plus a provenance manifest. This is **not** a recording of game execution or a validated animation frame rate; ScummVM runtime timing, script interference and reference rendering remain unverified. The four `CYCLE_FLAGS_UNVERIFIED` warnings remain visible.
 
 See [P1 prototype documentation](docs/P1_PROTOTYPE.md) for supported behavior, failure reporting and remaining limitations. The sample game files must remain outside the repository.
 

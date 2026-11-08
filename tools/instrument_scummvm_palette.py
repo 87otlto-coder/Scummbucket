@@ -45,7 +45,7 @@ HOOK = r'''void ScummEngine::scummLoop_handleEffects() {
 				std::fclose(existing);
 				warning("ScummBucket P4: trace output exists; refusing to overwrite");
 			} else {
-				sbP4Trace = std::fopen(path, "wb");
+				sbP4Trace = std::fopen(path, "wbx");
 				if (!sbP4Trace)
 					warning("ScummBucket P4: cannot open requested trace output");
 			}

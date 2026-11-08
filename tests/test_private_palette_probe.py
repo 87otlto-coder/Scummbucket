@@ -15,6 +15,7 @@ from scummbucket.palette_coverage import analyze_cycle_coverage
 from scummbucket.palette_sequence import export_palette_sequence
 from scummbucket.palette_gif import export_palette_gif
 from scummbucket.palette_events import export_palette_events, replay_event_palettes
+from scummbucket.palette_bundle_render import render_palette_event_bundle
 from scummbucket.palette_probe import (
     decode_room_background_indexed, palette_probe,
 )
@@ -25,6 +26,42 @@ EXPECTED_RESOURCE_SHA256 = "ad045372e0d49626503bb50fca29a687ec8e01ef75d9b8bca702
 
 @unittest.skipUnless(ARCHIVE, "Private original-game archive not provided")
 class PrivatePaletteProbeTest(unittest.TestCase):
+    def test_room23_saved_event_bundle_renders_30_and_60_fps(self):
+        source = Path(ARCHIVE)
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            bundle_path = root / "events"
+            first = export_palette_events(
+                source, bundle_path, room_id=23,
+                counter_rate=60, duration_seconds=4)
+            self.assertEqual(first["status"], "success", first["diagnostics"])
+            outcomes = {}
+            for fps in (30, 60):
+                result = render_palette_event_bundle(
+                    bundle_path, root / f"frames-{fps}", fps=fps)
+                self.assertEqual(result["status"], "success", result["diagnostics"])
+                self.assertEqual(result["frames_written"], 4 * fps)
+                self.assertEqual(
+                    result["provenance"]["source_indexed_pixels_sha256"],
+                    "94b7b2d675778bf73c73a87eca05ab74dca470ad67555faecd03ab112acbcd9f")
+                self.assertEqual(
+                    result["provenance"]["declared_original_resource_sha256"],
+                    EXPECTED_RESOURCE_SHA256)
+                self.assertTrue(
+                    result["provenance"]["rendered_from_saved_patches_only"])
+                self.assertFalse(
+                    result["provenance"]["source_game_archive_reopened"])
+                outcomes[fps] = result
+            self.assertEqual(outcomes[30]["sampling"]["omitted_event_ticks"],
+                             [105, 213])
+            self.assertEqual(outcomes[60]["sampling"]["omitted_event_ticks"], [])
+            self.assertIn(
+                "EVENT_RENDER_UNSAMPLED_STATES",
+                [item["code"] for item in outcomes[30]["diagnostics"]])
+            self.assertNotIn(
+                "EVENT_RENDER_UNSAMPLED_STATES",
+                [item["code"] for item in outcomes[60]["diagnostics"]])
+
     def test_room23_counter_timeline_source_assets_and_replay(self):
         import json
         from test_palette_sequence import parse_indexed_png

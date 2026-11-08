@@ -27,8 +27,15 @@ if [ ! -f "$root/engines/scumm/scumm.cpp" ]; then
   exit 2
 fi
 
-if ! grep -q 'SCUMMBUCKET_P4_PALETTE_TRACE_V1' "$root/engines/scumm/scumm.cpp"; then
-  echo "ERROR: Source hook is not installed. Run setup_scummvm_trace.ps1 in PowerShell." >&2
+if ! grep -q 'SCUMMBUCKET_P4_PALETTE_TRACE_V2' "$root/engines/scumm/scumm.cpp"; then
+  echo "ERROR: Corrected V2 source hook not installed. Pull latest ScummBucket and run setup_scummvm_trace.ps1 in PowerShell." >&2
+  exit 2
+fi
+
+# Guard against accidentally compiling the old hook which fails under
+# ScummVM's forbidden C stdio APIs.
+if grep -q 'SCUMMBUCKET_P4_PALETTE_TRACE_V1' "$root/engines/scumm/scumm.cpp"; then
+  echo "ERROR: Legacy V1 hook still present. Run the guarded upgrade in PowerShell." >&2
   exit 2
 fi
 

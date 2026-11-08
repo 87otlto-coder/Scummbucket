@@ -14,6 +14,7 @@ from scummbucket.inspector import XOR_KEY, inspect, _read_pair
 from scummbucket.palette_coverage import analyze_cycle_coverage
 from scummbucket.palette_sequence import export_palette_sequence
 from scummbucket.palette_gif import export_palette_gif
+from scummbucket.palette_events import export_palette_events, replay_event_palettes
 from scummbucket.palette_probe import (
     decode_room_background_indexed, palette_probe,
 )
@@ -24,6 +25,52 @@ EXPECTED_RESOURCE_SHA256 = "ad045372e0d49626503bb50fca29a687ec8e01ef75d9b8bca702
 
 @unittest.skipUnless(ARCHIVE, "Private original-game archive not provided")
 class PrivatePaletteProbeTest(unittest.TestCase):
+    def test_room23_counter_timeline_source_assets_and_replay(self):
+        import json
+        from test_palette_sequence import parse_indexed_png
+        source = Path(ARCHIVE)
+        with tempfile.TemporaryDirectory() as temp:
+            out = Path(temp) / "events"
+            result = export_palette_events(
+                source, out, room_id=23,
+                counter_rate=60, duration_seconds=4)
+            self.assertEqual(result["status"], "success", result["diagnostics"])
+            self.assertEqual(
+                result["source"]["resource_sha256"], EXPECTED_RESOURCE_SHA256)
+            self.assertEqual(result["source"]["native_size"], [320, 144])
+            self.assertEqual(
+                result["timeline"]["summary"]["cycle_definitions"], 8)
+            self.assertEqual(
+                result["timeline"]["summary"]["background_pixels_in_cycled_index_ranges"],
+                480)
+            self.assertEqual(
+                result["timeline"]["summary"]["modeled_cycle_rotations"], 32)
+            self.assertFalse(result["timing"]["actual_engine_schedule_observed"])
+            self.assertTrue(result["timing"]["rendering_fps_independent"])
+            self.assertFalse(result["timing"]["seamless_loop_verified"])
+            self.assertEqual(
+                result["timing"]["model"],
+                "video_calibrated_rate_plus_synthetic_unit_update_schedule")
+            self.assertEqual(result["timeline"]["end_counter_tick_exclusive"], 240)
+            width, height, pixels, clut = parse_indexed_png(
+                (out / "room-023_indexed.png").read_bytes())
+            self.assertEqual((width, height), (320, 144))
+            self.assertEqual(
+                hashlib.sha256(pixels).hexdigest(),
+                "94b7b2d675778bf73c73a87eca05ab74dca470ad67555faecd03ab112acbcd9f")
+            self.assertEqual(
+                clut, (out / "room-023_initial-clut.rgb").read_bytes())
+            manifest = json.loads((out / "timeline.json").read_text())
+            self.assertEqual(manifest["status"], "success")
+            self.assertEqual(len(manifest["replay_checks"]), 3)
+            for fps in (15, 30, 60):
+                sampled = replay_event_palettes(
+                    clut, manifest["timeline"]["events"],
+                    counter_rate=60, duration_seconds=4, fps=fps)
+                self.assertEqual(len(sampled), 4 * fps)
+                self.assertEqual(sampled[0]["palette_sha256"],
+                                 hashlib.sha256(clut).hexdigest())
+
     def test_room23_nonlooping_gif_and_video_calibrated_event_timeline(self):
         from PIL import Image
         source = Path(ARCHIVE)

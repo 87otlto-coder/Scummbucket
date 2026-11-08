@@ -7,6 +7,7 @@ from .extraction import extract
 from .descumm_verification import verify_descumm
 from .inspector import inspect
 from .object_images import export_object_images
+from .palette_probe import palette_probe
 
 
 def main(argv=None) -> int:
@@ -54,7 +55,39 @@ def main(argv=None) -> int:
     pictures.add_argument("--output-dir", required=True, help="Folder for RGBA PNG states and separate mask PNGs")
     pictures.add_argument("--no-masks", action="store_true", help="Skip separate Z-plane mask PNG exports")
     pictures.add_argument("--json", action="store_true", help="Print complete JSON report")
+    palette = sub.add_parser(
+        "palette-probe",
+        help="Export hypothetical room palette-cycle snapshots, NOT observed animation")
+    palette.add_argument("input", help="Original DOS MI2 ZIP or game folder")
+    palette.add_argument("--room", type=int, required=True)
+    palette.add_argument("--ticks", nargs="+", type=int, required=True,
+                         help="Synthetic counter-unit updates, e.g. 0 35 71 107; NOT milliseconds")
+    palette.add_argument("--output-dir", required=True, help="New non-overwriting PNG output folder")
+    palette.add_argument("--json", action="store_true", help="Print JSON report")
     args = parser.parse_args(argv)
+
+    if args.command == "palette-probe":
+        report = palette_probe(
+            args.input, args.output_dir, room_id=args.room, ticks=args.ticks)
+        if args.json:
+            print(json.dumps(report, indent=2))
+        else:
+            print(f"Palette probe: {report['status']} ({args.input})")
+            print(f"Room {args.room}: {report['summary']['snapshots']} hypothetical PNG snapshots, "
+                  f"{report['summary']['cycle_records']} cycle records, "
+                  f"{report['summary']['visible_cycle_pixels']} background pixel positions "
+                  "using cycled palette indices")
+            for snapshot in report["snapshots"]:
+                print(f"  Counter tick {snapshot['synthetic_counter_tick']}: "
+                      f"{snapshot['visible_changed_pixels_vs_initial']} visually changed "
+                      f"pixel positions vs initial, {snapshot['cycle_rotation_events']} "
+                      "cycle rotation events")
+            print("These are synthetic palette updates; real gameplay execution "
+                  "and timing remain unverified.")
+            for issue in report["diagnostics"]:
+                print(f"{issue['severity'].upper()} {issue['code']}: {issue['message']}",
+                      file=sys.stderr)
+        return 0 if report["status"] == "success" else 2
 
     if args.command == "images":
         report = export_object_images(

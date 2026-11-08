@@ -33,7 +33,7 @@ def _need(ok: bool, code: str, message: str, *, offset: int | None = None):
         raise ImageDecodeError(code, message, offset=offset)
 
 
-def _read_bits_1stream(stream: bytes, first_bytes: int, count: int, n: int):
+def _read_bits_1stream(stream: bytes, count: list[int], n: int):
     """Read n least-significant-first bits; raise rather than reading past strip."""
     while count[0] < n:
         pos = count[1]
@@ -85,17 +85,17 @@ def decode_strip(codec: int, stream: bytes, height: int) -> tuple[bytes, bool, i
             if repeated:
                 repeated -= 1
                 continue
-            if _read_bits_1stream(stream, 3, bit_state, 1) == 0:
+            if _read_bits_1stream(stream, bit_state, 1) == 0:
                 continue
-            if _read_bits_1stream(stream, 3, bit_state, 1) == 0:
-                color = _read_bits_1stream(stream, 3, bit_state, codec % 10)
+            if _read_bits_1stream(stream, bit_state, 1) == 0:
+                color = _read_bits_1stream(stream, bit_state, codec % 10)
                 continue
-            delta = _read_bits_1stream(stream, 3, bit_state, 3) - 4
+            delta = _read_bits_1stream(stream, bit_state, 3) - 4
             if delta:
                 color = (color + delta) & 0xFF
             else:
                 # This is the v5 major/minor identical-pixel run extension.
-                run = _read_bits_1stream(stream, 3, bit_state, 8)
+                run = _read_bits_1stream(stream, bit_state, 8)
                 repeated = (run - 1) & 0xFF
         return bytes(pixels), transparent, bit_state[1]
 
@@ -110,12 +110,12 @@ def decode_strip(codec: int, stream: bytes, height: int) -> tuple[bytes, bool, i
         pixels[y * 8 + x] = color
         if i == count - 1:
             break
-        if not _read_bits_1stream(stream, 2, bit_state, 1):
+        if not _read_bits_1stream(stream, bit_state, 1):
             continue
-        if not _read_bits_1stream(stream, 2, bit_state, 1):
-            color = _read_bits_1stream(stream, 2, bit_state, codec % 10)
+        if not _read_bits_1stream(stream, bit_state, 1):
+            color = _read_bits_1stream(stream, bit_state, codec % 10)
             direction = -1
-        elif not _read_bits_1stream(stream, 2, bit_state, 1):
+        elif not _read_bits_1stream(stream, bit_state, 1):
             color = (color + direction) & 0xFF
         else:
             direction = -direction
@@ -244,7 +244,13 @@ def decode_object_state(data: bytes, *, obim_offset: int, state_tag: str,
     """Decode a single IMxx state, but do not composite it into a room."""
     _need(len(palette) == 768, "PALETTE_INVALID", "Expected 256 RGB palette entries")
     _need(0 <= transparent_color <= 255, "TRNS_INVALID", "Transparent index out of bounds")
+    _need(0 <= obim_offset <= len(data) - 8, "OBIM_OFFSET_INVALID",
+          "Object-image chunk header out of bounds", offset=obim_offset)
+    _need(data[obim_offset:obim_offset + 4] == b"OBIM", "OBIM_TAG_INVALID",
+          "Expected an OBIM object-image chunk", offset=obim_offset)
     root_size = struct.unpack_from(">I", data, obim_offset + 4)[0]
+    _need(8 <= root_size <= len(data) - obim_offset, "OBIM_LENGTH_INVALID",
+          "OBIM chunk length exceeds input", offset=obim_offset)
     images = _subchunks(data, obim_offset, root_size)
     header = [p for p in images if p.tag == "IMHD"]
     _need(len(header) == 1 and header[0].length >= 24,
@@ -381,7 +387,7 @@ def export_object_images(input_path: str | Path, output_dir: str | Path, *,
                                         "kind": "separate_depth_mask",
                                         "state_tag": tag, "mask_tag": ztag})
             result["status"] = "success"
-        except ImageDecodeError as exc:
+        except (ImageDecodeError, InspectionError) as exc:
             problem(exc.code, f"{tag}: {exc}", offset=exc.offset)
             if exc.code == "STRIP_CODEC_UNSUPPORTED":
                 report["summary"]["unsupported"] += 1

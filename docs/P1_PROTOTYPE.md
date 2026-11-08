@@ -254,7 +254,7 @@ See the [palette-cycle candidate register and exact observations](research/P4_PA
 
 ## Verification
 
-- **GitHub Actions: 127 tests discovered, 124 passed, 3 optional private-integration tests skipped, 0 failures** ([verified workflow run](https://github.com/87otlto-coder/Scummbucket/actions/runs/42464447892)). The new delta-model and external palette-trace comparisons use **synthetic fixtures**, not gameplay data. Private-archive validation remains opt-in, and the user previously completed real `descumm` instruction checks for scripts 201 and 202.
+- **GitHub Actions: 128 tests discovered, 125 passed, 3 optional private-integration tests skipped, 0 failures** ([verified workflow run](https://github.com/87otlto-coder/Scummbucket/actions/runs/42464928520)). The new counter-delta, external palette-trace and malformed-cycle checks use **synthetic fixtures**, not gameplay data. Private-archive validation remains opt-in, and the user previously completed real `descumm` instruction checks for scripts 201 and 202.
 - User-supplied MI2 ZIP passed structural inventory: 110 rooms, 127 palette-cycle records in 21 rooms and 158 multi-state object images.
 - New resource-ID extraction tests cover two distinct scripts sharing a room, exact byte matches in both representations, empty and invalid slots, corrupt links, overwrite refusal and the new CLI.
 - Room 4 `CYCL` chunk exports in both `decoded` and `stored` modes were verified byte-for-byte against the original `MONKEY2.001` source slices.

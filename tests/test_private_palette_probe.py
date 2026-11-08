@@ -13,6 +13,7 @@ import unittest
 from scummbucket.inspector import XOR_KEY, inspect, _read_pair
 from scummbucket.palette_coverage import analyze_cycle_coverage
 from scummbucket.palette_sequence import export_palette_sequence
+from scummbucket.palette_gif import export_palette_gif
 from scummbucket.palette_probe import (
     decode_room_background_indexed, palette_probe,
 )
@@ -23,6 +24,42 @@ EXPECTED_RESOURCE_SHA256 = "ad045372e0d49626503bb50fca29a687ec8e01ef75d9b8bca702
 
 @unittest.skipUnless(ARCHIVE, "Private original-game archive not provided")
 class PrivatePaletteProbeTest(unittest.TestCase):
+    def test_room23_nonlooping_gif_and_video_calibrated_event_timeline(self):
+        from PIL import Image
+        source = Path(ARCHIVE)
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp) / "room23.gif"
+            result = export_palette_gif(
+                source, output, room_id=23, fps=30,
+                duration_seconds=4, counter_rate=60)
+            self.assertEqual(result["status"], "success", result["diagnostics"])
+            self.assertEqual(
+                result["source"]["resource_sha256"], EXPECTED_RESOURCE_SHA256)
+            self.assertEqual(result["source"]["native_size"], [320, 144])
+            self.assertEqual(result["summary"]["source_frames_sampled"], 120)
+            self.assertEqual(result["summary"]["cycle_definitions"], 8)
+            self.assertEqual(result["summary"]["unique_source_cycle_pixels"], 480)
+            self.assertGreater(result["summary"]["unique_visual_states"], 1)
+            self.assertGreater(result["summary"]["palette_rotation_events"], 0)
+            self.assertGreater(result["summary"]["gif_frames_written"], 1)
+            self.assertLess(result["summary"]["gif_frames_written"], 120)
+            self.assertTrue(result["fidelity"]["rendered_rgb_roundtrip_verified"])
+            self.assertEqual(result["timing"]["gif_duration_ms"], 4000)
+            self.assertFalse(result["timing"]["engine_timer_values_observed"])
+            self.assertFalse(result["timing"]["gif_loops"])
+            self.assertEqual(result["timing"]["model"],
+                             "video_calibrated_60_units_per_second_hypothesis")
+            self.assertTrue(output.is_file())
+            self.assertTrue(output.with_suffix(".manifest.json").is_file())
+            with Image.open(output) as gif:
+                self.assertEqual(gif.size, (320, 144))
+                self.assertEqual(gif.n_frames,
+                                 result["summary"]["gif_frames_written"])
+                self.assertNotIn("loop", gif.info)
+            self.assertEqual(sum(s["duration_ms"] for s in result["segments"]), 4000)
+            self.assertEqual(len(result["palette_events"]),
+                             result["summary"]["palette_rotation_events"])
+
     def test_room23_native_indexed_sequence_first_rotation_and_manifest(self):
         source = Path(ARCHIVE)
         with tempfile.TemporaryDirectory() as tempdir:

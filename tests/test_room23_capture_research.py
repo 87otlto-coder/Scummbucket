@@ -121,6 +121,41 @@ class Room23CaptureResearchTest(unittest.TestCase):
             parse_room23_hook_log(raw)
         self.assertEqual(error.exception.code, "RESEARCH_SEQUENCE_INVALID")
 
+    def test_sixty_unit_stress_phase_needs_longer_calibration(self):
+        # Original Room 23 cycle rates: the 60-unit setting causes several
+        # cycles to rotate on almost every callback. Repeated short patterns
+        # make the phase ambiguous with the old eight-sample cap.
+        records = [
+            {"id": i + 1, "rate_raw": rate, "flags": 0,
+             "start_color": 176 + 2 * i, "end_color": 177 + 2 * i,
+             "offset": 1000 + 9 * i}
+            for i, rate in enumerate((230, 307, 153, 384, 460, 384, 230, 307))
+        ]
+        cycles, issues = prepare_cycles(records)
+        self.assertFalse(issues)
+        palette = bytearray(self.clut)
+        samples = []
+        for sequence in range(1, 33):
+            advance_palette(palette, cycles, delta=60)
+            samples.append({
+                "sequence": sequence, "var_timer": 60,
+                "var_timer_next": 60, "millis": 1000 + sequence * 1000,
+                "palette": bytes(palette),
+            })
+        capture = {
+            "complete": False, "stop_reason": "missing_end",
+            "initial_palette": self.clut, "begin_millis": 1000,
+            "samples": samples,
+        }
+        result = compare_room23_palette_capture(
+            self.clut, records, capture, phase_search_limit=500)
+        self.assertEqual(result["model_comparison_status"], "matched")
+        self.assertEqual(result["samples_matching_cycling"], 32)
+        self.assertEqual(result["segments"][0]["first_sample_equivalent_model_update"], 1)
+        self.assertEqual(result["segments"][0]["calibration_samples"], 16)
+        self.assertEqual(result["heldout_samples_matching"], 16)
+        self.assertFalse(result["capture_complete"])
+
     def test_windows_runner_preserves_strict_end_gate(self):
         from pathlib import Path
         script = (Path(__file__).resolve().parents[1] /

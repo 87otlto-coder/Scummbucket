@@ -39,6 +39,16 @@ The archive-wide `CYCLE_FLAGS_UNVERIFIED` messages remain exactly these structur
 
 These raw values require checking against the actual v5 palette-cycle implementation. No warning has been suppressed as a result of successful object decoding or script disassembly.
 
+Direct source-byte verification of the user-supplied `MONKEY2.001` confirms the three anomaly locations:
+
+- **Room 35:** cycle 1 at decoded resource offset **2,781,146** has rate **3,072**, flags `0x0004`, colors **176–191**; cycle 2 at **2,781,155** has rate **2,688**, flags `0x0004`, colors **160–175**.
+- **Room 38:** cycle 1 at offset **2,939,224** has rate **459**, flags `0x0004`, colors **179–180**.
+- **Room 64:** cycle 2 at offset **5,426,226** has raw rate **65,494**, flags `0xD906`, colors **97–98**. For this value, integer `16384 // 65494 = 0`; ScummVM's cycle updater skips entries with delay zero.
+
+ScummBucket now issues a **separate** `CYCLE_DELAY_ZERO_IN_ENGINE` warning for such rate values, in addition to preserving all four `CYCLE_FLAGS_UNVERIFIED` warnings. **That makes five distinct warning occurrences in the analyzed original archive**, rather than reducing or muting the original four. The cause of the high raw flag bits remains **unresolved**; the parser does not assume they are meaningless or corrupted.
+
+
+
 ## New evidence: original indexed backgrounds and engine palette cycling
 
 Read-only analysis of the supplied original DOS MI2 resource pair, cross-checked with [ScummVM palette.cpp](https://github.com/scummvm/scummvm/blob/master/engines/scumm/palette.cpp), gives us a more concrete P4 starting point.

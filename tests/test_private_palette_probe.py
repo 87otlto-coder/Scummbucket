@@ -39,10 +39,13 @@ class PrivatePaletteProbeTest(unittest.TestCase):
             self.assertEqual(result["summary"]["source_frames_sampled"], 120)
             self.assertEqual(result["summary"]["cycle_definitions"], 8)
             self.assertEqual(result["summary"]["unique_source_cycle_pixels"], 480)
-            self.assertGreater(result["summary"]["unique_visual_states"], 1)
-            self.assertGreater(result["summary"]["palette_rotation_events"], 0)
-            self.assertGreater(result["summary"]["gif_frames_written"], 1)
-            self.assertLess(result["summary"]["gif_frames_written"], 120)
+            # Independent read-only research reconstruction on the fingerprinted
+            # original archive found 18 time-ordered visible runs, 16 distinct
+            # appearances and 32 modeled palette-rotation events. These counts
+            # belong to this four-second, 30fps, 60-unit source sample only.
+            self.assertEqual(result["summary"]["unique_visual_states"], 16)
+            self.assertEqual(result["summary"]["palette_rotation_events"], 32)
+            self.assertEqual(result["summary"]["gif_frames_written"], 18)
             self.assertTrue(result["fidelity"]["rendered_rgb_roundtrip_verified"])
             self.assertEqual(result["timing"]["gif_duration_ms"], 4000)
             self.assertFalse(result["timing"]["engine_timer_values_observed"])

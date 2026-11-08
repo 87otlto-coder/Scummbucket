@@ -69,6 +69,34 @@ class Room23CaptureResearchTest(unittest.TestCase):
         self.assertTrue(result["clock_discontinuities"][0]
                         ["source_cycle_colors_reinitialized_at_first_post_gap_sample"])
 
+    def test_report_lists_actual_timer_distribution(self):
+        parsed, result = self.verify(self.make_log())
+        self.assertEqual(result["timer_pair_distribution"], [{
+            "var_timer": 6, "var_timer_next": 6, "count": 40,
+            "first_sequence": 1, "last_sequence": 40,
+        }])
+
+    def test_mixed_timer_regime_is_reported_without_relabeling(self):
+        parsed = parse_room23_hook_log(self.make_log())
+        # Keep palette data unchanged: this test examines the observation
+        # histogram, not a claim that our modeled 60-delta replay matches.
+        parsed["samples"][20]["var_timer"] = 60
+        parsed["samples"][20]["var_timer_next"] = 60
+        result = compare_room23_palette_capture(
+            self.clut, self.records, parsed, phase_search_limit=70)
+        self.assertIn({"var_timer": 60, "var_timer_next": 60, "count": 1,
+                       "first_sequence": 21, "last_sequence": 21},
+                      result["timer_pair_distribution"])
+
+    def test_windows_stress_mode_requires_observed_timer_60(self):
+        from pathlib import Path
+        script = (Path(__file__).resolve().parents[1] /
+                  "tools" / "run_scummvm_palette_capture.ps1").read_text()
+        self.assertIn("CAPTURE_MODE_NOT_OBSERVED", script)
+        self.assertIn("scumm_vars[19] 60", script)
+        self.assertIn("AFTER entering Room 23", script)
+        self.assertIn("timer_pair_distribution", script)
+
     def test_completed_log_can_be_phase_compared(self):
         parsed, result = self.verify(self.make_log(complete=True))
         self.assertTrue(parsed["complete"])

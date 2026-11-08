@@ -240,6 +240,12 @@ def _parse_cycles(data: bytes, c: Chunk, source: str, room_id: int,
             diagnostics.append(Diagnostic("warning", "CYCLE_FLAGS_UNVERIFIED",
                                           f"Cycle flags 0x{flags:04X} need interpretation", source,
                                           record_offset, "CYCL", room_id))
+        if rate > 16384:
+            diagnostics.append(Diagnostic(
+                "warning", "CYCLE_DELAY_ZERO_IN_ENGINE",
+                f"Cycle id={number} rate={rate} produces zero delay "
+                "(16384 // rate); ScummVM skips this cycle while delay is zero",
+                source, record_offset, "CYCL", room_id))
         cycles.append({"id": number, "reserved_bytes_hex": data[pos:pos + 2].hex(),
                        "rate_raw": rate, "flags": flags,
                        "start_color": start, "end_color": finish, "offset": record_offset})

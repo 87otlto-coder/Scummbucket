@@ -144,7 +144,8 @@ def build_counter_event_timeline(
 
 
 def replay_event_palettes(initial_palette: bytes, events: list[dict], *,
-                          counter_rate: int, duration_seconds: int, fps: int) -> list[dict]:
+                          counter_rate: int, duration_seconds: int, fps: int,
+                          include_palette: bool = False) -> list[dict]:
     """Sample event patches at any output rate; verify every state transition.
 
     Replays the JSON data, without invoking the palette-cycle engine a
@@ -207,13 +208,16 @@ def replay_event_palettes(initial_palette: bytes, events: list[dict], *,
         while cursor < len(events) and events[cursor]["counter_tick"] <= tick:
             apply_event(events[cursor])
             cursor += 1
-        output.append({
+        sample = {
             "frame_index": frame,
             "timestamp_numerator": frame,
             "timestamp_denominator": fps,
             "modeled_counter_tick": tick,
             "palette_sha256": sha256(palette).hexdigest(),
-        })
+        }
+        if include_palette:
+            sample["palette_bytes"] = bytes(palette)
+        output.append(sample)
     # Verify all remaining events, including ticks between the final output
     # sample and the exclusive duration boundary. Otherwise low-FPS checks
     # could silently miss corrupt events near the end of the timeline.

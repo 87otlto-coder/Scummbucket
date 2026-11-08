@@ -13,6 +13,7 @@ from .palette_coverage import export_cycle_coverage
 from .palette_sequence import export_palette_sequence
 from .palette_gif import export_palette_gif
 from .palette_events import export_palette_events
+from .palette_bundle_render import render_palette_event_bundle
 
 
 def main(argv=None) -> int:
@@ -121,7 +122,37 @@ def main(argv=None) -> int:
     events.add_argument("--output-dir", required=True,
                         help="New folder for source PNG, original CLUT and timeline.json")
     events.add_argument("--json", action="store_true", help="Print complete JSON report")
+    event_render = sub.add_parser(
+        "render-events",
+        help="Render native indexed PNG frames from a saved palette event bundle, no game archive")
+    event_render.add_argument("bundle", help="Folder containing timeline.json and original indexed source")
+    event_render.add_argument("--fps", type=int, default=30,
+                              help="Sample existing event timeline at 1..60 frames/second")
+    event_render.add_argument("--output-dir", required=True,
+                              help="New folder for indexed PNG frames and render manifest")
+    event_render.add_argument("--json", action="store_true",
+                              help="Print complete result as JSON")
     args = parser.parse_args(argv)
+
+    if args.command == "render-events":
+        report = render_palette_event_bundle(
+            args.bundle, args.output_dir, fps=args.fps)
+        if args.json:
+            print(json.dumps(report, indent=2))
+        else:
+            sampling = report.get("sampling", {})
+            print(f"Palette event rendering: {report['status']} ({args.bundle})")
+            print(f"Frames: {report['frames_written']} at {args.fps} fps; "
+                  f"intermediate states not sampled: "
+                  f"{sampling.get('event_states_not_sampled', 'unknown')}")
+            print(f"Output: {report['output_dir']}")
+            print("Source data: event bundle only; no original archive reopened.")
+            print("Timing is replayed from the synthetic event model, "
+                  "not an observed ScummVM engine clock.")
+            for issue in report["diagnostics"]:
+                print(f"{issue['severity'].upper()} {issue['code']}: "
+                      f"{issue['message']}", file=sys.stderr)
+        return 0 if report["status"] == "success" else 2
 
     if args.command == "palette-events":
         report = export_palette_events(

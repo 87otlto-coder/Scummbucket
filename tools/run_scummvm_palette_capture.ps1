@@ -73,11 +73,17 @@ if ($Mode -eq 'normal') {
     Write-Host 'In the ScummVM debugger: scumm_vars[19] 6 ; room 23'
     Write-Host 'Remain in Room 23 for at least 256 updates, approximately 26 seconds.'
 } else {
-    Write-Host 'In the ScummVM debugger: scumm_vars[19] 60 ; room 23'
-    Write-Host 'At 1 Hz, 256 updates take about 4.3 minutes. Alternatively, after several updates'
-    Write-Host 'change to a nonzero room (for example room 22), then continue to close the log.'
+    Write-Host 'Stress mode only labels the capture; it does NOT change game timer values.'
+    Write-Host '1. From a different room, enter: room 23 (this automatically resumes the game).'
+    Write-Host '2. Once INSIDE Room 23, reopen the debugger and enter:'
+    Write-Host '       scumm_vars[19] 60'
+    Write-Host '       scumm_vars[19]'
+    Write-Host '       continue'
+    Write-Host '3. Confirm the readback said 60; remain in Room 23 for 35-40 seconds.'
+    Write-Host '4. Reopen the debugger, enter room 22, then exit the game after it resumes.'
+    Write-Host 'The initial capture samples may still have timer 6 before the live override.'
 }
-Write-Host 'Room 23 changes scenes and automatically closes the debugger; do not add continue.'
+Write-Host 'The room command auto-resumes; use continue only after manually setting the timer.'
 Write-Host 'Use the patched ScummVM window, not the normal ScummVM shortcut.'
 Write-Host ''
 
@@ -111,11 +117,35 @@ try {
 } finally {
     Pop-Location
 }
+$modeMismatch = $false
 if (Test-Path -LiteralPath $phaseReport) {
-    $phaseStatus = (Get-Content -LiteralPath $phaseReport -Raw | ConvertFrom-Json).status
-    Write-Host "Forensic phase report: $phaseReport (status: $phaseStatus)"
+    $phaseData = Get-Content -LiteralPath $phaseReport -Raw | ConvertFrom-Json
+    Write-Host "Forensic phase report: $phaseReport (status: $($phaseData.status))"
+    if ($phaseData.evidence -and $phaseData.evidence.timer_pair_distribution) {
+        $pairs = @($phaseData.evidence.timer_pair_distribution)
+        foreach ($item in $pairs) {
+            Write-Host ("Observed timer VAR_TIMER/VAR_TIMER_NEXT = {0}/{1}: {2} samples (#{3}..#{4})" -f
+                        $item.var_timer, $item.var_timer_next, $item.count,
+                        $item.first_sequence, $item.last_sequence)
+        }
+        if ($Mode -eq 'stress') {
+            $withSixty = @($pairs | Where-Object { $_.var_timer -eq 60 -and $_.var_timer_next -eq 60 })
+            if ($withSixty.Count -eq 0) {
+                $modeMismatch = $true
+                Write-Warning 'CAPTURE_MODE_NOT_OBSERVED: requested stress capture contained no 60/60 callbacks. Filename is NOT engine evidence.'
+                Write-Warning 'Set scumm_vars[19] 60 AFTER entering Room 23, read it back and then continue.'
+            }
+        }
+    } else {
+        Write-Warning 'Forensic analysis did not provide a valid timer distribution.'
+    }
 } else {
     Write-Warning "Forensic analysis did not produce a report (exit: $phaseExit)"
+}
+if ($modeMismatch) {
+    Write-Host "Preserved raw log: $raw"
+    Write-Host "Preserved forensic report: $phaseReport"
+    exit 2
 }
 if ($lastLine -notmatch '^SBP4[|]END[|][0-9]+[|](limit|room_exit)$') {
     Write-Warning 'Capture is incomplete. Raw log is preserved. No success report will be claimed.'

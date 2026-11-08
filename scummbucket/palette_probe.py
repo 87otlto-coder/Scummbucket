@@ -167,18 +167,22 @@ def prepare_cycles(records: list[dict]) -> tuple[list[dict], list[dict]]:
     return output, problems
 
 
-def advance_palette(palette: bytearray, cycles: list[dict]) -> list[dict]:
-    """One hypothetical scheduler update, with delta=1 counter unit.
+def advance_palette(palette: bytearray, cycles: list[dict], *,
+                    delta: int = 1) -> list[dict]:
+    """One engine-like palette update with explicit counter increment.
 
-    ScummVM: one rotation at most per update if counter >= delay.
-    Rendering/real-time scheduling and script-side modifications are unmodeled.
+    The caller supplies delta. In ScummVM v5, it is the greater of
+    VAR_TIMER and VAR_TIMER_NEXT at the point cyclePalette() runs.
+    This function models at most one rotation per cycle per call.
     """
+    _require(type(delta) is int and 0 <= delta <= 65535, "COUNTER_DELTA_INVALID",
+             "Counter delta must be an integer between 0 and 65535")
     changed = []
     for cycle in cycles:
         delay = cycle["delay_counter_units"]
         if not delay or cycle["start_color"] >= cycle["end_color"]:
             continue
-        cycle["counter"] += 1
+        cycle["counter"] += delta
         if cycle["counter"] < delay:
             continue
         cycle["counter"] %= delay
@@ -205,13 +209,17 @@ def _render_rgba(indexed: bytes, palette: bytes) -> bytes:
 
 
 def simulate_palette_snapshots(indexed: bytes, initial_palette: bytes,
-                               cycles: list[dict], ticks: list[int]) -> list[dict]:
+                               cycles: list[dict], ticks: list[int], *,
+                               counter_increment: int = 1) -> list[dict]:
     """Calculate reproducible *hypothetical* frames and event logs, not runtime."""
     _require(bool(ticks) and len(ticks) <= MAX_SNAPSHOTS and
              len(set(ticks)) == len(ticks) and all(
                  type(tick) is int and 0 <= tick <= MAX_SIMULATED_TICKS for tick in ticks),
              "TICKS_INVALID", f"Choose 1..{MAX_SNAPSHOTS} distinct ticks from "
                               f"0..{MAX_SIMULATED_TICKS}")
+    _require(type(counter_increment) is int and 1 <= counter_increment <= 255,
+             "COUNTER_INCREMENT_INVALID",
+             "Synthetic per-update counter increment must be 1..255")
     _require(len(initial_palette) == 768, "PALETTE_INVALID",
              "Expected exactly 256 RGB palette entries")
     _require(all(0 <= idx <= 255 for idx in indexed), "INDEX_INVALID",
@@ -223,13 +231,17 @@ def simulate_palette_snapshots(indexed: bytes, initial_palette: bytes,
     initial_rgb = _render_rgb(indexed, initial_palette)
     for tick in range(max(ticks) + 1):
         if tick:
-            for event in advance_palette(palette, cycles):
-                history.append({"simulated_counter_tick": tick, **event})
+            for event in advance_palette(palette, cycles, delta=counter_increment):
+                history.append({"synthetic_update_index": tick,
+                                "cumulative_counter_units": tick * counter_increment,
+                                **event})
         if tick in requested:
             current = _render_rgb(indexed, palette)
             changed = sum(initial_rgb[p:p + 3] != current[p:p + 3]
                           for p in range(0, len(current), 3))
-            frames.append({"tick": tick, "palette": bytes(palette),
+            frames.append({"tick": tick,
+                           "cumulative_counter_units": tick * counter_increment,
+                           "palette": bytes(palette),
                            "visible_changed_pixels": changed,
                            "total_rotation_events": len(history),
                            "palette_sha256": sha256(palette).hexdigest(),
@@ -238,16 +250,18 @@ def simulate_palette_snapshots(indexed: bytes, initial_palette: bytes,
 
 
 def palette_probe(input_path: str | Path, output_dir: str | Path, *,
-                  room_id: int, ticks: list[int]) -> dict:
+                  room_id: int, ticks: list[int],
+                  counter_increment: int = 1) -> dict:
     src, dest = Path(input_path), Path(output_dir)
     report = {"schema_version": "0.1", "operation": "palette_probe",
               "input": str(src), "output_dir": str(dest),
-              "status": "failed", "selection": {"room_id": room_id, "ticks": ticks},
+              "status": "failed", "selection": {"room_id": room_id, "ticks": ticks,
+                                                    "counter_increment": counter_increment},
               "summary": {"snapshots": 0, "visible_cycle_pixels": 0,
                           "cycle_records": 0},
               "files": [], "cycles": [], "snapshots": [], "diagnostics": [],
               "verification": {"engine_source": "ScummVM palette.cpp initCycl/cyclePalette",
-                               "clock": "hypothetical 1 counter unit per update",
+                               "clock": "hypothetical fixed counter increment per engine-like update",
                                "runtime_observed": False,
                                "rendering_reference_verified": False,
                                "script_interference_modelled": False}}
@@ -255,6 +269,10 @@ def palette_probe(input_path: str | Path, output_dir: str | Path, *,
         report["diagnostics"].append({
             "severity": severity, "code": code, "message": message,
             "source": str(src), "offset": offset, "resource_id": room_id})
+    if type(counter_increment) is not int or not 1 <= counter_increment <= 255:
+        problem("COUNTER_INCREMENT_INVALID",
+                "Synthetic counter increment must be between 1 and 255")
+        return report
     if type(room_id) is not int or not 0 <= room_id <= 255:
         problem("ROOM_ID_INVALID", "Room ID must be between 0 and 255")
         return report
@@ -321,7 +339,8 @@ def palette_probe(input_path: str | Path, output_dir: str | Path, *,
                             "background_zplanes_present_not_composited":
                                 bg["background_zplanes"]}
         frames = simulate_palette_snapshots(bg["indexed_pixels"],
-                                            bg["initial_palette"], cycles, ticks)
+                                            bg["initial_palette"], cycles, ticks,
+                                            counter_increment=counter_increment)
         dest.mkdir(parents=True, exist_ok=True)
         report["cycles"] = cycles
         for frame in frames:
@@ -332,7 +351,10 @@ def palette_probe(input_path: str | Path, output_dir: str | Path, *,
             digest = _write_new_verified(dest / filename, image)
             report["files"].append({"filename": filename, "sha256": digest})
             report["snapshots"].append({
-                "synthetic_counter_tick": frame["tick"], "filename": filename,
+                "synthetic_counter_tick": frame["tick"],
+                "synthetic_update_index": frame["tick"],
+                "cumulative_counter_units": frame["cumulative_counter_units"],
+                "filename": filename,
                 "visible_changed_pixels_vs_initial": frame["visible_changed_pixels"],
                 "cycle_rotation_events": frame["total_rotation_events"],
                 "palette_sha256": frame["palette_sha256"]})

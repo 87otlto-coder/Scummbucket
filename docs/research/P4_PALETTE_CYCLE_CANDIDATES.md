@@ -45,7 +45,7 @@ Read-only analysis of the supplied original DOS MI2 resource pair, cross-checked
 
 The engine initializes CYCL entries on room load. In this v5 format it calculates the cycle delay as **integer 16384 / raw cycle rate**. Its cycle updater advances a counter using the larger of two engine timer variables and rotates the palette range when the threshold is reached, **at most once per invocation**. Bit 1 of the raw flags controls reverse direction. The unit is an **engine counter unit, not a millisecond or guaranteed rendered frame**. Global scripts and room code can still alter, stop or restart cycling.
 
-The new palette-probe command decodes the original background to native palette indices (RMIM / IM00 / SMAP) and rotates a copy of the original CLUT using a deliberately synthetic scheduler: **one counter unit per simulated update**. The resulting images are **hypothetical** background-palette snapshots, not recordings of gameplay.
+The `palette-probe` command decodes the original background to native palette indices (RMIM / IM00 / SMAP) and rotates a copy of the original CLUT using a deliberately synthetic scheduler. Its default is **one counter unit per simulated update**, and the new `--counter-increment` option supports other explicit counter-unit assumptions. These images remain **hypothetical** background-palette snapshots, not recordings of gameplay.
 
 | Observation | Room 23 | Room 109 |
 | --- | ---: | ---: |
@@ -92,6 +92,14 @@ ScummVM's palette rotation tests flag bit 1 for direction, but this does not est
 Room 64 includes an anomalous raw cycle rate of 65494, yielding a computed integer delay of zero in the inspected engine logic, and its range 97–98 is absent from the decoded static room background. This raises questions rather than resolving the suspicious 0xD906 raw flags.
 
 **Evidence boundary:** We have now reproduced plausible indexed-background palette changes under explicit simulation assumptions. We have *not* verified executed gameplay cycles, runtime ticks, script interference, compositing of actors/objects/masks, or pixel-perfect ScummVM reference rendering.
+
+### Next verification step: exact engine timer and palette snapshots
+
+The prototype now has a strict comparison command, `verify-palette-trace`, for **externally captured** ScummVM palette data at the point immediately after `cyclePalette()` and before `palManipulate()`. ScummVM's main SCUMM loop writes `VAR_TIMER` from its current delta, and `cyclePalette()` advances each counter using `max(VAR_TIMER, VAR_TIMER_NEXT)`. Input capture must contain both values and all 256 RGB colors for each update, along with a reproducible source archive hash, engine revision, baseline palette and sequential update ID.
+
+The comparator reports per-update palette SHA-256, number of differing palette entries, and the first sample at which the model diverges. It does **not** authenticate supplied traces or equate palette agreement with verified on-screen animation. Its synthetic regression tests pass, but **no real ScummVM trace has been supplied**.
+
+For the executable contract, Windows commands and non-compiling screenshot observation alternative, consult [P4 Runtime Palette Verification](P4_RUNTIME_PALETTE_VERIFICATION.md).
 
 ## Proposed verification experiment
 

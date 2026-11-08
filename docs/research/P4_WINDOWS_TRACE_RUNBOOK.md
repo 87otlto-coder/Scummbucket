@@ -1,6 +1,6 @@
 # P4 Room 23 — Windows capture runbook (ScummVM v2026.4.0)
 
-**Status, 2026-11-08:** The first actual MSYS2 UCRT64 build of the V1 hook reached the SCUMM engine compiler, then failed because `common/forbidden.h` blocks `FILE`, `fprintf`, `fopen`, `fclose`, `fputc`, and `getenv` in engine code. The V2 hook now uses ScummVM-native `Common::DumpFile`; guarded in-place V1-to-V2 upgrades are supported. **The corrected V2 full Windows compile and real engine capture are not yet verified.** Game assets remain outside Git.
+**Status, 2026-11-08:** The user reported **BUILD COMPLETE** for the corrected V2 MSYS2 UCRT64 SCUMM-only build. This is a user-reported successful full ScummVM compile, **not an independently inspected executable or runtime capture**. The earlier V1 build failed because `common/forbidden.h` blocks C stdio and environment functions inside engines; V2 uses `Common::DumpFile` and the corrected build helper checks the V2 marker. **Actual Room 23 trace capture, importer outcome, and palette verification remain outstanding.** Game assets remain outside Git.
 
 This runbook uses a separate experimental ScummVM checkout so the original ScummVM installation and original game archives stay untouched.
 

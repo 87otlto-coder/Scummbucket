@@ -56,6 +56,14 @@ This confirms that the new CLI's on-device source reader and phase-aware replay 
 
 A subsequent synthetic stress-phase check of the original eight 60-unit cycle patterns showed that short prefixes may be nonunique: an early phase can require **16** samples to select a unique phase within the bounded 500-position search. The default research calibration ceiling has therefore been extended from eight to **24** samples. A dedicated 60-unit regression case was added to require unique phase selection at 16 samples; this **new code and test have not yet been run on the user's Windows machine**.
 
+## Additional complete capture: mode label is not timer evidence
+
+The user supplied a subsequent, `-Mode stress`-labeled, fully completed **256-sample** Room 23 trace (raw SHA-256 `5d9ee5d9a212a71a7446693a6c8a2cd51693c6343a3f906dd43fb9cc0f1e5f33`). Its actual timer distribution was **256 at 6/6 and zero at 60/60**, with 100-ms typical cadence over 25,498 ms, no clock gaps and valid `SBP4|END|256|limit`. The phase model matched **256/256** full RGB palette samples with **253 held out**. This is **normal-speed confirmation**, not 1-Hz confirmation.
+
+The strict converter successfully imported the complete trace; the old baseline verifier still reports `TRACE_INITIAL_PALETTE_MISMATCH` (indices 1,2,3,6,180,181). That result is a **precondition failure**, not a detected modeled RGB sample mismatch.
+
+The research report now includes `evidence.timer_pair_distribution`; the Windows runner prints these pairs and raises `CAPTURE_MODE_NOT_OBSERVED` when `-Mode stress` does not contain any **60/60** callbacks. Setting the timer before `room 23` may lose the override during scene entry. For the next stress test, enter Room 23 **first**, reopen the debugger while already inside the room, then apply and read back `scumm_vars[19] 60` followed by `continue`. See [complete capture diagnosis](P4_ROOM23_COMPLETE_6UNIT_TRACE.md) and updated [Windows procedure](P4_WINDOWS_TRACE_RUNBOOK.md).
+
 ## Next: collect a 60-unit capture
 
 Use a fresh patched ScummVM process (same successfully built V2 binary; **no rebuild required**). The PowerShell helper automatically produces a phase-aware report before enforcing strict END completeness.

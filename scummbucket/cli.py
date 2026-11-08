@@ -16,6 +16,7 @@ from .palette_events import export_palette_events
 from .palette_bundle_render import render_palette_event_bundle
 from .palette_event_gif import export_palette_event_gif
 from .engine_trace_import import import_scummvm_palette_log
+from .room23_capture_research import analyze_room23_capture
 
 
 def main(argv=None) -> int:
@@ -156,7 +157,39 @@ def main(argv=None) -> int:
                             help="New trace JSON file; existing output is never overwritten")
     engine_log.add_argument("--json", action="store_true",
                             help="Print detailed import report")
+    forensic = sub.add_parser(
+        "analyze-room23-palette-log",
+        help="Forensic phase-aware analysis of a Room 23 raw SBP4 log, including incomplete captures")
+    forensic.add_argument("input", help="Authorized original DOS VGA MI2 ZIP, game folder or index file")
+    forensic.add_argument("--raw-log", required=True, help="Actual unmodified SBP4 log from patched ScummVM")
+    forensic.add_argument("--output", required=True, help="New JSON forensic report; no overwrites")
+    forensic.add_argument("--json", action="store_true", help="Print entire forensic report")
     args = parser.parse_args(argv)
+
+    if args.command == "analyze-room23-palette-log":
+        report = analyze_room23_capture(args.input, args.raw_log)
+        try:
+            with open(args.output, "x", encoding="utf-8") as output_file:
+                json.dump(report, output_file, indent=2)
+                output_file.write("\n")
+        except OSError as exc:
+            print(f"ERROR OUTPUT_WRITE_FAILED: {type(exc).__name__}: {exc}",
+                  file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(report, indent=2))
+        else:
+            evidence = report.get("evidence") or {}
+            print(f"Room 23 raw palette research: {report['status']}")
+            print(f"Cycle samples matching: {evidence.get('samples_matching_cycling', 0)} "
+                  f"/ {evidence.get('sample_count', 0)}; "
+                  f"held-out full-palette matches: {evidence.get('heldout_samples_matching', 0)}")
+            print("Capture completion is reported separately. An incomplete trace "
+                  "never becomes a complete capture through phase alignment.")
+            for issue in report["diagnostics"]:
+                print(f"{issue['severity'].upper()} {issue['code']}: "
+                      f"{issue['message']}", file=sys.stderr)
+        return 0 if report["status"] == "success" else 2
 
     if args.command == "import-scummvm-palette-log":
         report = import_scummvm_palette_log(

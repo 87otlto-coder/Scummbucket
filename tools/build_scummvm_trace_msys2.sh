@@ -14,7 +14,7 @@ if [ "$(printenv MSYSTEM)" != "UCRT64" ]; then
   exit 2
 fi
 
-for tool in g++ make git sdl2-config python; do
+for tool in g++ make git sdl2-config; do
   if ! command -v "$tool" >/dev/null 2>&1; then
     echo "ERROR: '$tool' missing. Install MSYS2 base-devel, GCC, SDL2 and Python first." >&2
     exit 2

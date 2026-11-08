@@ -81,6 +81,43 @@ continue
 
 Record whether `VAR_TIMER=60` and `VAR_TIMER_NEXT=60` persisted, and whether palette colors visibly update roughly once a second. More quantitative fidelity still requires the separately instrumented full-palette capture bridge. The test environment is disposable; original game archives remain read-only.
 
+## Real-engine stress-test result (user debugger observations)
+
+**Date:** 2026-11-08. **Status:** **Confirmed scheduler override and user-observed visual effect**, not a full palette trace.
+
+The user ran the stress test in original DOS VGA MI2 Room 23:
+
+```text
+room                   => 23
+scumm_vars[47]         => 208701
+scumm_speed            => 0
+scumm_vars[19] 60      => 60
+continue
+scumm_vars[19]         => 60
+scumm_vars[46]         => 60
+scumm_vars[47]         => 209067
+scumm_speed            => 0
+```
+
+The user explicitly reported that **background animations became visibly more abrupt**. This is a first-person visual observation, not an RGB/palette-frame capture, and should not be silently upgraded to proof of the specific 28-versus-32 modeled rotation counts.
+
+**Derived:** `VAR_TIMER_TOTAL` advanced by `209067 - 208701 = 366` units. The decomposition `366 = 6 + 6 × 60` is consistent with one already-selected six-unit loop followed by six 60-unit loops. That is a **source-supported reconstruction**, not a logged sequence of seven individual calls.
+
+**Important mid-wait timer transition:** In [`scumm.cpp`](https://github.com/scummvm/scummvm/blob/v2026.4.0/engines/scumm/scumm.cpp), the loop reads `delta` from `VAR_TIMER_NEXT` **before** `waitForTimer(delta * 4)`. The debugger event is polled inside `waitForTimer()` via `parseEvents()`. Consequently, a debugger edit to `VAR_TIMER_NEXT=60` may happen *after a six-unit delta was latched*; once gameplay resumes, the next `scummLoop(6)` would add **6 units** to `VAR_TIMER_TOTAL` and set `VAR_TIMER=6`.
+
+However, later in that *same* loop [`cyclePalette()`](https://github.com/scummvm/scummvm/blob/v2026.4.0/engines/scumm/palette.cpp) applies `max(VAR_TIMER,VAR_TIMER_NEXT)`: **max(6,60) = 60 palette units**. Thus the palette rotation may jump by 60 units even on a transitional engine update that advances cumulative game time by only 6. That can matter to live RGB palette reconstruction and means one must not infer the palette increment from the change in `VAR_TIMER_TOTAL` alone during a debugger intervention.
+
+This transition is now covered by the **synthetic** `test_mid_wait_scheduler_override_uses_greater_palette_delta` regression in `tests/test_palette_trace.py`. That test checks the existing trace verifier handles timer pairs (6,60) and (60,60) with palette increments (60,60), without claiming the exact pair was instrumentally observed in this game session. The regression was committed; a fresh full test-suite run was not available during the remote edit.
+
+**Conclusions:**
+- Live `VAR_TIMER_NEXT=60` override persisted and `VAR_TIMER=60` was subsequently observed, with fast mode off.
+- User observed visibly more abrupt background animation in Room 23.
+- The source supports a concrete six-unit-to-sixty-unit handoff explanation for the +366 counter change, but callback count and actual palette phases remain inferred.
+- Whether exactly four rotations were skipped in this specific run is **unverified**; game-phase, possible scripts and the handoff alter expectations.
+- No proprietary game files, screenshots or captured palettes were added to the repository.
+
+**Recommended next:** Run the already prepared pinned ScummVM palette-capture hook to log true ordered timer pairs and post-cycle RGB palettes. The regular debugger has now established scheduler controllability; repeatedly varying timing manually offers diminishing marginal evidence. Restore `scumm_vars[19] 6` to return to the earlier observed runtime configuration, if it has not already been restored.
+
 ## Reproduce the ordinary 5-Hz preview with ScummBucket
 
 On Windows PowerShell from the active feature branch:

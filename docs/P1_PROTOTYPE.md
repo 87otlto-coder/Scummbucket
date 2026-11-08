@@ -227,7 +227,7 @@ The optional palette-probe command builds **hypothetical** palette snapshots fro
 Source observations from the fingerprinted original DOS MI2 archive:
 - **Room 23:** 320 x 144 indexed background, eight cycle records, **480 pixels using cycled palette indices**; simulated 35 and 71 counter-unit updates change 65 and 373 RGB pixel positions relative to the initial palette.
 - **Room 109:** 320 x 200 indexed background, five cycle records, **65 pixels using cycled indices**; the same hypothetical updates change 50 and 30 positions.
-- ScummVM's cycle setup derives an internal threshold as integer **16384 / raw rate**. The probe simulates **one counter unit per update** and does not assign real milliseconds or infer the engine's actual runtime update cadence.
+- ScummVM's cycle setup derives an internal threshold as integer **16384 / raw rate**; its runtime cycle update adds `max(VAR_TIMER, VAR_TIMER_NEXT)` counter units. The probe defaults to **one synthetic counter unit per update**, with `--counter-increment` available for explicitly hypothetical alternatives. Neither setting assigns real milliseconds or establishes the engine's actual update cadence.
 
 ```powershell
 cd "C:\Users\87otl\ScummBucket"
@@ -237,6 +237,8 @@ python -m scummbucket palette-probe "D:\old" --room 23 --ticks 0 35 71 107 --out
 ```
 
 It exports PNG snapshots at the original room dimensions plus a manifest containing source hashes, exact cycle records, synthetic counter units, palette hashes, changed-pixel counts and diagnostics. There is **no claim of real game animation playback**. Actors, objects, room depth masks, script-side cycle changes, game scheduler timing and independent pixel comparison against ScummVM remain unverified.
+
+A separate **`verify-palette-trace`** command can compare a strict, externally recorded ScummVM palette trace against the decoded source palette and actual captured timer variable values, reporting the first mismatch and affected palette indices. The trace file must include full RGB palette bytes, game fingerprint, engine revision and an exact `cyclePalette` capture point. Only **synthetic trace comparisons** have been tested to date. No real engine palette-state trace or exact playback timing has been verified. See [runtime verification procedure](research/P4_RUNTIME_PALETTE_VERIFICATION.md).
 
 See the [palette-cycle candidate register and exact observations](research/P4_PALETTE_CYCLE_CANDIDATES.md). The four existing CYCLE_FLAGS_UNVERIFIED warnings remain present.
 
@@ -252,7 +254,7 @@ See the [palette-cycle candidate register and exact observations](research/P4_PA
 
 ## Verification
 
-- **GitHub Actions: 112 tests discovered, 109 passed, 3 optional private-integration tests skipped, 0 failures** ([verified workflow run](https://github.com/87otlto-coder/Scummbucket/actions/runs/42462828820)). The new synthetic palette probe tests cover actual indexed source decoding, hypothetical color rotation and failure reporting, **not** gameplay animation; no proprietary files run in CI. The user independently completed real `descumm` checks on scripts 201 and 202.
+- **GitHub Actions: 127 tests discovered, 124 passed, 3 optional private-integration tests skipped, 0 failures** ([verified workflow run](https://github.com/87otlto-coder/Scummbucket/actions/runs/42464447892)). The new delta-model and external palette-trace comparisons use **synthetic fixtures**, not gameplay data. Private-archive validation remains opt-in, and the user previously completed real `descumm` instruction checks for scripts 201 and 202.
 - User-supplied MI2 ZIP passed structural inventory: 110 rooms, 127 palette-cycle records in 21 rooms and 158 multi-state object images.
 - New resource-ID extraction tests cover two distinct scripts sharing a room, exact byte matches in both representations, empty and invalid slots, corrupt links, overwrite refusal and the new CLI.
 - Room 4 `CYCL` chunk exports in both `decoded` and `stored` modes were verified byte-for-byte against the original `MONKEY2.001` source slices.

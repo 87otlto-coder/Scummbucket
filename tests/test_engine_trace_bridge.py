@@ -218,6 +218,13 @@ class PinnedPatcherTest(unittest.TestCase):
             self.assertIn(b"unidentified local change", self.file.read_bytes())
             self.assertEqual(backup.read_bytes(), original)
 
+    def test_windows_build_helper_requires_current_hook_marker(self):
+        # Regression for the initially shipped build script checking V1 after
+        # the generator had been upgraded to V2.
+        build_script = (ROOT / "tools/build_scummvm_trace_msys2.sh").read_text()
+        self.assertIn("SCUMMBUCKET_P4_PALETTE_TRACE_V2", build_script)
+        self.assertIn("Legacy V1 hook still present", build_script)
+
     def test_v2_hook_uses_supported_scummvm_io(self):
         with patch.object(patcher, "PINNED_CPP_BLOB", self.blob):
             patched = patcher.patch_source(self.fixture)

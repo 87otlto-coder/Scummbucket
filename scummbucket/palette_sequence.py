@@ -271,7 +271,11 @@ def export_palette_sequence(input_path: str | Path, output_dir: str | Path, *,
             "background_zplanes_present_but_not_composited":
                 bg["background_zplanes"],
         }
-        result["cycles"] = cycles
+        # Definitions/provenance should not be mistaken for live engine state.
+        result["cycles"] = [{
+            key: value for key, value in cycle.items()
+            if key not in ("counter", "rotation_events")
+        } for cycle in cycles]
         # Preflight all planned names to avoid preventable partial outputs.
         original_name = f"room-{room_id:03d}_source-indexed.png"
         palette_name = f"room-{room_id:03d}_initial-clut.rgb"
@@ -321,6 +325,19 @@ def export_palette_sequence(input_path: str | Path, output_dir: str | Path, *,
                 "total_rotations": frame["rotation_events_total"],
             })
             result["summary"]["frames_written"] += 1
+        if all(not frame["rotations_this_frame"] for frame in result["frames"]):
+            diagnostic(
+                "SEQUENCE_NO_ROTATIONS_IN_DURATION",
+                "No palette-cycle rotation occurred during the requested interval; "
+                "increase duration or inspect rate and timing assumptions",
+                severity="warning")
+        if all(frame["palette_sha256"] ==
+               bg["initial_palette_sha256"] for frame in result["frames"]):
+            diagnostic(
+                "SEQUENCE_NO_PALETTE_DIFFERENCE",
+                "All exported palettes match the initial palette; "
+                "do not interpret the resulting static sequence as active animation",
+                severity="warning")
         result["status"] = "success"
     except (OSError, ValueError, InspectionError, ImageDecodeError,
             PaletteProbeError, SequenceError) as exc:

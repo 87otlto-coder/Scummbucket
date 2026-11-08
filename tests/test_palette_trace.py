@@ -84,6 +84,39 @@ class PaletteTraceTest(unittest.TestCase):
         self.assertEqual([len(s["rotation_events"]) for s in outcome["samples"]],
                          [1, 1, 0, 1])
 
+    def test_mid_wait_scheduler_override_uses_greater_palette_delta(self):
+        """A game-loop delta latched at 6 can coexist with next timer 60.
+
+        SCUMM reads VAR_TIMER_NEXT before waiting, but palette cycling later
+        advances using max(VAR_TIMER, VAR_TIMER_NEXT). This synthetic trace
+        reproduces that transition without claiming any engine capture.
+        """
+        cycles, issues = prepare_cycles(self.records)
+        self.assertEqual(issues, [])
+        palette = bytearray(self.palette)
+        samples = []
+        for seq, (timer, next_timer) in enumerate(((6, 60), (60, 60)), 1):
+            advance_palette(palette, cycles, delta=max(timer, next_timer))
+            samples.append({
+                "sequence": seq,
+                "var_timer": timer,
+                "var_timer_next": next_timer,
+                "palette_rgb_hex": palette.hex(),
+            })
+        self.trace["samples"] = samples
+        outcome = compare_palette_samples(
+            self.palette, self.records, self.trace,
+            room_id=1, source_sha=self.original_sha)
+        self.assertEqual(outcome["status"], "success")
+        self.assertEqual(outcome["samples_matched"], 2)
+        self.assertEqual([s["timer"] for s in outcome["samples"]], [6, 60])
+        self.assertEqual([s["counter_delta"] for s in outcome["samples"]],
+                         [60, 60])
+        # These two callbacks would advance VAR_TIMER_TOTAL by only
+        # 6 + 60, *not* by the modeled palette counter total of 120.
+        self.assertEqual(6 + 60, 66)
+        self.assertFalse(outcome["trace_authenticated"])
+
     def test_first_palette_mismatch_reports_differing_indices(self):
         # Sequence 2 rotates back to the original palette. Deliberately
         # change one color to demonstrate an exact, observable mismatch.

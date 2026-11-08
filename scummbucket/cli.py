@@ -8,6 +8,7 @@ from .descumm_verification import verify_descumm
 from .inspector import inspect
 from .object_images import export_object_images
 from .palette_probe import palette_probe
+from .palette_trace import verify_palette_trace
 
 
 def main(argv=None) -> int:
@@ -66,7 +67,40 @@ def main(argv=None) -> int:
                          help="Simulated timer counter units added on each update (default 1, not a real runtime measurement)")
     palette.add_argument("--output-dir", required=True, help="New non-overwriting PNG output folder")
     palette.add_argument("--json", action="store_true", help="Print JSON report")
+    trace = sub.add_parser("verify-palette-trace",
+        help="Compare externally recorded SCUMM palette state to source-based cycle simulation")
+    trace.add_argument("input", help="Authorized MI2 archive, folder or index file")
+    trace.add_argument("--room", type=int, required=True, help="Room ID 0..255")
+    trace.add_argument("--trace", required=True, help="JSON trace captured after engine cyclePalette")
+    trace.add_argument("--output", help="Write a new JSON verification report; never overwrite")
+    trace.add_argument("--json", action="store_true", help="Print complete JSON")
     args = parser.parse_args(argv)
+
+    if args.command == "verify-palette-trace":
+        report = verify_palette_trace(args.input, args.trace, room_id=args.room)
+        if args.output:
+            try:
+                with open(args.output, "x", encoding="utf-8") as f:
+                    json.dump(report, f, indent=2)
+                    f.write("\n")
+            except OSError as exc:
+                print(f"ERROR OUTPUT_WRITE_FAILED: {type(exc).__name__}: {exc}",
+                      file=sys.stderr)
+                return 2
+        if args.json:
+            print(json.dumps(report, indent=2))
+        else:
+            summary = report.get("result") or {}
+            print(f"External palette trace comparison: {report['status']} ({args.input})")
+            print(f"Room {args.room}: {summary.get('samples_checked', 0)} samples, "
+                  f"{summary.get('samples_matched', 0)} matches, "
+                  f"{summary.get('samples_mismatched', 0)} mismatches")
+            print("This checks user-supplied palette state, not screenshot pixels, "
+                  "trace authenticity, or playback timing.")
+            for issue in report["diagnostics"]:
+                print(f"{issue['severity'].upper()} {issue['code']}: "
+                      f"{issue['message']}", file=sys.stderr)
+        return 0 if report["status"] == "success" else 2
 
     if args.command == "palette-probe":
         report = palette_probe(

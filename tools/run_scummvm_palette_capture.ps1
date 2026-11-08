@@ -71,8 +71,10 @@ try {
     if (Test-Path -LiteralPath (Join-Path $ucrtBin 'SDL2.dll')) {
         $env:PATH = "$ucrtBin;$oldPath"
     }
-    & $exe
-    Write-Host "ScummVM exit code: $LASTEXITCODE"
+    # ScummVM can use the Windows GUI subsystem. Start-Process -Wait prevents
+    # the verifier from racing the still-running engine or its raw trace file.
+    $engineProcess = Start-Process -FilePath $exe -WorkingDirectory $Checkout -Wait -PassThru
+    Write-Host "ScummVM exit code: $($engineProcess.ExitCode)"
 } finally {
     $env:PATH = $oldPath
     if ($null -eq $oldCapture) {

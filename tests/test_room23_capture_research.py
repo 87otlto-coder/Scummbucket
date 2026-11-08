@@ -121,6 +121,17 @@ class Room23CaptureResearchTest(unittest.TestCase):
             parse_room23_hook_log(raw)
         self.assertEqual(error.exception.code, "RESEARCH_SEQUENCE_INVALID")
 
+    def test_windows_runner_preserves_strict_end_gate(self):
+        from pathlib import Path
+        script = (Path(__file__).resolve().parents[1] /
+                  "tools" / "run_scummvm_palette_capture.ps1").read_text()
+        forensic_at = script.index("analyze-room23-palette-log")
+        end_gate_at = script.index("if ($lastLine -notmatch")
+        strict_at = script.index("import-scummvm-palette-log")
+        self.assertLess(forensic_at, end_gate_at)
+        self.assertLess(end_gate_at, strict_at)
+        self.assertIn("phase-research.json", script)
+
     def test_outside_phase_limit_reports_unresolved_not_success(self):
         parsed = parse_room23_hook_log(self.make_log())
         result = compare_room23_palette_capture(

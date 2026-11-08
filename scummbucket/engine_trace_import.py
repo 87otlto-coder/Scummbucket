@@ -122,8 +122,7 @@ def parse_scummvm_palette_log(data: bytes, *, engine_commit: str,
             "runtime_trace_authenticated": False,
             "source_claim_authenticated": False,
             "timer_values_observed_at_cycle_call": True,
-            "source_game_archive_reopened_by_scummbucket": False,
-            "complete_room_lifetime_captured": ending[3] == "room_exit",
+            "capture_ended_by_room_exit": ending[3] == "room_exit",
             "engine_commit_supplied_by_operator": True,
         },
     }
@@ -179,6 +178,11 @@ def import_scummvm_palette_log(raw_path: str | Path, resource_path: str | Path,
             raw_bytes, engine_commit=engine_commit, game_resource_sha256=source_sha)
         trace["raw_hook_log_sha256"] = result["raw_log_sha256"]
         trace["resource_file_bytes"] = resource.stat().st_size
+        trace["import_provenance"] = {
+            "local_source_file_opened_for_hashing": True,
+            "original_resource_decoded_by_importer": False,
+            "resource_hash_verified_against_operator_expectation": expected_source_sha256 is not None,
+        }
         encoded = (json.dumps(trace, indent=2) + "\n").encode("utf-8")
         _need(len(encoded) <= 1024 * 1024, "ENGINE_TRACE_SIZE_INVALID",
               "Produced trace exceeds existing verifier's 1 MB limit")

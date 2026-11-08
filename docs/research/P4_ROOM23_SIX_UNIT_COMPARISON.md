@@ -53,6 +53,22 @@ The newer GIF is consistent with the prior synthetic reconstruction *on the obse
 
 The earlier 20-segment version remains the event-resolved regression; the new 14-segment version is a **candidate engine-cadence presentation regression**. Do not rewrite the first artifact's timing metadata or claim that either version is fully runtime-verified.
 
+### Reproducibility test
+
+The optional `tests/test_private_room23_cadence_compare.py` runs entirely against the two existing user-generated GIFs and adjacent manifests. It requires Pillow, compares file hashes and decoded RGB states, verifies 40 matching 100-ms samples, and checks the 480-pixel spatial union. It does **not** require proprietary game archives. Public CI skips when either private path is absent.
+
+On Windows PowerShell, set both variables to the exact existing files, then invoke the test:
+
+```powershell
+$env:SCUMMBUCKET_ROOM23_EVENT_GIF = "C:\Users\87otl\ScummBucket\exports\room23-event-preview-20261108-151952.gif"
+$env:SCUMMBUCKET_ROOM23_SIXUNIT_GIF = "C:\Users\87otl\ScummBucket\exports\room23-sixunit-preview-20261108-161024.gif"
+python -m unittest discover -s tests -p "test_private_room23_cadence_compare.py" -v
+Remove-Item Env:SCUMMBUCKET_ROOM23_EVENT_GIF
+Remove-Item Env:SCUMMBUCKET_ROOM23_SIXUNIT_GIF
+```
+
+Locally, this test passed once with both supplied files and was confirmed skipped when no private-file environment variables were present. It remains a **synthetic animation-model comparison test**, never a substitute for actual ScummVM palette trace evidence.
+
 ### Remaining tasks
 
 1. Use a build-instrumented ScummVM `cyclePalette()` capture to record every `VAR_TIMER`, `VAR_TIMER_NEXT` and post-cycle RGB palette for consecutive callbacks; existing [capture bridge](P4_SCUMMVM_ENGINE_TRACE_CAPTURE.md) targets this.

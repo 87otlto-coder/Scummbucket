@@ -1,6 +1,6 @@
 # P4 — Capture actual Room 23 palette/timer samples from ScummVM
 
-**Status:** Instrumentation patcher and strict trace importer implemented and tested with synthetic fixtures. The inserted C++ code has been compiled and exercised in a standalone mock SCUMM engine, **not yet compiled into the full ScummVM application or run against real Monkey Island 2 gameplay**. No engine-derived trace exists yet. The established Room 23 GIF remains a **synthetic** replay reference.
+**Status:** Pinned source patcher, strict trace importer and Windows run helpers are implemented. The original V1 hook failed its first **real MSYS2 UCRT64 build** because it used forbidden C standard-library APIs. The corrected V2 hook uses ScummVM-native `Common::DumpFile` and supports guarded V1-to-V2 upgrade; **V2 compilation and actual Room 23 engine capture remain unverified**. No engine-derived palette trace exists yet.
 
 ## Source and capture contract
 
@@ -14,7 +14,7 @@ The ScummVM code path for SCUMM v5 is:
 
 The injected hook, in that *second* function, captures `_currentPalette` immediately **before the first `cyclePalette()` call in Room 23** and after each such call, but **before `palManipulate()`**. It also reads the actual `VAR_TIMER`, `VAR_TIMER_NEXT` values and `_system->getMillis()` on every call. The hook does not interfere with cycle logic or modify the source/game archives.
 
-It is opt-in via the `SCUMMBUCKET_PALETTE_TRACE_PATH` environment variable and limited to original **DOS Monkey Island 2**, SCUMM v5, room **23**, non-EGA-dithered renderer. It records at most **256 consecutive calls**; it closes the log with `END|256|limit`, or with `END|N|room_exit` when the game leaves the room. It refuses to overwrite an existing raw log. It writes no raw game files, scripts, sound or images, only the active 768-byte RGB palette per sample and timer values. The trace is private and must not be committed.
+The **separate instrumented binary** is the opt-in control. ScummVM forbids C `getenv` and C stdio inside engines, so V2 uses `Common::DumpFile` to create `scummbucket-p4-room23.raw.log` in the **patched executable's working directory**. The PowerShell capture helper sets that working directory, refuses to run if the temporary log already exists, and moves the completed (or partial) log into a uniquely named, gitignored export path when the process exits. The engine hook also checks for an existing file before opening it. Capture is restricted to original **DOS Monkey Island 2**, SCUMM v5, room **23**, non-EGA-dithered renderer. It records at most **256 consecutive calls**; it closes the log with `END|256|limit`, or with `END|N|room_exit` when the game leaves the room. It writes no raw game files, scripts, sound or images, only the active 768-byte RGB palette per sample and timer values. The trace is private and must not be committed.
 
 **Limitations:** The clock observations are timestamps from ScummVM's `OSystem::getMillis()` at the call site, not guaranteed presentation/vsync timestamps. The first palette may already have been altered by entry scripts or debugger room-jumping; our comparer reports `TRACE_INITIAL_PALETTE_MISMATCH` rather than inventing a baseline. Consecutive calls can be affected by room scripts. A successful trace comparison still does not establish exact display-frame scheduling or composition. A developer build (or compatible instrumentation) is necessary: the stock ScummVM debugger does not emit these RGB arrays.
 
@@ -23,41 +23,27 @@ It is opt-in via the `SCUMMBUCKET_PALETTE_TRACE_PATH` environment variable and l
 This is an **additional source checkout**, not the existing ScummBucket folder. Use a separate directory, and **do not replace your installed ScummVM executable**.
 
 ```powershell
-$scummvm = "C:\Users\87otl\ScummVM-P4-Trace"
-git clone https://github.com/scummvm/scummvm.git "$scummvm"
-git -C "$scummvm" checkout --detach v2026.4.0
-git -C "$scummvm" rev-parse HEAD
-
-Push-Location "C:\Users\87otl\ScummBucket"
+cd "C:\Users\87otl\ScummBucket"
 git fetch origin
 git switch research/p4-engine-palette-trace
 git pull --ff-only origin research/p4-engine-palette-trace
-
-python tools/instrument_scummvm_palette.py "$scummvm" --check
-python tools/instrument_scummvm_palette.py "$scummvm" --apply
-Pop-Location
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\tools\setup_scummvm_trace.ps1"
 ```
 
-`--apply` creates `engines/scumm/scumm.cpp.scummbucket-p4-original`, never silently overwrites that backup, and refuses already-modified source. `--restore` restores the original **only if the patched file still exactly matches our generated patch**; it will not erase subsequent manual changes.
+`--apply` creates `engines/scumm/scumm.cpp.scummbucket-p4-original`, never silently overwrites that backup, and refuses unknown edits. Existing V1 instrumentation can be upgraded to V2 only if it matches the exact generated V1 bytes and the original backup matches the pinned upstream source. `--restore` supports either known V1 or V2 generated source and refuses further manual edits.
 
-**Compile the patched source** using the upstream ScummVM Windows build instructions from [ScummVM's compiling documentation](https://wiki.scummvm.org/index.php?title=Compiling_ScummVM). The generator does **not** compile ScummVM and does not install an executable. The complete native Windows build and third-party dependencies must be handled through the upstream build workflow. The code was syntax-checked with a C++11 standalone harness, but a complete ScummVM build remains an explicit acceptance check. Please record any compiler errors without silently altering or weakening the trace hook.
+**Compile the patched V2 source** with the [Windows runbook's minimal MSYS2 SCUMM-only build](P4_WINDOWS_TRACE_RUNBOOK.md). The V1 source hook's initial live compilation error was recorded and corrected; V2 must still pass a full Windows compilation. The pinned-source helper doesn't compile or install the executable. Record compiler failures without weakening source protections.
 
 ## Stage 2 — capture the private engine log
 
 Use the **compiled patched executable**, not your existing system ScummVM shortcut. Keep the game set to VGA with EGA dithering off; try natural room entry, or use the debugger's `room 23` command but record that it was a debugger jump. When Room 23 is active, remain there long enough to record 256 palette calls, or leave the room normally. Quitting the process *before* either closing condition may leave an incomplete log; import deliberately fails in that case.
 
 ```powershell
-$stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-$raw = "C:\Users\87otl\ScummBucket\exports\room23-scummvm-$stamp.raw.log"
-$env:SCUMMBUCKET_PALETTE_TRACE_PATH = $raw
-
-# Replace with the actual path to YOUR patched build's executable:
-& "C:\path\to\patched-build\scummvm.exe"
-
-Remove-Item Env:SCUMMBUCKET_PALETTE_TRACE_PATH
-Get-Item "$raw"
-Get-Content "$raw" -Tail 1
+cd "C:\Users\87otl\ScummBucket"
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\tools\run_scummvm_palette_capture.ps1" -Mode normal
 ```
+
+The helper launches `C:\Users\87otl\ScummVM-P4-Trace\scummvm.exe` with that checkout as its working directory. The engine creates `scummbucket-p4-room23.raw.log` there; after the engine exits, the helper moves it to a new `exports/room23-normal-TIMESTAMP.raw.log` and attempts import plus verification. For the 60-unit test, use `-Mode stress` in a **new process**, and enter `scumm_vars[19] 60` before `room 23` in the debugger.
 
 A valid completed log ends with either `SBP4|END|256|limit` or `SBP4|END|N|room_exit`. This text format is an ephemeral interchange: never treat the hex palette bytes as a game source file or infer animation timing from their line count. The importer checks every line and detects missing END records.
 
@@ -89,6 +75,6 @@ The user can upload just the generated JSON trace and JSON verification report. 
 
 ## Implemented tests and open checks
 
-The synthetic bridge tests cover pinning and no-double-patch behavior, backup safety, CRLF handling, 256 samples, missing END and malformed records, integer/timer bounds, source hash comparison, non-overwrite, sample timestamps and malformed log failures. The injected C++ hook was separately compiled/executed in a mock C++11 engine and its output parsed successfully.
+The synthetic bridge tests cover pinning and no-double-patch behavior, backup safety, CRLF handling, 256 samples, missing END and malformed records, integer/timer bounds, source hash comparison, non-overwrite, sample timestamps and malformed log failures. The *V1* injected C++ hook was separately compiled/executed in a mock C++11 engine and its output parsed successfully, but failed within a real ScummVM engine because of `common/forbidden.h`. The V2 native-file hook is covered by Python-level source generation and upgrade regression tests; a full Windows compile remains outstanding.
 
 **Still outstanding:** Full ScummVM Windows compile, natural-entry versus debugger-jump comparison, real capture, real `verify-palette-trace` results and reconciliation of any `CLUT` / runtime cycle differences. These must remain explicitly unverified until we obtain actual trace evidence.

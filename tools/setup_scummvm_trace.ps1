@@ -40,24 +40,24 @@ if (-not (Test-Path -LiteralPath $target -PathType Leaf)) {
     throw "Expected source file missing: $target"
 }
 
-$alreadyPatched = Select-String -LiteralPath $target -SimpleMatch 'SCUMMBUCKET_P4_PALETTE_TRACE_V1' -Quiet
+$alreadyPatched = Select-String -LiteralPath $target -SimpleMatch 'SCUMMBUCKET_P4_PALETTE_TRACE_V2' -Quiet
 
+# The Python patcher validates the original SHA and verifies any installed v1/v2
+# hook against the exactly-generated source. Unrecognized modifications are refused.
+Write-Host 'Checking pinned source and hook state...'
+& python $patcher $Checkout --check
+if ($LASTEXITCODE -ne 0) { throw 'Patcher preflight failed; source not modified' }
 if ($alreadyPatched) {
-    if (-not (Test-Path -LiteralPath $backup -PathType Leaf)) {
-        throw "Source is marked as instrumented but its original backup is missing: $backup"
-    }
-    Write-Host 'Already instrumented; leaving existing patched source unchanged.'
+    Write-Host 'Current v2 hook already installed; no changes made.'
 } else {
-    Write-Host 'Checking pinned source fingerprint and hook insertion points...'
-    & python $patcher $Checkout --check
-    if ($LASTEXITCODE -ne 0) { throw 'Patcher preflight failed; source not modified' }
     & python $patcher $Checkout --apply
-    if ($LASTEXITCODE -ne 0) { throw 'Patcher failed; check output before compiling' }
+    if ($LASTEXITCODE -ne 0) { throw 'Patcher apply/upgrade failed; check output before compiling' }
 }
 Write-Host ""
 Write-Host "ScummVM commit: $($head.Trim())"
 Write-Host "Instrumented source: $target"
 Write-Host 'Your existing installed ScummVM and original game files were not modified.'
+Write-Host 'Using v2 ScummVM DumpFile hook: no forbidden C file functions.'
 Write-Host ""
 if (Test-Path -LiteralPath 'C:\msys64\ucrt64.exe') {
     Write-Host 'MSYS2 UCRT64 detected. The next step is its minimal SCUMM-only build.'

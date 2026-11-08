@@ -296,6 +296,23 @@ Pop-Location
 
 **Timing boundary:** This model deliberately differs from the original PNG/GIF assumption of one engine-like update per exported frame. Both are **explicitly unverified schedules**. We do not silently change existing exports or claim that a frame-rate-independent model implies a verified real-game schedule. The existing video evidence supports the approximate **counter rate**, not the exact engine-call cadence. The optional original-game test expects 32 modeled room-23 rotations and remains pending on the user's machine. See [P4 event timeline and replay contract](research/P4_PALETTE_EVENT_TIMELINE.md).
 
+### Rendering saved palette-event bundles at variable FPS
+
+The **`render-events`** command reads an earlier `palette-events` output bundle and produces original indexed PNG frames without reopening `MONKEY2.001`, rerunning palette cycle simulation, installing Pillow, or changing the source bundle. It checks the bundle manifest, exact PNG format and chunk CRCs, 768-byte original CLUT, file SHA-256, source indexed-pixel fingerprint, and all saved RGB event patches. Every rendered PNG retains the original pixel indices and carries its own hash in a new render manifest.
+
+```powershell
+Push-Location "C:\Users\87otl\ScummBucket"
+$bundle = "C:\Users\87otl\ScummBucket\exports\room23-events-20261108-143724"
+$stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+$out = "C:\Users\87otl\ScummBucket\exports\room23-replay60-$stamp"
+python -m scummbucket render-events "$bundle" --fps 60 --output-dir "$out"
+Pop-Location
+```
+
+The original room-23 event bundle was uploaded and verified independently: source image/CLUT hashes match, all **19 event timestamps and 32 modeled rotations** pass before/after palette hash checks. Changing output rate **does not change those events**, but frame sampling can omit temporary states. For this four-second synthetic schedule: **15 fps misses five event states, 30 fps misses two (ticks 105 and 213), 60 fps misses zero**. The renderer emits **`EVENT_RENDER_UNSAMPLED_STATES`** as a visible warning and preserves the pre-existing five archive warnings.
+
+The synthetic schedule is still not verified against real engine update calls. Existing PNG/GIF commands retain their previous frame-based hypothetical schedule; these outputs must not be treated as equivalent merely because they have similar visuals. See [P4 saved event bundle rendering](research/P4_EVENT_BUNDLE_RENDER.md). The Windows-specific opt-in integration regression is pending.
+
 A separate **`verify-palette-trace`** command can compare a strict, externally recorded ScummVM palette trace against the decoded source palette and actual captured timer variable values, reporting the first mismatch and affected palette indices. The trace file must include full RGB palette bytes, game fingerprint, engine revision and an exact `cyclePalette` capture point. Only **synthetic trace comparisons** have been tested to date. No real engine palette-state trace or exact playback timing has been verified. See [runtime verification procedure](research/P4_RUNTIME_PALETTE_VERIFICATION.md).
 
 See the [palette-cycle candidate register and exact observations](research/P4_PALETTE_CYCLE_CANDIDATES.md). The four existing CYCLE_FLAGS_UNVERIFIED warnings remain present.
@@ -306,13 +323,13 @@ See the [palette-cycle candidate register and exact observations](research/P4_PA
 - Automatic archive-wide or arbitrary byte-range extraction. Export selection deliberately requires a room, and may optionally specify a chunk tag.
 - Directory IDs now locate global scripts, costumes and sounds; scene inventory pairs object IDs and records nearby resources by storage. **Full bytecode interpretation, instruction-aligned script-to-object dependencies, and verified animation playback remain unimplemented.**
 - Recovery of individual malformed resource chunks when the outer room structure fails validation: the current inspector stops safely for that input.
-- Complete room/background and depth-mask compositing, character costume animation, full-scene animation playback, script interpreter, or audio decoding. The limited P2 `OBIM` image-state decoder and P4 palette-driven **PNG sequence, GIF preview and event-timeline exporters** remain experimental and reference-timing unverified.
+- Complete room/background and depth-mask compositing, character costume animation, full-scene animation playback, script interpreter, or audio decoding. The P2 `OBIM` image-state decoder and P4 **PNG/GIF, event-timeline and bundle-replay exporters** remain experimental and reference-timing unverified.
 - Monkey Island 1 or other editions/SCUMM versions.
 - Playback/reference comparison against ScummVM or verified original gameplay.
 
 ## Verification
 
-- **GitHub Actions: 180 tests discovered, 174 passed, 6 optional private-input tests skipped, 0 failures** ([verified workflow run](https://github.com/87otlto-coder/Scummbucket/actions/runs/42479068539)). Synthetic tests now include output-FPS-independent counter timelines, replay patch/hash integrity across 15/30/60 fps, hidden events and error paths. Original-game event-bundle integration is opt-in and pending. Real ScummVM timer/palette tracing remains outstanding.
+- **GitHub Actions: 193 tests discovered, 186 passed, 7 optional private-input tests skipped, 0 failures** ([verified workflow run](https://github.com/87otlto-coder/Scummbucket/actions/runs/42481806460)). New bundle-to-PNG renderer tests check source-sidecar hashes, PNG CRC/decompression validity, independent replay at multiple FPS, corruption and file-collision rejection, and visible warnings for event states not sampled. The opt-in original-MI2 bundle renderer integration remains pending; engine timer-trace verification is outstanding.
 - User-supplied MI2 ZIP passed structural inventory: 110 rooms, 127 palette-cycle records in 21 rooms and 158 multi-state object images.
 - New resource-ID extraction tests cover two distinct scripts sharing a room, exact byte matches in both representations, empty and invalid slots, corrupt links, overwrite refusal and the new CLI.
 - Room 4 `CYCL` chunk exports in both `decoded` and `stored` modes were verified byte-for-byte against the original `MONKEY2.001` source slices.

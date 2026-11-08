@@ -44,12 +44,13 @@ New-Item -ItemType Directory -Force -Path $exportDir, $reportDir | Out-Null
 $raw = Join-Path $exportDir "room23-$Mode-$stamp.raw.log"
 $trace = Join-Path $reportDir "room23-$Mode-$stamp.trace.json"
 $report = Join-Path $reportDir "room23-$Mode-$stamp.verify.json"
+$phaseReport = Join-Path $reportDir "room23-$Mode-$stamp.phase-research.json"
 
 # The v2 ScummVM-native hook cannot read arbitrary environment variables.
 # It creates exactly this private filename relative to the patched engine's
 # working directory. We move it into the gitignored exports folder afterwards.
 $engineLog = Join-Path $Checkout 'scummbucket-p4-room23.raw.log'
-foreach ($candidate in @($raw, $trace, $report, $engineLog)) {
+foreach ($candidate in @($raw, $trace, $report, $phaseReport, $engineLog)) {
     if (Test-Path -LiteralPath $candidate) {
         throw "Output collision: $candidate. Preserve or move the existing file before another capture."
     }
@@ -100,6 +101,22 @@ Move-Item -LiteralPath $engineLog -Destination $raw -ErrorAction Stop
 Write-Host "Preserved raw trace: $raw"
 $lastLine = Get-Content -LiteralPath $raw -Tail 1
 Write-Host "Raw trace last line: $lastLine"
+
+# A separately labeled phase-aware forensic report is valuable even for an
+# interrupted log. It never adds a fabricated END or replaces strict import.
+Push-Location $repoRoot
+try {
+    & python -m scummbucket analyze-room23-palette-log $GameDirectory --raw-log $raw --output $phaseReport
+    $phaseExit = $LASTEXITCODE
+} finally {
+    Pop-Location
+}
+if (Test-Path -LiteralPath $phaseReport) {
+    $phaseStatus = (Get-Content -LiteralPath $phaseReport -Raw | ConvertFrom-Json).status
+    Write-Host "Forensic phase report: $phaseReport (status: $phaseStatus)"
+} else {
+    Write-Warning "Forensic analysis did not produce a report (exit: $phaseExit)"
+}
 if ($lastLine -notmatch '^SBP4[|]END[|][0-9]+[|](limit|room_exit)$') {
     Write-Warning 'Capture is incomplete. Raw log is preserved. No success report will be claimed.'
     exit 2

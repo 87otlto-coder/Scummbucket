@@ -203,13 +203,30 @@ The [17-event machine-readable evidence register](research/P1_ROOM34_OBJECT_EVEN
 
 **P4 consequence:** A fixed 16-frame looping export would *not* faithfully reconstruct this interactive object. A conditional, parameterized state sequence is a better candidate once asset rendering, branching and timing are independently verified.
 
+## Early P2 image-state decoding experiment
+
+A **separate experimental** `images` command has been added while the P1 inventory work remains open. It selects one validated `OBIM` object, decodes supported SCUMM v5 `SMAP` strip compression into native-size RGBA PNGs, and exports separate grayscale `ZPxx` depth-mask PNGs. It uses the room's 256-entry `CLUT` and `TRNS` transparent color, without Pillow or other runtime graphics dependencies.
+
+For the fingerprinted room 34 object 358, independent read-only testing decoded all **16 image states at 56 × 40 pixels** and **48 mask planes**. A user-side private integration test is included but skipped in public CI. The pixel output has **not** yet been validated against ScummVM's actual runtime rendering or dynamic palette behavior.
+
+```powershell
+cd "C:\Users\87otl\ScummBucket"
+$stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+$out = "C:\Users\87otl\ScummBucket\exports\room34-object358-$stamp"
+python -m scummbucket images "D:\old" --room 34 --object 358 --output-dir "$out"
+```
+
+For complete limitations, implementation details and confidence levels, see [P2 experimental image-state decoder](research/P2_MI2_OBIM_STATE_DECODING.md). Do **not** treat this as completion of P2, or mistake the puzzle object's conditional state changes for an autonomous background loop.
+
+The separate [autonomous palette-animation candidate survey](research/P4_PALETTE_CYCLE_CANDIDATES.md) identifies rooms 23 and 109 as good research controls, while explicitly retaining the four unresolved cycle-flag warnings.
+
 ## Not yet supported / limitations
 
 - Exact retail edition identification by trusted fingerprint; structural compatibility is not conclusive.
 - Automatic archive-wide or arbitrary byte-range extraction. Export selection deliberately requires a room, and may optionally specify a chunk tag.
 - Directory IDs now locate global scripts, costumes and sounds; scene inventory pairs object IDs and records nearby resources by storage. **Full bytecode interpretation, instruction-aligned script-to-object dependencies, and verified animation playback remain unimplemented.**
 - Recovery of individual malformed resource chunks when the outer room structure fails validation: the current inspector stops safely for that input.
-- Image, sprite/costume, palette pixel, animation, script or audio decoding.
+- Complete room/background, character costume, animation playback, script interpreter, or audio decoding. The limited P2 `OBIM` image-state/CLUT/Z-plane decoder remains **experimental**.
 - Monkey Island 1 or other editions/SCUMM versions.
 - Playback/reference comparison against ScummVM or verified original gameplay.
 
@@ -255,7 +272,7 @@ Do not commit game archives, extracted graphics, audio, ROMs or other commercial
 
 ## Next P1 acceptance work
 
-1. **Completed for object 358:** Independently confirmed all 17 opcode starts; examined the two actual script reports and documented state selection and conditional sequence logic. **Next:** trace gameplay execution and visually decode image states before claiming rendered behavior or duration.
+1. **Completed for object 358:** Independently confirmed all 17 opcode starts; examined the two real script reports and documented state selection. An experimental pixel and depth-mask decoder is now available. **Next:** run the private integration test and compare visual output against ScummVM before claiming pixel fidelity, executed gameplay behavior or duration.
 2. Expand structured resource-level recovery diagnostics where an isolated malformed chunk can be safely skipped.
 3. Add archive/version identification and signature regression fixtures.
 4. Verify reproducible extraction across more resource classes and strengthen source provenance fields.

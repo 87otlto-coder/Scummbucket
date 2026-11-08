@@ -181,6 +181,55 @@ class PinnedPatcherTest(unittest.TestCase):
                 patcher.apply_patch(self.root)
             self.assertIn("ALREADY_INSTRUMENTED", str(exc.exception))
 
+    def test_upgrade_v1_hook_preserves_original_source_backup(self):
+        # Reproduce the old (forbidden C stdio) hook precisely, using the
+        # pinned backup as the only trusted source of truth for the upgrade.
+        with patch.object(patcher, "PINNED_CPP_BLOB", self.blob):
+            original = self.fixture
+            legacy = patcher.patch_source(original, legacy=True)
+            backup = self.file.with_name(self.file.name + patcher.BACKUP_SUFFIX)
+            backup.write_bytes(original)
+            self.file.write_bytes(legacy)
+            self.assertIn("UPGRADE_APPLICABLE",
+                          patcher.apply_patch(self.root, check=True))
+            self.assertEqual(self.file.read_bytes(), legacy)
+            self.assertIn("PATCH_UPGRADED_V1_TO_V2",
+                          patcher.apply_patch(self.root))
+            self.assertEqual(backup.read_bytes(), original)
+            current = self.file.read_bytes()
+            self.assertEqual(current, patcher.patch_source(original))
+            self.assertIn(b"Common::DumpFile sbP4Trace", current)
+            self.assertNotIn(b"std::getenv", current)
+            self.assertNotIn(b"std::fopen", current)
+            self.assertIn("RESTORED", patcher.apply_patch(self.root, restore=True))
+            self.assertEqual(self.file.read_bytes(), original)
+            self.assertFalse(backup.exists())
+
+    def test_upgrade_rejects_manual_edits_to_legacy_source(self):
+        with patch.object(patcher, "PINNED_CPP_BLOB", self.blob):
+            original = self.fixture
+            backup = self.file.with_name(self.file.name + patcher.BACKUP_SUFFIX)
+            backup.write_bytes(original)
+            self.file.write_bytes(patcher.patch_source(original, legacy=True) +
+                                  b"// unidentified local change")
+            with self.assertRaises(patcher.PatchError) as error:
+                patcher.apply_patch(self.root)
+            self.assertIn("PATCHED_SOURCE_CHANGED", str(error.exception))
+            self.assertIn(b"unidentified local change", self.file.read_bytes())
+            self.assertEqual(backup.read_bytes(), original)
+
+    def test_v2_hook_uses_supported_scummvm_io(self):
+        with patch.object(patcher, "PINNED_CPP_BLOB", self.blob):
+            patched = patcher.patch_source(self.fixture)
+            self.assertIn(b"Common::DumpFile", patched)
+            self.assertIn(b"Common::FSNode", patched)
+            self.assertIn(b"Common::Path", patched)
+            self.assertNotIn(b"std::FILE", patched)
+            self.assertNotIn(b"std::getenv", patched)
+            self.assertNotIn(b"std::fprintf", patched)
+            self.assertEqual(patched.count(b"cyclePalette();"), 1)
+            self.assertEqual(patched.count(b"palManipulate();"), 1)
+
     def test_crlf_source_retained(self):
         crlf = self.fixture.replace(b"\n", b"\r\n")
         self.file.write_bytes(crlf)

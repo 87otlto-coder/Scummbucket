@@ -11,6 +11,7 @@ import tempfile
 import unittest
 
 from scummbucket.inspector import XOR_KEY, inspect, _read_pair
+from scummbucket.palette_coverage import analyze_cycle_coverage
 from scummbucket.palette_probe import (
     decode_room_background_indexed, palette_probe,
 )
@@ -41,6 +42,20 @@ class PrivatePaletteProbeTest(unittest.TestCase):
                 bg = decode_room_background_indexed(
                     decoded, room_offset=room["room_offset"], room_length=room["room_size"])
                 self.assertEqual(bg["pixel_indices_sha256"], hash_expected)
+                coverage, masks = analyze_cycle_coverage(
+                    bg["indexed_pixels"], width=bg["width"], height=bg["height"],
+                    records=room["palette_cycles"])
+                self.assertEqual(coverage["union_pixel_count"], visible_pixels)
+                self.assertEqual(coverage["cycle_records"], cycle_count)
+                self.assertEqual(coverage["union_pixel_count"],
+                                 sum(value > 0 for value in masks[0]))
+                if room_id == 23:
+                    self.assertEqual(
+                        [c["native_pixel_count"] for c in coverage["cycles"]],
+                        [90, 55, 42, 75, 65, 49, 84, 20])
+                    self.assertTrue(all(
+                        c["native_bounds_xyxy_inclusive"][1] >= 52
+                        for c in coverage["cycles"]))
                 self.assertEqual(bg["width"], 320)
                 self.assertEqual(len(bg["strips"]), 40)
                 self.assertTrue(all(strip["codec"] == 68 for strip in bg["strips"]))

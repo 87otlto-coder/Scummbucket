@@ -1,8 +1,9 @@
 # Prepare a separate, pinned ScummVM source tree for P4 Room 23 tracing.
-# Run from Windows PowerShell. This DOES NOT build or launch ScummVM.
+# Run from Windows PowerShell under SOURCE\ScummBucket. This DOES NOT build or launch ScummVM.
+# A non-default checkout may be supplied explicitly using -Checkout.
 [CmdletBinding()]
 param(
-    [string]$Checkout = (Join-Path $HOME 'ScummVM-P4-Trace')
+    [string]$Checkout = 'F:\Dev\SCUMMBUCKET\TOOLS\ScummVM-P4-Trace'
 )
 
 $ErrorActionPreference = 'Stop'

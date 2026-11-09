@@ -112,7 +112,7 @@ Review third-party licenses before incorporating code. Respect ScummVM's GPL obl
 
 ## Working Across Conversations
 
-**Default Windows checkout path:** `C:\Users\87otl\ScummBucket`. Use this path consistently in local PowerShell examples, with generated assets under `exports\` and reports under `reports\`. Keep original commercial game files outside the repository. This is a user-specific documentation convention, **not** a hard-coded runtime requirement: CLI input/output paths must remain configurable for other machines.
+**Windows workspace root:** `F:\Dev\SCUMMBUCKET`. Exactly three top-level directories are allowed, with no new root folders without approval: `SOURCE\ScummBucket` for project code, Git, tests, scripts, research and docs; `TOOLS\ScummVM-P4-Trace` and other third-party utilities for builds/emulators/debuggers; `FIXTURE\GAMES` for untouched original games by title/edition, `FIXTURE\CAPTURES` for real-engine traces, `FIXTURE\REFERENCE` for captures/known-good imagery, `FIXTURE\OUTPUT` for generated assets, and `FIXTURE\REPORTS` for manifests, diagnostics and validation results. Use absolute paths in cross-terminal instructions. Do not relocate, overwrite or delete existing data automatically; migrate by verified non-destructive copy, then separately approve retirement of old paths. System-wide dependencies (e.g. MSYS2 under `C:\msys64`) may remain in place. No copyrighted game assets in Git. These are project defaults, **not** hardcoded CLI limitations for other users.
 
 At the start of substantial work, inspect the latest repository state, roadmap and relevant documentation. Never assume proposed changes from earlier chats were actually implemented.
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # SCUMM-only Windows build inside an MSYS2 UCRT64 terminal.
 # Example:
-# bash /c/Users/87otl/ScummBucket/tools/build_scummvm_trace_msys2.sh /c/Users/87otl/ScummVM-P4-Trace
+# bash /f/Dev/SCUMMBUCKET/SOURCE/ScummBucket/tools/build_scummvm_trace_msys2.sh /f/Dev/SCUMMBUCKET/TOOLS/ScummVM-P4-Trace
 set -euo pipefail
 
 if [ "$#" -ne 1 ]; then
-  echo "USAGE: bash build_scummvm_trace_msys2.sh /c/Users/USER/ScummVM-P4-Trace" >&2
+  echo "USAGE: bash /f/Dev/SCUMMBUCKET/SOURCE/ScummBucket/tools/build_scummvm_trace_msys2.sh /f/Dev/SCUMMBUCKET/TOOLS/ScummVM-P4-Trace" >&2
   exit 2
 fi
 
@@ -16,7 +16,7 @@ fi
 
 for tool in g++ make git sdl2-config; do
   if ! command -v "$tool" >/dev/null 2>&1; then
-    echo "ERROR: '$tool' missing. Install MSYS2 base-devel, GCC, SDL2 and Python first." >&2
+    echo "ERROR: '$tool' missing. Install MSYS2 base-devel, GCC and SDL2 first." >&2
     exit 2
   fi
 done

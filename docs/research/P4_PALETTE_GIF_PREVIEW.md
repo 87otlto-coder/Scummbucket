@@ -1,5 +1,8 @@
 # P4 — Experimental palette-driven GIF preview
 
+> **Current workspace (2026-11-09):** Execute commands from `F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket`; originals, generated assets and reports belong in `FIXTURE`, and third-party utilities in `TOOLS`. Historical discussion retains its original evidence paths and timestamps. See [workspace migration](../WORKSPACE_MIGRATION.md).
+
+
 **Status:** Exporter implemented, unit-tested with synthetic assets. An **independent private-file research reconstruction** also produced a real source-backed GIF and verified its pixel/timing readback. The GitHub CLI's own original-game integration test is still **opt-in and pending on the user's Windows checkout**.  
 **Scope:** Original DOS VGA Monkey Island 2 room palette cycling; first reference room 23.
 
@@ -20,7 +23,7 @@ The comparison is based on RGB values at **palette indices actually used by the 
 First update the current feature branch and install the optional GIF extra **once**:
 
 ```powershell
-cd "C:\Users\87otl\ScummBucket"
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
 git pull --ff-only origin feature/p1-scumm-v5-inventory
 python -m pip install -e ".[gif]"
 ```
@@ -29,7 +32,7 @@ Then export the VGA source room's water shimmer to one GIF:
 
 ```powershell
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$out = "C:\Users\87otl\ScummBucket\exports\room23-preview-$stamp.gif"
+$out = "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-preview-$stamp.gif"
 python -m scummbucket palette-gif "D:\old" --room 23 --fps 30 --duration-seconds 4 --counter-rate 60 --output "$out"
 Start-Process "$out"
 ```

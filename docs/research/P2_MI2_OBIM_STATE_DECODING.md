@@ -1,5 +1,8 @@
 # P2 experimental — Monkey Island 2 v5 object-image states
 
+> **Current workspace (2026-11-09):** Execute commands from `F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket`; originals, generated assets and reports belong in `FIXTURE`, and third-party utilities in `TOOLS`. Historical discussion retains its original evidence paths and timestamps. See [workspace migration](../WORKSPACE_MIGRATION.md).
+
+
 **Status:** First experimental native-resolution PNG and separate depth-mask decoder; *not* a verified, complete P2 renderer.  
 **Sample:** The fingerprinted original DOS Monkey Island 2 resource pair, room 34, object 358.  
 **No copyrighted assets** are stored in this repository.
@@ -22,11 +25,11 @@
 Run the new command on the **local authorized game archive**, without downloading anything additional:
 
 ```powershell
-cd "C:\Users\87otl\ScummBucket"
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
 git pull --ff-only origin feature/p1-scumm-v5-inventory
 
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$out = "C:\Users\87otl\ScummBucket\exports\room34-object358-$stamp"
+$out = "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room34-object358-$stamp"
 python -m scummbucket images "D:\old" --room 34 --object 358 --output-dir "$out"
 ```
 

@@ -1,15 +1,23 @@
-# Run a private Room 23 engine capture, then import and verify its real palette log.
+# Run Room 23 engine capture under FIXTURE\CAPTURES\Room23; reports under FIXTURE\REPORTS\Room23.
 # Does not modify original game archives or the normal installed ScummVM.
 [CmdletBinding()]
 param(
     [ValidateSet('normal','stress')]
     [string]$Mode = 'normal',
-    [string]$Checkout = (Join-Path $HOME 'ScummVM-P4-Trace'),
-    [string]$GameDirectory = 'D:\old\mi2'
+    [string]$WorkspaceRoot = 'F:\Dev\SCUMMBUCKET',
+    [string]$Checkout,
+    [string]$GameDirectory
 )
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+$expectedRepo = Join-Path $WorkspaceRoot 'SOURCE\ScummBucket'
+if (-not (Test-Path -LiteralPath $expectedRepo -PathType Container) -or
+    (Resolve-Path -LiteralPath $expectedRepo).Path -ne $repoRoot) {
+    throw "Capture helper must run from $expectedRepo. Old checkout paths are no longer default."
+}
+if (-not $Checkout) { $Checkout = Join-Path $WorkspaceRoot 'TOOLS\ScummVM-P4-Trace' }
+if (-not $GameDirectory) { $GameDirectory = Join-Path $WorkspaceRoot 'FIXTURE\GAMES\MonkeyIsland2_DOS_VGA' }
 $exe = Join-Path $Checkout 'scummvm.exe'
 $resource = Join-Path $GameDirectory 'MONKEY2.001'
 $index = Join-Path $GameDirectory 'MONKEY2.000'
@@ -38,8 +46,8 @@ if ($LASTEXITCODE -ne 0 -or $engineCommit.Trim().Length -ne 40) {
 $engineCommit = $engineCommit.Trim().ToLowerInvariant()
 
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss-fff'
-$exportDir = Join-Path $repoRoot 'exports'
-$reportDir = Join-Path $repoRoot 'reports'
+$exportDir = Join-Path $WorkspaceRoot 'FIXTURE\CAPTURES\Room23'
+$reportDir = Join-Path $WorkspaceRoot 'FIXTURE\REPORTS\Room23'
 New-Item -ItemType Directory -Force -Path $exportDir, $reportDir | Out-Null
 $raw = Join-Path $exportDir "room23-$Mode-$stamp.raw.log"
 $trace = Join-Path $reportDir "room23-$Mode-$stamp.trace.json"
@@ -91,7 +99,7 @@ try {
     if (Test-Path -LiteralPath (Join-Path $ucrtBin 'SDL2.dll')) {
         $env:PATH = "$ucrtBin;$oldPath"
     }
-    # A GUI-subsystem executable may return before quitting when directly invoked.
+    # GUI-subsystem processes need explicit -Wait before reading the log.
     $engineProcess = Start-Process -FilePath $exe -WorkingDirectory $Checkout -Wait -PassThru
     Write-Host "ScummVM exit code: $($engineProcess.ExitCode)"
 } finally {

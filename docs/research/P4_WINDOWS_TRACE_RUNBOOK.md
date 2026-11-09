@@ -9,7 +9,7 @@ This runbook uses a separate experimental ScummVM checkout so the original Scumm
 Requires Git and Python available in PowerShell. Commands work regardless of the starting PowerShell directory:
 
 ~~~powershell
-cd "C:\Users\87otl\ScummBucket"
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
 git fetch origin
 git switch research/p4-engine-palette-trace
 git pull --ff-only origin research/p4-engine-palette-trace
@@ -20,7 +20,7 @@ python -m unittest discover -s tests -p "test_palette_trace.py" -v
 powershell -NoProfile -ExecutionPolicy Bypass -File ".\tools\setup_scummvm_trace.ps1"
 ~~~
 
-This script clones ScummVM v2026.4.0 into C:\Users\87otl\ScummVM-P4-Trace, checks both the exact tag commit and the original C++ blob fingerprint, and installs only the guarded palette hook, retaining an original-source backup. It can also **upgrade the failed V1 hook to V2 in an existing checkout**, if source and backup match the exact generated files; no new clone is needed. An existing different checkout is refused, not overwritten.
+This script clones ScummVM v2026.4.0 into F:\Dev\SCUMMBUCKET\TOOLS\ScummVM-P4-Trace, checks both the exact tag commit and the original C++ blob fingerprint, and installs only the guarded palette hook, retaining an original-source backup. It can also **upgrade the failed V1 hook to V2 in an existing checkout**, if source and backup match the exact generated files; no new clone is needed. An existing different checkout is refused, not overwritten.
 
 Expected in a fresh checkout: `PATCH_APPLICABLE`, `PATCH_APPLIED`, and the pinned commit SHA. Expected when repairing the V1 compile failure: `UPGRADE_APPLICABLE`, then `PATCH_UPGRADED_V1_TO_V2`. If V2 is already present, expect `PATCH_ALREADY_CURRENT`. Stop if tests or source guards fail.
 
@@ -33,7 +33,7 @@ Run:
 ~~~bash
 pacman -S --needed base-devel git mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-SDL2 mingw-w64-ucrt-x86_64-pkgconf
 
-bash /c/Users/87otl/ScummBucket/tools/build_scummvm_trace_msys2.sh /c/Users/87otl/ScummVM-P4-Trace
+bash /f/Dev/SCUMMBUCKET/SOURCE/ScummBucket/tools/build_scummvm_trace_msys2.sh /f/Dev/SCUMMBUCKET/TOOLS/ScummVM-P4-Trace
 ~~~
 
 The build script checks UCRT64, the compiler, SDL2, and presence of our source hook. It runs ScummVM's own configure script (only the SCUMM engine) and make -j 4, then checks that the compiled scummvm.exe exists. No existing executable is replaced.
@@ -42,10 +42,10 @@ The build script checks UCRT64, the compiler, SDL2, and presence of our source h
 
 ## 3. Windows PowerShell — actual default-cadence palette capture
 
-The original MI2 files are expected under D:\old\mi2 (both MONKEY2.000 and MONKEY2.001). The helper verifies that MONKEY2.001 has SHA-256 ad045372e0d49626503bb50fca29a687ec8e01ef75d9b8bca702a366d143819e before launch.
+The original MI2 files are expected under F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA (both MONKEY2.000 and MONKEY2.001). The helper verifies that MONKEY2.001 has SHA-256 ad045372e0d49626503bb50fca29a687ec8e01ef75d9b8bca702a366d143819e before launch.
 
 ~~~powershell
-cd "C:\Users\87otl\ScummBucket"
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
 powershell -NoProfile -ExecutionPolicy Bypass -File ".\tools\run_scummvm_palette_capture.ps1" -Mode normal
 ~~~
 
@@ -63,10 +63,10 @@ The corrected V2 engine writes a single file named `scummbucket-p4-room23.raw.lo
 
 Each run gets new, non-overwriting outputs:
 
-- exports/room23-normal-TIMESTAMP.raw.log
-- reports/room23-normal-TIMESTAMP.phase-research.json (forensic, even if END is missing)
-- reports/room23-normal-TIMESTAMP.trace.json (strict import when END present)
-- reports/room23-normal-TIMESTAMP.verify.json (strict baseline when import succeeds)
+- F:\Dev\SCUMMBUCKET\FIXTURE\CAPTURES\Room23\room23-normal-TIMESTAMP.raw.log
+- F:\Dev\SCUMMBUCKET\FIXTURE\REPORTS\Room23\room23-normal-TIMESTAMP.phase-research.json (forensic, even if END is missing)
+- F:\Dev\SCUMMBUCKET\FIXTURE\REPORTS\Room23\room23-normal-TIMESTAMP.trace.json (strict import when END present)
+- F:\Dev\SCUMMBUCKET\FIXTURE\REPORTS\Room23\room23-normal-TIMESTAMP.verify.json (strict baseline when import succeeds)
 
 If no hook log appears, the eligible engine/capture conditions may not have been reached. If the log lacks an END record, it remains evidence of an incomplete run, not a success.
 
@@ -75,7 +75,7 @@ If no hook log appears, the eligible engine/capture conditions may not have been
 Use a **new patched ScummVM process** for the second log:
 
 ~~~powershell
-cd "C:\Users\87otl\ScummBucket"
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
 powershell -NoProfile -ExecutionPolicy Bypass -File ".\tools\run_scummvm_palette_capture.ps1" -Mode stress
 ~~~
 

@@ -1,5 +1,8 @@
 # P1 — Room 34, Object 358: Script-Pattern Evidence Register
 
+> **Current workspace (2026-11-09):** Execute commands from `F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket`; originals, generated assets and reports belong in `FIXTURE`, and third-party utilities in `TOOLS`. Historical discussion retains its original evidence paths and timestamps. See [workspace migration](../WORKSPACE_MIGRATION.md).
+
+
 **Status:** Original 17 byte patterns now **independently confirmed as instruction starts**; subsequent instruction-level behavior analysis completed, but **gameplay execution and animation timing remain unverified**  
 **Date:** 2026-11-07  
 **Scope:** Specific user-supplied original DOS Monkey Island 2 resource pair only
@@ -104,13 +107,13 @@ The original private script chunks were separately rechecked by SHA-256, without
 | 201 | 2,740,982 | 5,050 bytes | `3dd3377827386229962e9aae8d681426115ad228efe1ecf36d7469154d1fbc09` |
 | 202 | 2,746,032 | 1,107 bytes | `1bb2578f20c0aad5146995f7d40b5cfdd0fe6b5c25a65faaffeddb5f12c82ee9` |
 
-On Windows, download **ScummVM Tools for Windows** from https://www.scummvm.org/en/downloads/ (the tools package, not just the game runner), and extract it into a folder outside the source checkout, for example `C:\Users\87otl\Tools\scummvm-tools`. Find the `descumm.exe` executable, then run:
+On Windows, download **ScummVM Tools for Windows** from https://www.scummvm.org/en/downloads/ (the tools package, not just the game runner), and extract it into a folder outside the source checkout, for example `F:\Dev\SCUMMBUCKET\TOOLS\ScummVMTools`. Find the `descumm.exe` executable, then run:
 
 ```powershell
-cd "C:\Users\87otl\ScummBucket"
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
 git pull --ff-only origin feature/p1-scumm-v5-inventory
 
-$descumm = (Get-ChildItem "C:\Users\87otl\Tools\scummvm-tools" -Recurse -Filter descumm.exe -File | Select-Object -First 1).FullName
+$descumm = (Get-ChildItem "F:\Dev\SCUMMBUCKET\TOOLS\ScummVMTools" -Recurse -Filter descumm.exe -File | Select-Object -First 1).FullName
 
 python -m scummbucket verify-descumm "D:\old" --room 34 --script 201 --object 358 --descumm "$descumm"
 python -m scummbucket verify-descumm "D:\old" --room 34 --script 202 --object 358 --descumm "$descumm"
@@ -132,10 +135,10 @@ The `D:\old` input is the original-game directory confirmed working in this user
 Two opt-in regression tests are available in the repository: the existing archive inventory test, and the new real-disassembler integration test `tests/test_private_descumm.py`. Both skip in CI unless given the user's private inputs. To run both on the Windows workstation (without committing any copyrighted resources):
 
 ```powershell
-cd "C:\Users\87otl\ScummBucket"
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
 git pull --ff-only origin feature/p1-scumm-v5-inventory
 $env:SCUMMBUCKET_MI2_ARCHIVE = "D:\old"
-$env:SCUMMBUCKET_DESCUMM = "C:\Users\87otl\Tools\scummvm-tools\descumm.exe"
+$env:SCUMMBUCKET_DESCUMM = "F:\Dev\SCUMMBUCKET\TOOLS\ScummVMTools\descumm.exe"
 python -m unittest discover -s tests -v
 Remove-Item Env:\SCUMMBUCKET_MI2_ARCHIVE
 Remove-Item Env:\SCUMMBUCKET_DESCUMM

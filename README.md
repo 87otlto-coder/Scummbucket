@@ -33,28 +33,28 @@ Reference implementations require independent validation against relevant game e
 
 A limited, read-only command-line prototype is available on the P1 feature branch. It currently supports the original DOS Monkey Island 2 `MONKEY2.000` / `MONKEY2.001` pair only. This includes P1 inventory, diagnostics and selective raw-chunk export tools, plus an **experimental P2 image-state decoder** for supported DOS v5 OBIM strips and masks. Full room, animation and audio decoding remain unimplemented.
 
-On Windows, the standard local project directory is `C:\Users\87otl\ScummBucket`. From PowerShell, run:
+The standard Windows workspace is `F:\Dev\SCUMMBUCKET` with **exactly three top-level folders**: `SOURCE` (owned code, tests and docs), `TOOLS` (external utilities such as instrumented ScummVM), and `FIXTURE` (original games, engine captures, exports, references and reports). The Git checkout is `SOURCE\ScummBucket`. Original MI2 is under `FIXTURE\GAMES\MonkeyIsland2_DOS_VGA`, room palette logs under `FIXTURE\CAPTURES\Room23`, outputs under `FIXTURE\OUTPUT` and validation reports under `FIXTURE\REPORTS\Room23`. For non-destructive migration from the earlier local paths, use [the workspace migration guide](docs/WORKSPACE_MIGRATION.md). From PowerShell, run:
 
 ```powershell
-cd "C:\Users\87otl\ScummBucket"
-python -m scummbucket inspect "C:\path\to\mi2.zip" --json
-python -m scummbucket extract "C:\path\to\mi2.zip" --room 4 --tag CYCL --output-dir "C:\Users\87otl\ScummBucket\exports\room-004-cycl"
-python -m scummbucket extract-id "C:\path\to\mi2.zip" --directory DSCR --id 12 --output-dir "C:\Users\87otl\ScummBucket\exports\script-012"
-python -m scummbucket scenes "C:\path\to\mi2.zip" --room 34
-python -m scummbucket images "C:\path\to\mi2.zip" --room 34 --object 358 --output-dir "C:\Users\87otl\ScummBucket\exports\object358-new-output"
-python -m scummbucket palette-probe "C:\path\to\mi2.zip" --room 23 --ticks 0 35 71 107 --output-dir "C:\Users\87otl\ScummBucket\exports\room23-palette-new-output"
-python -m scummbucket palette-map "C:\path\to\mi2.zip" --room 23 --output-dir "C:\Users\87otl\ScummBucket\exports\room23-palette-map-new-output"
-python -m scummbucket palette-sequence "C:\path\to\mi2.zip" --room 23 --fps 30 --duration-seconds 4 --counter-rate 60 --output-dir "C:\Users\87otl\ScummBucket\exports\room23-sequence-new-output"
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
+python -m scummbucket inspect "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --json
+python -m scummbucket extract "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --room 4 --tag CYCL --output-dir "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room-004-cycl"
+python -m scummbucket extract-id "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --directory DSCR --id 12 --output-dir "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\script-012"
+python -m scummbucket scenes "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --room 34
+python -m scummbucket images "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --room 34 --object 358 --output-dir "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\object358-new-output"
+python -m scummbucket palette-probe "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --room 23 --ticks 0 35 71 107 --output-dir "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-palette-new-output"
+python -m scummbucket palette-map "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --room 23 --output-dir "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-palette-map-new-output"
+python -m scummbucket palette-sequence "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --room 23 --fps 30 --duration-seconds 4 --counter-rate 60 --output-dir "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-sequence-new-output"
 python -m pip install -e ".[gif]"  # Once, for optional GIF encoding
-python -m scummbucket palette-gif "C:\path\to\mi2.zip" --room 23 --fps 30 --duration-seconds 4 --counter-rate 60 --output "C:\Users\87otl\ScummBucket\exports\room23-preview-new.gif"
-python -m scummbucket palette-events "C:\path\to\mi2.zip" --room 23 --duration-seconds 4 --counter-rate 60 --output-dir "C:\Users\87otl\ScummBucket\exports\room23-events-new-output"
-python -m scummbucket render-events "C:\Users\87otl\ScummBucket\exports\room23-events-new-output" --fps 60 --output-dir "C:\Users\87otl\ScummBucket\exports\room23-render60-new-output"
-python -m scummbucket palette-probe "C:\path\to\mi2.zip" --room 23 --ticks 0 1 4 9 --counter-increment 4 --output-dir "C:\Users\87otl\ScummBucket\exports\room23-delta4-new-output"
-python -m scummbucket verify-descumm "C:\path\to\mi2.zip" --room 34 --script 201 --object 358 --descumm "C:\path\to\descumm.exe"
+python -m scummbucket palette-gif "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --room 23 --fps 30 --duration-seconds 4 --counter-rate 60 --output "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-preview-new.gif"
+python -m scummbucket palette-events "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --room 23 --duration-seconds 4 --counter-rate 60 --output-dir "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-events-new-output"
+python -m scummbucket render-events "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-events-new-output" --fps 60 --output-dir "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-render60-new-output"
+python -m scummbucket palette-probe "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --room 23 --ticks 0 1 4 9 --counter-increment 4 --output-dir "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-delta4-new-output"
+python -m scummbucket verify-descumm "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --room 34 --script 201 --object 358 --descumm "C:\path\to\descumm.exe"
 python -m unittest discover -s tests -v
 ```
 
-Replace `C:\path\to\mi2.zip` with the location of your own game archive. Export files go under `exports\` rather than the project root. The source archive should remain outside the repository; the project path is a documentation convention, **not hard-coded into the tool**.
+Use `F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA` for the copied read-only original game files. General image exports go under `FIXTURE\OUTPUT` rather than the source checkout. Inputs and output locations remain CLI-configurable for other machines, and proprietary game bytes remain outside Git.
 
 The `extract-id` command exports one validated resource by directory type and ID, with byte-exact source provenance. Global script 12 in the supplied MI2 sample, for example, is a 94-byte `SCRP` chunk. This does **not** interpret the script instructions.
 

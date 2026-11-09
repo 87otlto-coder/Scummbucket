@@ -1,5 +1,8 @@
 # P4 — Comparing simulated MI2 palette cycles with actual ScummVM execution
 
+> **Current paths (2026-11-09):** Reproducible commands use the new F:\Dev\SCUMMBUCKET workspace. Historical evidence and timestamps are unchanged; see [migration guide](../WORKSPACE_MIGRATION.md).
+
+
 **Status:** Comparison pipeline and an optional pinned ScummVM capture bridge have synthetic tests. **No real ScummVM palette trace has been captured or verified.** See [instrumented ScummVM trace capture](P4_SCUMMVM_ENGINE_TRACE_CAPTURE.md) for the verified source anchor, guarded patcher and strict log importer.
 
 **Target:** Fingerprinted original DOS Monkey Island 2 archive, room 23 first and room 109 second.
@@ -70,7 +73,7 @@ Values `4` above are merely illustrative. **Do not enter them as real measuremen
 ### Run an actual comparison (once a trace exists)
 
 ```powershell
-cd "C:\Users\87otl\ScummBucket"
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
 git pull --ff-only origin feature/p1-scumm-v5-inventory
 
 python -m scummbucket verify-palette-trace "D:\old" --room 23 --trace "C:\path\to\room23-observed-trace.json" --json
@@ -88,7 +91,7 @@ Even without external trace input, `palette-probe` now accepts `--counter-increm
 
 ```powershell
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$out = "C:\Users\87otl\ScummBucket\exports\room23-delta4-$stamp"
+$out = "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-delta4-$stamp"
 python -m scummbucket palette-probe "D:\old" --room 23 --ticks 0 1 4 9 18 --counter-increment 4 --output-dir "$out"
 ```
 

@@ -123,10 +123,10 @@ This transition is now covered by the **synthetic** `test_mid_wait_scheduler_ove
 On Windows PowerShell from the active feature branch:
 
 ```powershell
-cd "C:\Users\87otl\ScummBucket"
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$out = "C:\Users\87otl\ScummBucket\exports\room23-fivehz-$stamp.gif"
-python -m scummbucket palette-gif "D:\old\mi2" --room 23 --fps 5 --duration-seconds 4 --counter-rate 60 --output "$out"
+$out = "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-fivehz-$stamp.gif"
+python -m scummbucket palette-gif "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --room 23 --fps 5 --duration-seconds 4 --counter-rate 60 --output "$out"
 Invoke-Item "$out"
 ```
 

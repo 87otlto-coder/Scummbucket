@@ -50,7 +50,7 @@ python -m scummbucket palette-gif "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland
 python -m scummbucket palette-events "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --room 23 --duration-seconds 4 --counter-rate 60 --output-dir "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-events-new-output"
 python -m scummbucket render-events "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-events-new-output" --fps 60 --output-dir "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-render60-new-output"
 python -m scummbucket palette-probe "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --room 23 --ticks 0 1 4 9 --counter-increment 4 --output-dir "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-delta4-new-output"
-python -m scummbucket verify-descumm "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --room 34 --script 201 --object 358 --descumm "C:\path\to\descumm.exe"
+python -m scummbucket verify-descumm "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --room 34 --script 201 --object 358 --descumm "F:\Dev\SCUMMBUCKET\TOOLS\ScummVMTools\descumm.exe"
 python -m unittest discover -s tests -v
 ```
 

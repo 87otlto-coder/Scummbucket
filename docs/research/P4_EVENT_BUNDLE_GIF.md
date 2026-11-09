@@ -1,5 +1,8 @@
 # P4 — Event-bundle GIF preview (event-driven, not FPS-sampled)
 
+> **Current workspace (2026-11-09):** Execute commands from `F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket`; originals, generated assets and reports belong in `FIXTURE`, and third-party utilities in `TOOLS`. Historical discussion retains its original evidence paths and timestamps. See [workspace migration](../WORKSPACE_MIGRATION.md).
+
+
 **Status:** Implemented on `feature/p4-event-bundle-gif`. Synthetic/controlled tests passed, and the user's Room 23 GIF and manifest were independently verified as a modeled replay on 2026-11-08. See [Room 23 GIF verification](P4_ROOM23_EVENT_GIF_VERIFICATION.md). No real ScummVM engine-state trace has been obtained.
 
 ## Why this exporter exists
@@ -23,16 +26,16 @@ GIF is a convenience preview. The indexed room image, original CLUT and full eve
 ## Windows command for the existing Room 23 bundle
 
 ```powershell
-Push-Location "C:\Users\87otl\ScummBucket"
+Push-Location "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
 git status --short
 git fetch origin
 git switch feature/p4-event-bundle-gif
 git pull --ff-only origin feature/p4-event-bundle-gif
 python -m pip install -e ".[gif]"
 
-$bundle = "C:\Users\87otl\ScummBucket\exports\room23-events-20261108-143724"
+$bundle = "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\LegacyExports\room23-events-20261108-143724"
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$out = "C:\Users\87otl\ScummBucket\exports\room23-event-preview-$stamp.gif"
+$out = "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-event-preview-$stamp.gif"
 python -m scummbucket render-event-gif "$bundle" --output "$out"
 
 Pop-Location

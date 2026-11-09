@@ -1,5 +1,8 @@
 # P4 — Room 23: six-unit callback comparison to event-bundle GIF
 
+> **Current workspace (2026-11-09):** Execute commands from `F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket`; originals, generated assets and reports belong in `FIXTURE`, and third-party utilities in `TOOLS`. Historical discussion retains its original evidence paths and timestamps. See [workspace migration](../WORKSPACE_MIGRATION.md).
+
+
 **Verification date:** 2026-11-08. **Status:** Independent file-integrity, decoded-RGB and timeline comparison passed. **Classification:** Synthetic model cross-check using runtime-observed scalar timer values, **not** an instrumented ScummVM palette-state verification.
 
 ## Evidence and provenance
@@ -60,8 +63,8 @@ The optional `tests/test_private_room23_cadence_compare.py` runs entirely agains
 On Windows PowerShell, set both variables to the exact existing files, then invoke the test:
 
 ```powershell
-$env:SCUMMBUCKET_ROOM23_EVENT_GIF = "C:\Users\87otl\ScummBucket\exports\room23-event-preview-20261108-151952.gif"
-$env:SCUMMBUCKET_ROOM23_SIXUNIT_GIF = "C:\Users\87otl\ScummBucket\exports\room23-sixunit-preview-20261108-161024.gif"
+$env:SCUMMBUCKET_ROOM23_EVENT_GIF = "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\LegacyExports\room23-event-preview-20261108-151952.gif"
+$env:SCUMMBUCKET_ROOM23_SIXUNIT_GIF = "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\LegacyExports\room23-sixunit-preview-20261108-161024.gif"
 python -m unittest discover -s tests -p "test_private_room23_cadence_compare.py" -v
 Remove-Item Env:SCUMMBUCKET_ROOM23_EVENT_GIF
 Remove-Item Env:SCUMMBUCKET_ROOM23_SIXUNIT_GIF

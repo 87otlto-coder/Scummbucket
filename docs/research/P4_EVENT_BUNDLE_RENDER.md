@@ -1,5 +1,8 @@
 # P4 — Render indexed PNGs from an exported palette-event bundle
 
+> **Current paths (2026-11-09):** Reproducible commands use the new F:\Dev\SCUMMBUCKET workspace. Historical evidence and timestamps are unchanged; see [migration guide](../WORKSPACE_MIGRATION.md).
+
+
 **Status:** Feature implemented, synthetic regression tests passing. Private-source bundle supplied by the user was independently checked. The new repository CLI still requires optional integration verification against the user's Windows export.
 
 ## Purpose
@@ -15,12 +18,12 @@ This makes source decoding, **hypothetical palette-event reconstruction**, and r
 
 ## Run on Windows using the existing room-23 bundle
 
-    Push-Location "C:\Users\87otl\ScummBucket"
+    Push-Location "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
     git pull --ff-only origin feature/p1-scumm-v5-inventory
 
-    $bundle = "C:\Users\87otl\ScummBucket\exports\room23-events-20261108-143724"
+    $bundle = "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\LegacyExports\room23-events-20261108-143724"
     $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-    $out = "C:\Users\87otl\ScummBucket\exports\room23-replay60-$stamp"
+    $out = "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-replay60-$stamp"
 
     python -m scummbucket render-events "$bundle" --fps 60 --output-dir "$out"
 

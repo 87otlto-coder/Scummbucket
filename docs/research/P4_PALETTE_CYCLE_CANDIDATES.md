@@ -1,5 +1,8 @@
 # P0/P4 — Autonomous background-animation candidates from MI2 CYCL inventory
 
+> **Current paths (2026-11-09):** Reproducible commands use the new F:\Dev\SCUMMBUCKET workspace. Historical evidence and timestamps are unchanged; see [migration guide](../WORKSPACE_MIGRATION.md).
+
+
 **Status:** Indexed room background decoded; engine-described palette rotation reproduced as a hypothetical preview. Actual gameplay execution and timing are not verified.  
 **Source:** Fingerprinted original DOS Monkey Island 2 `MONKEY2.000/.001` pair (SHA-256 values in [P0/P1 evidence register](P1_OBJECT_358_SCRIPT_SURVEY.md)).  
 **Research date:** 2026-11-08.
@@ -85,10 +88,10 @@ Room 23's raw-rate / counter-delay pairs are 230/71, 307/53, 153/107, 384/42, 46
 
 From the standard Windows checkout, with your authorized MI2 archive already at D:\old:
 
-    cd "C:\Users\87otl\ScummBucket"
+    cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
     git pull --ff-only origin feature/p1-scumm-v5-inventory
     $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-    $out = "C:\Users\87otl\ScummBucket\exports\room23-palette-$stamp"
+    $out = "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-palette-$stamp"
     python -m scummbucket palette-probe "D:\old" --room 23 --ticks 0 35 71 107 --output-dir "$out"
 
 The new output contains native-size PNG previews and a manifest recording source hashes, bitmap index hashes, palette hashes, simulator counter units, simulated rotation events, and explicit failure/warning diagnostics. Unsupported compression, malformed chunks, missing colors, overlaps, and collisions are not silently concealed. Original game assets and generated frame images remain outside GitHub.

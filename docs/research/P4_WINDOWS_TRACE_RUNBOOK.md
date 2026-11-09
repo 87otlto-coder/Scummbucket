@@ -1,6 +1,6 @@
 # P4 Room 23 — Windows capture runbook (ScummVM v2026.4.0)
 
-**Status, 2026-11-08:** The user reported **BUILD COMPLETE** for the corrected V2 MSYS2 UCRT64 SCUMM-only build. This is a user-reported successful full ScummVM compile, **not an independently inspected executable or runtime capture**. The earlier V1 build failed because `common/forbidden.h` blocks C stdio and environment functions inside engines; V2 uses `Common::DumpFile` and the corrected build helper checks the V2 marker. **Actual Room 23 trace capture, importer outcome, and palette verification remain outstanding.** Game assets remain outside Git.
+**Status, 2026-11-09:** The user reported successful compilation of the corrected ScummVM V2 hook on Windows, then supplied a complete 256-sample normal-cadence palette log from Room 23, matching the phase-aware source model in 256/256 samples (253 held out). A subsequent file labeled stress still recorded only 6/6 timer pairs; **the true 60/60 stress experiment remains unverified**. The local workspace now uses F:\Dev\SCUMMBUCKET\SOURCE, TOOLS and FIXTURE; see the [verified-copy migration procedure](../WORKSPACE_MIGRATION.md).
 
 This runbook uses a separate experimental ScummVM checkout so the original ScummVM installation and original game archives stay untouched.
 

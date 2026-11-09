@@ -1,30 +1,33 @@
 # P1 — SCUMM v5 archive inventory and raw chunk export prototype
 
+> **Current workspace (2026-11-09):** Execute commands from `F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket`; originals, generated assets and reports belong in `FIXTURE`, and third-party utilities in `TOOLS`. Historical discussion retains its original evidence paths and timestamps. See [workspace migration](WORKSPACE_MIGRATION.md).
+
+
 **Status:** Implemented as a bounded P1 prototype; the overall P1 milestone is **not complete**.
 
 ## Run
 
 Python 3.10+ is sufficient for the source-tree CLI (no third-party runtime packages).
 
-**Standard Windows checkout:** `C:\Users\87otl\ScummBucket`
+**Current Windows checkout:** `F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket` (data/output under FIXTURE)
 
 Open PowerShell and run:
 
 ```powershell
-cd "C:\Users\87otl\ScummBucket"
-python -m scummbucket inspect "C:\path\to\mi2.zip"
-python -m scummbucket inspect "C:\path\to\mi2.zip" --json
-New-Item -ItemType Directory -Force "C:\Users\87otl\ScummBucket\reports" | Out-Null
-python -m scummbucket inspect "C:\path\to\MONKEY2.000" --output "C:\Users\87otl\ScummBucket\reports\mi2-inventory.json"
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
+python -m scummbucket inspect "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA"
+python -m scummbucket inspect "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --json
+New-Item -ItemType Directory -Force "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket\reports" | Out-Null
+python -m scummbucket inspect "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA\MONKEY2.000" --output "F:\Dev\SCUMMBUCKET\FIXTURE\REPORTS\mi2-inventory.json"
 
 # Export room 4 palette-cycle chunks, removing the file-level XOR encoding:
-python -m scummbucket extract "C:\path\to\mi2.zip" --room 4 --tag CYCL --output-dir "C:\Users\87otl\ScummBucket\exports\room-004-cycl"
+python -m scummbucket extract "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --room 4 --tag CYCL --output-dir "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room-004-cycl"
 
 # Export room 4 chunks as bytes stored in the original SCUMM container:
-python -m scummbucket extract "C:\path\to\mi2.zip" --room 4 --output-dir "C:\Users\87otl\ScummBucket\exports\room-004-stored" --representation stored
+python -m scummbucket extract "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --room 4 --output-dir "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room-004-stored" --representation stored
 
 # Extract exactly one indexed global script, by ID (not all scripts in room 4):
-python -m scummbucket extract-id "C:\path\to\mi2.zip" --directory DSCR --id 12 --output-dir "C:\Users\87otl\ScummBucket\exports\script-012"
+python -m scummbucket extract-id "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --directory DSCR --id 12 --output-dir "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\script-012"
 
 python -m unittest discover -s tests -v
 ```
@@ -68,8 +71,8 @@ Ten additional synthetic-only linker tests cover valid linking, empty slots and 
 A second command, `extract-id`, selects **one validated directory record**, avoiding the ambiguity of selecting a tag shared by many resources in a room:
 
 ```powershell
-cd "C:\Users\87otl\ScummBucket"
-python -m scummbucket extract-id "C:\path\to\mi2.zip" --directory DSCR --id 12 --output-dir "C:\Users\87otl\ScummBucket\exports\script-012"
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
+python -m scummbucket extract-id "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --directory DSCR --id 12 --output-dir "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\script-012"
 ```
 
 Directory types: `DROO` (room), `DSCR` (global script), `DSOU` (sound), `DCOS` (costume) and `DCHR` (character font). IDs refer to index-directory **slots**, not room-local `LSCR` bytecode IDs. An empty slot gives `RESOURCE_SLOT_UNUSED` (failed request; skipped count 1); an out-of-range ID gives `RESOURCE_ID_OUT_OF_RANGE`. Any invalid source directory link blocks extraction rather than guessing a target.
@@ -83,8 +86,8 @@ For the fingerprinted MI2 sample, the source index's `DSCR[12]` resolves to room
 The standard GitHub Actions workflow uses **only synthetic fixtures**. An authorized user with the exact fingerprinted MI2 sample can enable additional integration checks without copying commercial game files into GitHub:
 
 ```powershell
-cd "C:\Users\87otl\ScummBucket"
-$env:SCUMMBUCKET_MI2_ARCHIVE = "C:\path\to\mi2.zip"
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
+$env:SCUMMBUCKET_MI2_ARCHIVE = "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA"
 python -m unittest discover -s tests -v
 Remove-Item Env:\SCUMMBUCKET_MI2_ARCHIVE
 ```
@@ -99,9 +102,9 @@ When the variable is absent, the private test reports `skipped` explicitly. When
 From the standard Windows checkout, use PowerShell:
 
 ```powershell
-cd "C:\Users\87otl\ScummBucket"
-python -m scummbucket scenes "C:\path\to\mi2.zip" --room 34
-python -m scummbucket scenes "C:\path\to\mi2.zip" --room 34 --json
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
+python -m scummbucket scenes "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --room 34
+python -m scummbucket scenes "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --room 34 --json
 ```
 
 Replace the example input with the actual authorized archive location. `--room` is optional (it otherwise shows all 110 rooms). Use `--output "C:\Users\87otl\ScummBucket\reports\room-034.json"` to write a new report; the parent directory must already exist, and existing files are never overwritten.
@@ -149,9 +152,9 @@ References: [ScummVM `script_v5.cpp`](https://github.com/scummvm/scummvm/blob/ma
 PowerShell from the standard project directory:
 
 ```powershell
-cd "C:\Users\87otl\ScummBucket"
-python -m scummbucket scenes "C:\path\to\mi2.zip" --room 34
-python -m scummbucket scenes "C:\path\to\mi2.zip" --room 34 --json
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
+python -m scummbucket scenes "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --room 34
+python -m scummbucket scenes "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --room 34 --json
 ```
 
 Replace the example ZIP path with your authorized local archive. The human-readable output summarizes candidate counts by object; the JSON retains individual offsets for reproducible review.
@@ -163,8 +166,8 @@ ScummBucket can now compare an existing script-state byte-pattern candidate to a
 **Installation:** Obtain the Windows ScummVM Tools package at https://www.scummvm.org/en/downloads/ and extract it outside the source checkout (for example `C:\Users\87otl\Tools\scummvm-tools`). Locate `descumm.exe` there. The CLI also supports an executable already on `PATH`.
 
 ```powershell
-cd "C:\Users\87otl\ScummBucket"
-$descumm = (Get-ChildItem "C:\Users\87otl\Tools\scummvm-tools" -Recurse -Filter descumm.exe -File | Select-Object -First 1).FullName
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
+$descumm = (Get-ChildItem "F:\Dev\SCUMMBUCKET\TOOLS\ScummVMTools" -Recurse -Filter descumm.exe -File | Select-Object -First 1).FullName
 
 python -m scummbucket verify-descumm "D:\old" --room 34 --script 201 --object 358 --descumm "$descumm"
 python -m scummbucket verify-descumm "D:\old" --room 34 --script 202 --object 358 --descumm "$descumm"
@@ -210,9 +213,9 @@ A **separate experimental** `images` command has been added while the P1 invento
 For the fingerprinted room 34 object 358, independent read-only testing decoded all **16 image states at 56 × 40 pixels** and **48 mask planes**. A user-side private integration test is included but skipped in public CI. The pixel output has **not** yet been validated against ScummVM's actual runtime rendering or dynamic palette behavior.
 
 ```powershell
-cd "C:\Users\87otl\ScummBucket"
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$out = "C:\Users\87otl\ScummBucket\exports\room34-object358-$stamp"
+$out = "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room34-object358-$stamp"
 python -m scummbucket images "D:\old" --room 34 --object 358 --output-dir "$out"
 ```
 
@@ -230,9 +233,9 @@ Source observations from the fingerprinted original DOS MI2 archive:
 - ScummVM's cycle setup derives an internal threshold as integer **16384 / raw rate**; its runtime cycle update adds `max(VAR_TIMER, VAR_TIMER_NEXT)` counter units. The probe defaults to **one synthetic counter unit per update**, with `--counter-increment` available for explicitly hypothetical alternatives. Neither setting assigns real milliseconds or establishes the engine's actual update cadence.
 
 ```powershell
-cd "C:\Users\87otl\ScummBucket"
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$out = "C:\Users\87otl\ScummBucket\exports\room23-palette-$stamp"
+$out = "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-palette-$stamp"
 python -m scummbucket palette-probe "D:\old" --room 23 --ticks 0 35 71 107 --output-dir "$out"
 ```
 
@@ -244,7 +247,7 @@ The new `palette-map` command exports the **exact native pixel-coordinate masks*
 
 ```powershell
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$out = "C:\Users\87otl\ScummBucket\exports\room23-palette-map-$stamp"
+$out = "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-palette-map-$stamp"
 python -m scummbucket palette-map "D:\old" --room 23 --output-dir "$out"
 ```
 
@@ -253,9 +256,9 @@ python -m scummbucket palette-map "D:\old" --room 23 --output-dir "$out"
 The `palette-sequence` command is the first **actual palette-driven background frame exporter**, separate from the `palette-probe` still-frame experiment. It exports one 8-bit indexed PNG per output frame, leaving the source pixel-index buffer identical while changing only each PNG's `PLTE` RGB palette. The original source-indexed PNG and initial 768-byte `CLUT` are preserved alongside per-frame palette/rotation hashes in `manifest.json`.
 
 ```powershell
-cd "C:\Users\87otl\ScummBucket"
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$out = "C:\Users\87otl\ScummBucket\exports\room23-sequence-$stamp"
+$out = "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-sequence-$stamp"
 python -m scummbucket palette-sequence "D:\old" --room 23 --fps 30 --duration-seconds 4 --counter-rate 60 --output-dir "$out"
 ```
 
@@ -270,10 +273,10 @@ The new **`palette-gif`** command provides one convenient **nonlooping GIF previ
 The exporter needs optional **Pillow** (`python -m pip install -e ".[gif]"`), uses its established GIF encoding rather than recreating compression, and reopens every generated GIF to verify pixel RGB values, frame count, segment delays and the **absence of an unverified loop extension**. Failure and partial-output statuses remain explicit; a missing Pillow installation is reported with remediation instructions.
 
 ```powershell
-cd "C:\Users\87otl\ScummBucket"
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
 python -m pip install -e ".[gif]"
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$out = "C:\Users\87otl\ScummBucket\exports\room23-preview-$stamp.gif"
+$out = "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-preview-$stamp.gif"
 python -m scummbucket palette-gif "D:\old" --room 23 --fps 30 --duration-seconds 4 --counter-rate 60 --output "$out"
 Start-Process "$out"
 ```
@@ -287,9 +290,9 @@ See [P4 GIF preview and verification boundaries](research/P4_PALETTE_GIF_PREVIEW
 The **`palette-events`** command exports the original indexed room bitmap and source `CLUT` just once, plus a portable `timeline.json` of modeled palette updates. Unlike existing GIF/PNG exporters, this new experimental timeline advances once per **hypothetical counter unit** independently of output FPS. Its RGB patch sequence can be replayed and independently verified at **15, 30 and 60 fps** from the source palette without reinterpreting `CYCL` a second time.
 
 ```powershell
-Push-Location "C:\Users\87otl\ScummBucket"
+Push-Location "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$out = "C:\Users\87otl\ScummBucket\exports\room23-events-$stamp"
+$out = "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-events-$stamp"
 python -m scummbucket palette-events "D:\old" --room 23 --duration-seconds 4 --counter-rate 60 --output-dir "$out"
 Pop-Location
 ```
@@ -301,10 +304,10 @@ Pop-Location
 The **`render-events`** command reads an earlier `palette-events` output bundle and produces original indexed PNG frames without reopening `MONKEY2.001`, rerunning palette cycle simulation, installing Pillow, or changing the source bundle. It checks the bundle manifest, exact PNG format and chunk CRCs, 768-byte original CLUT, file SHA-256, source indexed-pixel fingerprint, and all saved RGB event patches. Every rendered PNG retains the original pixel indices and carries its own hash in a new render manifest.
 
 ```powershell
-Push-Location "C:\Users\87otl\ScummBucket"
-$bundle = "C:\Users\87otl\ScummBucket\exports\room23-events-20261108-143724"
+Push-Location "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
+$bundle = "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\LegacyExports\room23-events-20261108-143724"
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$out = "C:\Users\87otl\ScummBucket\exports\room23-replay60-$stamp"
+$out = "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-replay60-$stamp"
 python -m scummbucket render-events "$bundle" --fps 60 --output-dir "$out"
 Pop-Location
 ```
@@ -343,8 +346,8 @@ The repo includes an integration test for the fingerprinted MI2 sample, but the 
 To run it privately on your own Windows machine, set the environment variable to your authorized game archive path, then run the tests:
 
 ```powershell
-cd "C:\Users\87otl\ScummBucket"
-$env:SCUMMBUCKET_MI2_ARCHIVE = "C:\path\to\mi2.zip"
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
+$env:SCUMMBUCKET_MI2_ARCHIVE = "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA"
 python -m unittest discover -s tests -v
 Remove-Item Env:\SCUMMBUCKET_MI2_ARCHIVE
 ```
@@ -353,7 +356,7 @@ To also repeat the **real `descumm` instruction-alignment regression**, use both
 
 ```powershell
 $env:SCUMMBUCKET_MI2_ARCHIVE = "D:\old"
-$env:SCUMMBUCKET_DESCUMM = "C:\Users\87otl\Tools\scummvm-tools\descumm.exe"
+$env:SCUMMBUCKET_DESCUMM = "F:\Dev\SCUMMBUCKET\TOOLS\ScummVMTools\descumm.exe"
 python -m unittest discover -s tests -v
 Remove-Item Env:\SCUMMBUCKET_MI2_ARCHIVE
 Remove-Item Env:\SCUMMBUCKET_DESCUMM

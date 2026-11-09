@@ -111,6 +111,9 @@ if (-not $Apply) {
 }
 
 foreach ($name in @('SOURCE','TOOLS','FIXTURE')) { Ensure-Folder (Join-Path $Root $name) }
+foreach ($name in @('GAMES','CAPTURES','REFERENCE','OUTPUT','REPORTS')) {
+    Ensure-Folder (Join-Path (Join-Path $Root 'FIXTURE') $name)
+}
 
 if (-not (Test-Path -LiteralPath $repoDest)) {
     $excludedFolders = @(

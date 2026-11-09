@@ -9,14 +9,14 @@ The original strict `import-scummvm-palette-log` and `verify-palette-trace` rema
 The first capture was `room23-normal-20261108-215059-863.raw.log` from Room 23, original DOS VGA MI2. It is incomplete: there are 180 valid SAMPLE records but no END. The phase-aware command reads this raw log **without modifying or sealing it** and writes a separate report with exclusive creation.
 
 ~~~powershell
-cd "C:\Users\87otl\ScummBucket"
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
 git pull --ff-only origin research/p4-engine-palette-trace
 
 python -m unittest discover -s tests -p "test_room23_capture_research.py" -v
 
-python -m scummbucket analyze-room23-palette-log "D:\old\mi2" `
-    --raw-log "C:\Users\87otl\ScummBucket\exports\room23-normal-20261108-215059-863.raw.log" `
-    --output "C:\Users\87otl\ScummBucket\reports\room23-first-live-phase-analysis.json" `
+python -m scummbucket analyze-room23-palette-log "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" `
+    --raw-log "F:\Dev\SCUMMBUCKET\FIXTURE\CAPTURES\Room23\room23-normal-20261108-215059-863.raw.log" `
+    --output "F:\Dev\SCUMMBUCKET\FIXTURE\REPORTS\Room23\room23-first-live-phase-analysis.json" `
     --json
 ~~~
 
@@ -69,7 +69,7 @@ The research report now includes `evidence.timer_pair_distribution`; the Windows
 Use a fresh patched ScummVM process (same successfully built V2 binary; **no rebuild required**). The PowerShell helper automatically produces a phase-aware report before enforcing strict END completeness.
 
 ```powershell
-cd "C:\Users\87otl\ScummBucket"
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
 git pull --ff-only origin research/p4-engine-palette-trace
 python -m unittest discover -s tests -p "test_room23_capture_research.py" -v
 powershell -NoProfile -ExecutionPolicy Bypass -File ".\tools\run_scummvm_palette_capture.ps1" -Mode stress

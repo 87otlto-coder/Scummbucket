@@ -1,5 +1,8 @@
 # P4 — Room 23 VGA recording: spatial correspondence with CYCL source pixels
 
+> **Current paths (2026-11-09):** Reproducible commands use the new F:\Dev\SCUMMBUCKET workspace. Historical evidence and timestamps are unchanged; see [migration guide](../WORKSPACE_MIGRATION.md).
+
+
 **Status:** Observed video changes strongly coincide with source-backed palette-cycle pixel positions. **Exact engine palette updates, timing, and other possible scene effects are still unverified.**
 
 **Date:** 2026-11-08  
@@ -97,11 +100,11 @@ The video source's classification and alignment were made from the **VGA-appeari
 Run from the Windows checkout, using the already tested authorized game archive:
 
 ```powershell
-cd "C:\Users\87otl\ScummBucket"
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
 git pull --ff-only origin feature/p1-scumm-v5-inventory
 
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$out = "C:\Users\87otl\ScummBucket\exports\room23-palette-map-$stamp"
+$out = "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-palette-map-$stamp"
 python -m scummbucket palette-map "D:\old" --room 23 --output-dir "$out"
 ```
 

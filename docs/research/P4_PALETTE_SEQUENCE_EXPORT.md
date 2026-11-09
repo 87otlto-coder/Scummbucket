@@ -1,5 +1,8 @@
 # P4 — Experimental native indexed-background animation export
 
+> **Current workspace (2026-11-09):** Execute commands from `F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket`; originals, generated assets and reports belong in `FIXTURE`, and third-party utilities in `TOOLS`. Historical discussion retains its original evidence paths and timestamps. See [workspace migration](../WORKSPACE_MIGRATION.md).
+
+
 **Status:** PNG frame-sequence exporter implemented; **synthetic tests passed**. Original-game integration test added but not yet run in this environment. This does **not** meet the final P4 timing-fidelity exit criterion.
 
 **Primary test scene:** Original DOS VGA Monkey Island 2, room 23 (Captain Dread's ship / peninsula), where source pixel locations and observed water shimmer have been correlated with eight `CYCL` records.
@@ -17,11 +20,11 @@ The default sample is **320 × 144 native pixels** for room 23. There are no sca
 From the existing local checkout and authorized original MI2 archive:
 
 ```powershell
-cd "C:\Users\87otl\ScummBucket"
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
 git pull --ff-only origin feature/p1-scumm-v5-inventory
 
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$out = "C:\Users\87otl\ScummBucket\exports\room23-sequence-$stamp"
+$out = "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-sequence-$stamp"
 
 python -m scummbucket palette-sequence "D:\old" --room 23 --fps 30 --duration-seconds 4 --counter-rate 60 --output-dir "$out"
 

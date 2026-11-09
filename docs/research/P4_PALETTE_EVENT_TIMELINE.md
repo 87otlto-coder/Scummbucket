@@ -1,5 +1,8 @@
 # P4 — Frame-rate-independent palette-event bundle
 
+> **Current paths (2026-11-09):** Reproducible commands use the new F:\Dev\SCUMMBUCKET workspace. Historical evidence and timestamps are unchanged; see [migration guide](../WORKSPACE_MIGRATION.md).
+
+
 **Status:** Implemented, synthetic tests passed. Original DOS MI2 integration check is opt-in and pending. This is a HYPOTHETICAL palette update schedule, not a real engine-state trace.
 
 ## Why this is different
@@ -14,11 +17,11 @@ The new palette-events command is a separate experiment: it calls the palette mo
 
 From any PowerShell location:
 
-    Push-Location "C:\Users\87otl\ScummBucket"
+    Push-Location "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
     git pull --ff-only origin feature/p1-scumm-v5-inventory
 
     $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-    $out = "C:\Users\87otl\ScummBucket\exports\room23-events-$stamp"
+    $out = "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-events-$stamp"
     python -m scummbucket palette-events "D:\old" --room 23 --counter-rate 60 --duration-seconds 4 --output-dir "$out"
 
     Pop-Location

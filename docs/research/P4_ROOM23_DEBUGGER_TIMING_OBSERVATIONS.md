@@ -1,5 +1,8 @@
 # Room 23 — standard ScummVM debugger timer observations (2026-11-08)
 
+> **Current workspace (2026-11-09):** Execute commands from `F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket`; originals, generated assets and reports belong in `FIXTURE`, and third-party utilities in `TOOLS`. Historical discussion retains its original evidence paths and timestamps. See [workspace migration](../WORKSPACE_MIGRATION.md).
+
+
 ## Evidence scope
 
 User-provided manual readings from a standard ScummVM debugger while running **Monkey Island 2, original DOS VGA**, room 23. These are **live scalar-variable observations**, not instrumented per-callback palette captures. The source archive edition is independently known to match the Room 23 study; the debugger observations themselves contain no self-authenticating game fingerprint.
@@ -37,8 +40,8 @@ On Windows, with a clean new output:
 
 ```powershell
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$out = "C:\Users\87otl\ScummBucket\exports\room23-sixunit-preview-$stamp.gif"
-python -m scummbucket palette-gif "D:\old\mi2" --room 23 --fps 10 --duration-seconds 4 --counter-rate 60 --output "$out"
+$out = "F:\Dev\SCUMMBUCKET\FIXTURE\OUTPUT\room23-sixunit-preview-$stamp.gif"
+python -m scummbucket palette-gif "F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" --room 23 --fps 10 --duration-seconds 4 --counter-rate 60 --output "$out"
 Invoke-Item "$out"
 ```
 

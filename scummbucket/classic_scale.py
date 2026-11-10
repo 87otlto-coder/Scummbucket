@@ -31,7 +31,24 @@ def paint_scaled(costume, pixels, width, x, y, facing, positions, scale):
         shift_y = sum(kept(phase_y + i) for i in range(abs(ry)))
         px = x + step * (shift_x if rx >= 0 else -shift_x)
         top = y + (shift_y if ry >= 0 else -shift_y)
-        for col in range(cel.width):
+        first = 0
+        if step == 1 and px < 0:
+            edge = px
+            hidden = 0
+            for col in range(cel.width):
+                if edge >= 0:
+                    break
+                hidden += 1
+                if kept(phase_x + col):
+                    edge += 1
+            if edge <= 0 and hidden == cel.width:
+                dx += cel.move_x
+                dy -= cel.move_y
+                continue
+            first = max(0, hidden - 1)
+            if first:
+                px = 0
+        for col in range(first, cel.width):
             py = top
             for row in range(cel.height):
                 if kept(phase_y + row):

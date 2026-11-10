@@ -22,6 +22,10 @@ from .room23_capture_research import analyze_room23_capture
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="scummbucket", description="SCUMM resource investigation (initial MI2 DOS scope)")
     sub = parser.add_subparsers(dest="command", required=True)
+    pano = sub.add_parser("panorama", help="Export native indexed room background and separate layers")
+    pano.add_argument("input")
+    pano.add_argument("--room", type=int, required=True)
+    pano.add_argument("--output", required=True)
     command = sub.add_parser("inspect", help="Inspect a ZIP, game folder or MONKEY2.000 file")
     command.add_argument("input")
     command.add_argument("--json", action="store_true", help="Print complete JSON report")
@@ -169,6 +173,13 @@ def main(argv=None) -> int:
     native.add_argument("--raw-log", required=True)
     native.add_argument("--output-dir", required=True, help="New directory for frames, player and manifest")
     args = parser.parse_args(argv)
+    if args.command == "panorama":
+        from .panorama import export_panorama
+        report = export_panorama(args.input, args.output, args.room)
+        print(f"{report['width']} x {report['height']}, {len(report['files'])} files in {args.output}")
+        for diagnostic in report["diagnostics"]:
+            print(diagnostic, file=sys.stderr)
+        return 2 if report["diagnostics"] else 0
 
     if args.command == "export-room23-capture":
         from .room23_export import export_room23

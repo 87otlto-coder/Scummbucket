@@ -3,7 +3,7 @@ name: Python regression tests
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, research/p4-engine-palette-trace]
 
 permissions:
   contents: read

@@ -25,6 +25,7 @@
 | Depth | One room Z-plane, `ZP01`, native world width 784, 18,366 set pixels |
 | Stored object images | IDs 41, 42, 45, 57, one state each; object-state changes not observed |
 | Animated scenery | Script 207 places actor 11 (costume 142) relative to camera; archive-decoded/script-derived mechanism; execution observed only in debugger-equivalent room jump |
+| Costume 142 independently checked against original uploaded ZIP | `DCOS[142]` points to room 7; decoded `MONKEY2.001` offset 584460, chunk length 1,509, format `0x59`, 14 as highest animation identifier; COST SHA-256 `7ef3e98fb9cd824782b0cf7e93d9e7f3c059354557ec7e08d714eda9425a7c5f` |
 | Existing Room 7 panorama | `FIXTURE/OUTPUT/Room7/native-20261110-a` (`manifest.json`, `background.png`, `ZP01.png`, objects) |
 | Existing private capture | `FIXTURE/CAPTURES/Room7/sweep-20261110-a` (`run.json`, engine and presentation binaries) |
 | Existing comparison | `FIXTURE/REPORTS/Room7/sweep-20261110-a/report.json` (87 frame records) |
@@ -47,7 +48,7 @@ The uploaded `sweep-20261110-a.zip` shared in ChatGPT contains the comparison re
 
 ### Checkpoint B — independent actor 11 against isolated reference (second code push)
 
-- Treat frame-state data as **engine-observed**, not self-simulated. Preserve frame ID, actor 11 world position, camera origin, logical animation frame, limb cursors, facing, scale and palette mapping. Derived screen X is `world_x - viewport_x`. Do not assume `y=144` means outside the screen: cels can extend above actor foot origin.
+- Treat frame-state data as **engine-observed**, not self-simulated. The original 87-frame report records actor 11's world position, costume, logical frame, and scale, but **only records limb cursors for actor 1** (`walk 1 ...`); it does **not** contain actor-11 limb positions. Do not hallucinate those missing fields. A guarded, source-only follow-up patcher is prepared at `tools/instrument_room7_actor11.py`, with synthetic tests; if exact actor pose cannot be determined from decoded scripts, copy the existing Room 7 ScummVM build to a **fresh** TOOLS path, apply that patch, compile and run a focused comparable sweep. Actor-11 cursor snapshots will be emitted as `costume11 ...`. Derived screen X is `world_x - viewport_x`. Do not assume `y=144` means outside the screen: cels can extend above actor foot origin.
 - Frame candidates: ~47–74, where Guybrush is substantially off left side; confirm *costume pixel extent*, not just foot coordinates, before declaring isolation. In frame 63, camera X=464 and actor 11 world X=590, so screen origin X=126.
 - Reconstruct one actor-11 indexed frame *from decoded archive COST*, not from ScummVM's front pixels. Then compare `320*144=46,080` indexed positions per frame; report mismatches, first differing coordinates, control data, palette mappings and visible bounds. Progress to all isolated frames if valid.
 - If scenery uses camera-relative positioning `590 - ((camera_x - 624)/2)`, verify script/data consistency separately; do not fit position to each reference image.
@@ -75,7 +76,7 @@ The uploaded `sweep-20261110-a.zip` shared in ChatGPT contains the comparison re
 
 - Room 7 was entered using a debugger-equivalent jump from a Room 23 save, **not normal gameplay entry**. Normal entry, conditional object 57 state and music triggers are separate pending experiments.
 - Actor 11 uses **costume 142 with 32 local palette slots**. Preparatory source changes now accept format `0x59`, with synthetic test coverage. **Real costume-142 decoding and frame fidelity remain unverified**; validate before building on this code.
-- The Room 7 report says 87/87 archive background crops, masks and final palettes matched. **It does not say the composed front buffer was independently reconstructed**.
+- The Room 7 report says 87/87 archive background crops, masks and final palettes matched. **It does not say the composed front buffer was independently reconstructed**. It records **no actor-11 limb cursors**, so a new narrow instrumentation capture may be necessary before exact scenery composition can be tested.
 - `ZP01` world mask byte agreement is not proof that scaled actor clipping or layered costume rendering works.
 - Room 23 observed the limb cursor **after** drawing on the walking sequence. Corrected displayed positions used the previous step in the archive-defined gait cycle; test if/when Room 7 exhibits the same order, don't blindly subtract one from every cursor.
 - Camera X stops at 464 after frame 63; actor 11 continues independent script-controlled motion by camera position and potentially costume animation.

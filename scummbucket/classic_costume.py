@@ -1,4 +1,4 @@
-"""SCUMM v5 classic DOS costume cels, drawn at native scale in room coordinates."""
+"""SCUMM v5 classic DOS 16/32-color costume cels and native-scale composition."""
 from dataclasses import dataclass
 from struct import Struct
 
@@ -19,13 +19,18 @@ class ClassicCostume:
     header = Struct("<HHhhhh")
 
     def __init__(self, chunk):
-        if (len(chunk) < 60 or chunk[:4] != b"COST" or
-                int.from_bytes(chunk[4:8], "big") != len(chunk) or chunk[9] & 127 != 0x58):
-            raise ValueError("expected a complete v5 16-color COST")
+        fmt = (chunk[9] & 127) if len(chunk) >= 10 else None
+        colors = {0x58: 16, 0x59: 32}.get(fmt)
+        if (colors is None or len(chunk) < 44 + colors or
+                chunk[:4] != b"COST" or
+                int.from_bytes(chunk[4:8], "big") != len(chunk)):
+            raise ValueError("expected a complete v5 16/32-color COST")
         self.data = chunk
         self.force_right = bool(chunk[9] & 128)
-        self.palette = chunk[10:26]
-        self.commands = self.pointer(26)
+        self.colors = colors
+        self.palette = chunk[10:10 + colors]
+        self.table_start = 10 + colors
+        self.commands = self.pointer(self.table_start)
 
     def pointer(self, pos):
         # V5 COST addresses are relative to byte two of the chunk.
@@ -42,7 +47,7 @@ class ClassicCostume:
         animation = 4 * frame + directions[facing]
         if frame != 2 or animation > self.data[8] or len(recorded) != 16:
             raise ValueError("unsupported walk animation")
-        pos = self.pointer(60 + 2 * animation)
+        pos = self.pointer(self.table_start + 34 + 2 * animation)
 
         def word():
             nonlocal pos
@@ -90,7 +95,7 @@ class ClassicCostume:
         code = self.data[command] & 127
         if code == 0x7b:
             return None
-        table = self.pointer(28 + number * 2)
+        table = self.pointer(self.table_start + 2 + number * 2)
         offset = self.pointer(table + code * 2)
         if offset + self.header.size > len(self.data):
             raise ValueError("truncated cel header")
@@ -100,10 +105,13 @@ class ClassicCostume:
         if not area or area > 255 * (len(self.data) - pos):
             raise ValueError("invalid cel dimensions")
         slots = bytearray()
+        shift = 3 if self.colors == 32 else 4
+        mask = (1 << shift) - 1
         while len(slots) < area:
             if pos >= len(self.data):
                 raise ValueError("truncated cel")
-            slot, count = divmod(self.data[pos], 16)
+            encoded = self.data[pos]
+            slot, count = encoded >> shift, encoded & mask
             pos += 1
             if count == 0:
                 if pos >= len(self.data):

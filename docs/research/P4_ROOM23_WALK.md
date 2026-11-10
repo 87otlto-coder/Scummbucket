@@ -70,3 +70,26 @@ python -B -m unittest discover -s tests -q
 ~~~
 
 Verified suite result: 251 tests run, four skipped. The verified private captures use the prefix `CAPTURES/Room23/walk-20261110-a`. The per-frame report is `REPORTS/Room23/walk-20261110-a.json` (SHA-256 `ab34f9c0ccbac98561494e4014addc5fb7a84258eaa5d577556e2bae129f9550`). The instrumented executable SHA-256 was `b9b55ec2fa34805f6e10bc797334f5e0adbb4273e88750400232d590d209851b`. The save SHA-256 was `968bbdfaa855f35e0e89c271172d3d185448f256213f87d527cfa2b18ccea8ad`. The launcher copies that save into each new capture directory. Preparing a replacement save manually yields a different experiment and requires rechecking the route and frame expectations.
+## Archive costume reconstruction
+
+The independent compositor in `scummbucket/classic_costume.py` reproduces the 320 × 144 indexed room in all 87 control and all 87 normal frames. Each comparison covers 4,008,960 room pixels. ZP02 suppresses 2,036 distinguishable indices over eight frames, including 546 on frame 30. The held standing pose from frame 38 onward also matches.
+
+| Evidence | Scope |
+| --- | --- |
+| Archive-decoded | The linked DCOS slot 1 points to a 27,965-byte COST at MONKEY2.001 offset 258859. Its 16-color table, directional animation records, limb tables, signed cel offsets and column-major run lengths supply the costume data. Local slot zero is transparent. The background and packed ZP02 come from Room 23. |
+| Engine-observed | The pinned walk report supplies each foot position, facing, movement state, logical frame, limb cursors and selected plane. Its frame digests authenticate the two original indexed reference buffers. |
+| Inferred and checked against the control | Native scale, foot origin and default costume palette reproduce this route. For a moving pose the v5 draw precedes animation advancement. Reversing one step in the archive-defined loop recovers the drawn cel. The walk animation stops limb 1 while its recorded cursor stays populated. Standing poses use the recorded cursors directly. |
+| Unsupported | ZP01 actor clipping, other routes or costumes, scaled actors, palette overrides, and simulation of walking or animation from player input. |
+
+On frame 30 the engine recorded limb 0 at sequence position 9. The drawn position was 8, giving an 18 × 47 cel at (211, 92) relative to the room. The verifier constructs both predictions before reading the corresponding capture buffers. Its private report records the cel offsets and placements, both pairs of indexed hashes, mismatch counts and first differing coordinates if present.
+
+From the SOURCE checkout, use the original fixture tree and a fresh report filename. The verifier returns a failure status for any indexed mismatch and refuses to overwrite an existing report.
+
+~~~powershell
+$f = 'F:/Dev/SCUMMBUCKET/FIXTURE'
+python -B -m tools.verify_room23_costume $f "$f/REPORTS/Room23/walk-costume-$(Get-Date -Format yyyyMMdd-HHmmss-fff).json"
+$env:SCUMMBUCKET_COSTUME_FIXTURE = $f
+python -B -m unittest discover -s tests -p test_classic_costume.py -v
+~~~
+
+The verified private report is `REPORTS/Room23/walk-20261110-a-costume.json`, SHA-256 `9c455e58b57a5455430d6bbe0e7396f2fc7ec73658b561ce5090fc730b8bddae`.

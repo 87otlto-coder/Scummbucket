@@ -20,6 +20,8 @@ def digest(path):
 
 def run(args):
     exe, game, dest = (p.resolve() for p in (args.exe, args.game, args.output))
+    if args.walk and (not args.save or args.enter_room):
+        raise ValueError("use the Room 23 save for a walking run")
     if {name: digest(game / name) for name in ARCHIVES} != ARCHIVES:
         raise ValueError("unexpected DOS game archives")
     dest.mkdir(parents=True, exist_ok=False)
@@ -44,6 +46,11 @@ def run(args):
             "headless": args.headless, "debugger_equivalent_entry": args.enter_room, "save_sha256": digest(args.save) if args.save else None,
             "version": subprocess.check_output([str(exe), "--version"], cwd=dest, env=env,
                                                text=True, errors="replace").strip()}
+    if args.walk:
+        meta["walk"] = args.walk
+        (dest / "walk.enabled").touch(exist_ok=False)
+        if args.walk == "control":
+            (dest / "walk-control.enabled").touch(exist_ok=False)
     (dest / "run.json").write_text(json.dumps(meta, indent=2), encoding="utf8")
     if args.enter_room:
         (dest / "enter-room23.enabled").touch(exist_ok=False)
@@ -72,6 +79,7 @@ if __name__ == "__main__":
     parser.add_argument("--dll-dir", type=Path, default=Path("C:/msys64/ucrt64/bin"))
     parser.add_argument("--music-driver", default="auto")
     parser.add_argument("--save", type=Path)
+    parser.add_argument("--walk", choices=("normal", "control"))
     parser.add_argument("--enter-room", action="store_true")
     parser.add_argument("--headless", action="store_true")
     parser.add_argument("--timeout", type=int, default=120)

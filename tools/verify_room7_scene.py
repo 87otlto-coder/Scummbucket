@@ -78,8 +78,8 @@ if __name__ == '__main__':
     dest = Path(sys.argv[2])
     rows = list(compare(Path(sys.argv[1]),dest))
     from scummbucket.room23_export import PLAYER
-    timeline = [[r['file'],r['time_ms']-rows[0]['time_ms']] for r in rows]
-    (dest/'preview.html').write_text(PLAYER.replace('Room 23 background','Room 7 reconstruction').replace('TIMELINE',json.dumps(timeline)),encoding='utf8')
+    from scummbucket.standalone_preview import render_standalone_preview
+    (dest/'preview.html').write_text(render_standalone_preview(dest, rows, PLAYER), encoding='utf8')
     report = dict(entry='debugger-equivalent Room 23 save jump', frames=rows,
                   archive_inputs=['DCOS[1]', 'DCOS[142]', 'Room 7 SMAP, ZP01, CYCL'],
                   observed_inputs=['camera, actor state, initial palette, timer and presentation timestamps'])

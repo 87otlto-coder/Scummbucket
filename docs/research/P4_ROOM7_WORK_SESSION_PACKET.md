@@ -1,6 +1,6 @@
 # Room 7 — low-usage Work session packet (P3/P4)
 
-**Status:** preparation only; this file does not claim new compositor or renderer verification.  
+**Status:** preparation plus a source-grounded 0x59 decoder extension and fixture-free tests. **No private Room 7 actor reconstruction has been verified.** Research-branch GitHub Actions now runs synthetic tests on each push; always inspect the latest CI result.  
 **Research branch baseline at preparation:** `965424eaededc23b73b5447f55061ba2b70de48c` (verify current remote HEAD before work).  
 **Owner-approved scope:** extract the maximum independently verified Room 7 reconstruction evidence in a **limited ChatGPT Work-usage allocation**. Budget is *usage*, not literal elapsed minutes. Prioritize validated, pushed increments. **Do not launch a broad, unbounded agent task.**
 
@@ -9,7 +9,7 @@
 1. Verify branch HEAD and `git status --porcelain` in each checkout. Canonical local paths: `F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket` (repository), `F:\Dev\SCUMMBUCKET\TOOLS` (ScummVM instruments/builds), `F:\Dev\SCUMMBUCKET\FIXTURE` (immutable archives, private captures and exports). No fourth top-level directory.
 2. Previous Work used a separate checkout at `C:\Users\87otl\Documents\ChatGPT\ScummBucket\SOURCE\ScummBucket`. It reported the F: checkout at an older commit. **Only fast-forward** F: when reachable and the working tree is clean; otherwise report divergence and do not overwrite, reset, relocate or silently copy between trees.
 3. Run `python -B tools/room7_work_preflight.py --root F:/Dev/SCUMMBUCKET` when available. It is read-only. If original capture files are unavailable, use the report and archive-only research; never invent frame-level validation.
-4. Read this packet, [Room 7 integration](P4_ROOM7_INTEGRATION.md), [Room 23 walking and costume baseline](P4_ROOM23_WALK.md), `scummbucket/classic_costume.py`, `tools/compare_room7.py`, `tools/verify_room23_costume.py`, `tools/instrument_room7.py`, `tools/run_room23_frames.py`, `tests/test_classic_costume.py`.
+4. Read this packet, [renderer source map](P4_ROOM7_RENDERER_SOURCE_MAP.md), [Room 7 integration](P4_ROOM7_INTEGRATION.md), [Room 23 walking and costume baseline](P4_ROOM23_WALK.md), `scummbucket/classic_costume.py`, `tools/compare_room7.py`, `tools/verify_room23_costume.py`, `tools/instrument_room7.py`, `tools/run_room23_frames.py`, `tests/test_classic_costume.py`.
 5. **PUSH EARLY:** Every *independently useful, tested* milestone should be committed and pushed immediately to `research/p4-engine-palette-trace`. Check remote HEAD before subsequent pushes; use ordinary fast-forward behavior and stop on conflict. Do not leave all commits until the end. Tests/diagnostics can be partial, but label them clearly; never call failing verification a success.
 
 ### Known pinned fixtures and evidence
@@ -36,14 +36,14 @@ The uploaded `sweep-20261110-a.zip` shared in ChatGPT contains the comparison re
 
 ## Targeted experiments, ordered by value
 
-### Checkpoint A — 32-color scenery COST decoder (first code push)
+### Checkpoint A — verify 32-color scenery COST against the original archive (first new Work push)
 
 - Inspect `ClassicCostume` and pinned upstream `scummvm/scummvm` tag `v2026.4.0`, `engines/scumm/costume.cpp`, especially `ClassicCostumeLoader::loadCostume`, `paintCelByleRLECommon`, `ClassicCostumeRenderer::byleRLEDecode`.
-- 16-color `0x58` and 32-color `0x59` differ in palette width and table offsets, and in RLE color/run bit allocation. Implement **bounded** format dispatch, malformed/truncated checks and test fixtures that do not contain copyrighted pixels. Source offset pointers are relative to the COST payload base, not arbitrary file offsets. Preserve existing 16-color output and all Room 23 regressions.
+- Preparation commits already extend `ClassicCostume` for `0x58` and `0x59` and add synthetic tests for 32-color palettes, RLE, transparency and malformed runs. **Review and run these first**; they have not yet been compared with private actor-11 frames. Fix any failures, verify pointer bases and bounds, and preserve Room 23 behavior. No copyrighted pixels were added to Git.
 - Resolve `DCOS[142]` via `inspect(game)['directory_links']['entries']`; verify linked tag, byte length, source digest. Do not copy or commit the costume resource.
 - Enumerate actor-11 cels/sequences/palette/transparent slot. If decoder data do not match source invariants, record a hard diagnostic, do not guess.
 
-**Push A** after targeted public tests + private decode smoke test (if fixtures exist), even if actor placement still needs work.
+**Push A** after independent costume-142 decode smoke test and targeted tests (if private fixtures exist), even if actor placement still needs work.
 
 ### Checkpoint B — independent actor 11 against isolated reference (second code push)
 
@@ -74,7 +74,7 @@ The uploaded `sweep-20261110-a.zip` shared in ChatGPT contains the comparison re
 ## Important pitfalls already discovered
 
 - Room 7 was entered using a debugger-equivalent jump from a Room 23 save, **not normal gameplay entry**. Normal entry, conditional object 57 state and music triggers are separate pending experiments.
-- Actor 11 uses **costume 142 with 32 local palette slots**. Existing `classic_costume.py` rejects format byte `0x59`; a prior chat suggested a patch, **but it has not been applied or tested**. Do not blindly paste it.
+- Actor 11 uses **costume 142 with 32 local palette slots**. Preparatory source changes now accept format `0x59`, with synthetic test coverage. **Real costume-142 decoding and frame fidelity remain unverified**; validate before building on this code.
 - The Room 7 report says 87/87 archive background crops, masks and final palettes matched. **It does not say the composed front buffer was independently reconstructed**.
 - `ZP01` world mask byte agreement is not proof that scaled actor clipping or layered costume rendering works.
 - Room 23 observed the limb cursor **after** drawing on the walking sequence. Corrected displayed positions used the previous step in the archive-defined gait cycle; test if/when Room 7 exhibits the same order, don't blindly subtract one from every cursor.

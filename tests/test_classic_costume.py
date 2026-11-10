@@ -28,7 +28,7 @@ def sample(runs=b"\x11\x02\x20\x03"):
     return ClassicCostume(bytes(chunk))
 
 
-def sample_32(runs=b"\\x0b\\xfb"):
+def sample_32(runs=bytes([0x0b, 0xfb])):
     # Minimal synthetic v5 32-color COST: two columns, three pixels each.
     # Local slot 0 is transparent, slot 1 maps to index 42, slot 31 to 77.
     chunk = bytearray(140)
@@ -77,7 +77,7 @@ class CostumeTests(unittest.TestCase):
             sample().limb(2, 0)
 
     def test_32_color_palette_and_three_bit_rle(self):
-        for encoded in (b"\\x0b\\xfb", b"\\x08\\x03\\xfb"):
+        for encoded in (bytes([0x0b, 0xfb]), bytes([0x08, 0x03, 0xfb])):
             with self.subTest(encoded=encoded):
                 costume = sample_32(encoded)
                 self.assertEqual(costume.colors, 32)
@@ -92,13 +92,13 @@ class CostumeTests(unittest.TestCase):
                 self.assertEqual(placements[0]["origin"], [1, 0])
 
     def test_32_color_local_zero_is_transparent(self):
-        costume = sample_32(b"\\x03\\xfb")
+        costume = sample_32(bytes([0x03, 0xfb]))
         state = [0] + [65535] * 15
         result, _ = compose(costume, bytes([9]) * 12, 4, 1, 2, 90, state)
         self.assertEqual(result, bytes([9, 9, 77, 9] * 3))
 
     def test_32_color_invalid_runs_are_rejected(self):
-        for encoded in (b"\\x08", b"\\x08\\x00", b"\\x17", b"\\x0b\\xfc"):
+        for encoded in (bytes([0x08]), bytes([0x08, 0x00]), bytes([0x17]), bytes([0x0b, 0xfc])):
             with self.subTest(encoded=encoded), self.assertRaises(ValueError):
                 sample_32(encoded).limb(0, 0)
 

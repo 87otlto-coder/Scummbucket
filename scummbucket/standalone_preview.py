@@ -28,8 +28,8 @@ def render_standalone_preview(folder, rows, player_template, *, title="Room 7 re
         raise ValueError("No frames in Room 7 preview manifest")
     if player_template.count("TIMELINE") != 1:
         raise ValueError("Expected exactly one TIMELINE placeholder")
-    if player_template.count("Room 23 background") != 1:
-        raise ValueError("Unexpected player title placeholder")
+    if "Room 23 background" not in player_template:
+        raise ValueError("Missing player title placeholder")
     timeline = []
     previous_time = None
     first_time = None

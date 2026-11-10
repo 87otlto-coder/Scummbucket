@@ -147,6 +147,24 @@ def _candidate_phases(source: bytes, records: list[dict], segment: list[dict],
     return results
 
 
+def iter_continuous_palettes(source, cycles, capture, phase):
+    """Yield immutable post-callback palettes, preserving counters across clock gaps."""
+    rows = capture["samples"]
+    palette = bytearray(capture["initial_palette"])
+    cycles = [cycle.copy() for cycle in cycles]
+    for cycle in cycles:
+        span = slice(3 * cycle["start_color"], 3 * (cycle["end_color"] + 1))
+        palette[span] = source[span]
+    first_delta = max(rows[0]["var_timer"], rows[0]["var_timer_next"])
+    for _ in range(phase - 1):
+        advance_palette(palette, cycles, delta=first_delta)
+
+    for row in rows:
+        delta = max(row["var_timer"], row["var_timer_next"])
+        events = advance_palette(palette, cycles, delta=delta)
+        yield bytes(palette), events
+
+
 def _continuous_replay(source: bytes, cycles: list[dict], capture: dict,
                        first_segment: dict, fixed: tuple[int, ...]) -> dict:
     """Freeze the first segment's prefix phase and advance once per recorded call."""
@@ -156,8 +174,6 @@ def _continuous_replay(source: bytes, cycles: list[dict], capture: dict,
 
     rows = capture["samples"]
     prefix = first_segment["calibration_samples"]
-    palette = bytearray(source)
-    cycles = [cycle.copy() for cycle in cycles]
     groups = []
     for cycle in cycles:
         groups.append({key: cycle[key] for key in (
@@ -165,15 +181,10 @@ def _continuous_replay(source: bytes, cycles: list[dict], capture: dict,
             "direction_from_flag_bit_1")})
     for group in groups:
         group.update(heldout_matches=0, first_mismatch=None)
-    first_delta = max(rows[0]["var_timer"], rows[0]["var_timer_next"])
-    for _ in range(phase - 1):
-        advance_palette(palette, cycles, delta=first_delta)
-
     predictions = []
     previous = capture["initial_palette"]
-    for row in rows:
-        delta = max(row["var_timer"], row["var_timer_next"])
-        events = advance_palette(palette, cycles, delta=delta)
+    states = iter_continuous_palettes(source, cycles, capture, phase)
+    for row, (palette, events) in zip(rows, states):
         if row["sequence"] > prefix:
             observed = row["palette"]
             changed = []

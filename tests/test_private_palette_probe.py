@@ -165,7 +165,7 @@ class PrivatePaletteProbeTest(unittest.TestCase):
                              "video_calibrated_60_units_per_second_hypothesis")
             self.assertFalse(result["timing"]["engine_timer_values_observed"])
             self.assertFalse(result["timing"]["seamless_loop_verified"])
-            self.assertEqual(result["frames"][0]["counter_delta"], 0)
+            self.assertEqual(result["frames"][0]["counter_increment"], 0)
             self.assertEqual(result["frames"][18]["cumulative_counter_units"], 36)
             self.assertEqual(result["frames"][36]["cumulative_counter_units"], 72)
             self.assertTrue(any(event["cycle_id"] == 5

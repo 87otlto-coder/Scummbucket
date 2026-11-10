@@ -164,7 +164,21 @@ def main(argv=None) -> int:
     forensic.add_argument("--raw-log", required=True, help="Actual unmodified SBP4 log from patched ScummVM")
     forensic.add_argument("--output", required=True, help="New JSON forensic report; no overwrites")
     forensic.add_argument("--json", action="store_true", help="Print entire forensic report")
+    native = sub.add_parser("export-room23-capture", help="Export native background PNGs at SBP4 sample times")
+    native.add_argument("input")
+    native.add_argument("--raw-log", required=True)
+    native.add_argument("--output-dir", required=True, help="New directory for frames, player and manifest")
     args = parser.parse_args(argv)
+
+    if args.command == "export-room23-capture":
+        from .room23_export import export_room23
+        try:
+            manifest = export_room23(args.input, args.raw_log, args.output_dir)
+        except Exception as exc:
+            print(f"Room 23 export failed: {exc}", file=sys.stderr)
+            return 2
+        print(f"Exported {len(manifest['frames'])} samples into {args.output_dir}")
+        return 0
 
     if args.command == "analyze-room23-palette-log":
         report = analyze_room23_capture(args.input, args.raw_log)

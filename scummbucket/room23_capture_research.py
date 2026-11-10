@@ -147,6 +147,67 @@ def _candidate_phases(source: bytes, records: list[dict], segment: list[dict],
     return results
 
 
+def _continuous_replay(source: bytes, cycles: list[dict], capture: dict,
+                       first_segment: dict, fixed: tuple[int, ...]) -> dict:
+    """Freeze the first segment's prefix phase and advance once per recorded call."""
+    phase = first_segment.get("first_sample_equivalent_model_update")
+    if phase is None:
+        return {"status": "phase_unresolved", "heldout_samples": 0}
+
+    rows = capture["samples"]
+    prefix = first_segment["calibration_samples"]
+    palette = bytearray(source)
+    cycles = [cycle.copy() for cycle in cycles]
+    groups = []
+    for cycle in cycles:
+        groups.append({key: cycle[key] for key in (
+            "id", "start_color", "end_color", "rate_raw", "delay_counter_units",
+            "direction_from_flag_bit_1")})
+    for group in groups:
+        group.update(heldout_matches=0, first_mismatch=None)
+    first_delta = max(rows[0]["var_timer"], rows[0]["var_timer_next"])
+    for _ in range(phase - 1):
+        advance_palette(palette, cycles, delta=first_delta)
+
+    predictions = []
+    previous = capture["initial_palette"]
+    for row in rows:
+        delta = max(row["var_timer"], row["var_timer_next"])
+        events = advance_palette(palette, cycles, delta=delta)
+        if row["sequence"] > prefix:
+            observed = row["palette"]
+            changed = []
+            mismatches = []
+            for group in groups:
+                span = slice(3 * group["start_color"], 3 * (group["end_color"] + 1))
+                if observed[span] != previous[span]:
+                    changed.append(group["id"])
+                if palette[span] == observed[span]:
+                    group["heldout_matches"] += 1
+                else:
+                    mismatches.append(group["id"])
+                    if group["first_mismatch"] is None:
+                        group["first_mismatch"] = row["sequence"]
+            fixed_diff = _entries_differ(capture["initial_palette"], observed, fixed)
+            predictions.append({
+                "sequence": row["sequence"], "timer_pair": [row["var_timer"], row["var_timer_next"]],
+                "predicted_rotation_ids": [event["cycle_id"] for event in events],
+                "observed_changed_ids": changed, "mismatched_cycle_ids": mismatches,
+                "noncycling_mismatch_indices": fixed_diff,
+            })
+        previous = row["palette"]
+    matches = sum(not (p["mismatched_cycle_ids"] or p["noncycling_mismatch_indices"])
+                  for p in predictions)
+    return {
+        "method": "First clock segment prefix selects one equivalent phase. Carry counters through clock gaps, one max(timer, timer_next) update per SAMPLE. Noncycling colors use BEGIN.",
+        "first_sample_equivalent_model_update": phase, "calibration_samples": prefix,
+        "heldout_samples": len(predictions), "heldout_matches": matches,
+        "status": ("no_holdout" if not predictions else
+                   "matched" if matches == len(predictions) else "mismatch"),
+        "cycles": groups, "predictions": predictions,
+    }
+
+
 def compare_room23_palette_capture(source_palette: bytes, records: list[dict],
                                    capture: dict, *, phase_search_limit: int = 500,
                                    min_calibration: int = 3,
@@ -253,6 +314,7 @@ def compare_room23_palette_capture(source_palette: bytes, records: list[dict],
                               if (row["var_timer"], row["var_timer_next"]) == (timer, timer_next)),
     } for (timer, timer_next), count in sorted(timer_counts.items())]
     return {
+        "continuous_scheduler": _continuous_replay(source_palette, cycles, capture, all_out[0], fixed),
         "timer_pair_distribution": timer_pairs,
         "model_comparison_status": report_status,
         "capture_complete": bool(capture["complete"]),
@@ -317,8 +379,8 @@ def analyze_room23_capture(input_path: str | Path, raw_path: str | Path, *,
         report["runtime_trace_authenticated"] = False
         report["complete_scene_animation_verified"] = False
         report["status"] = (
-            "success" if comparison["model_comparison_status"] == "matched" and parsed["complete"]
-            else "incomplete" if comparison["model_comparison_status"] == "matched"
+            "incomplete" if not parsed["complete"]
+            else "success" if comparison["model_comparison_status"] == "matched"
             else "failed")
         if not parsed["complete"]:
             report["diagnostics"].append({"severity": "warning", "code": "RESEARCH_MISSING_END",
@@ -328,7 +390,7 @@ def analyze_room23_capture(input_path: str | Path, raw_path: str | Path, *,
                                           "message": "Clock gaps segmented for phase analysis; actual reset cause unobserved"})
         if comparison["model_comparison_status"] != "matched":
             report["diagnostics"].append({"severity": "error", "code": "RESEARCH_MODEL_MISMATCH",
-                                          "message": "Phase-aware source model did not account for every observed palette"})
+                                          "message": "Clock-segment phase search did not resolve or match every observed palette"})
     except Exception as exc:
         # Research input mistakes and unsupported source variants must remain
         # visible as structured diagnostics rather than vanishing silently.

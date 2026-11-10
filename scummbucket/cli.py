@@ -181,9 +181,14 @@ def main(argv=None) -> int:
         else:
             evidence = report.get("evidence") or {}
             print(f"Room 23 raw palette research: {report['status']}")
-            print(f"Cycle samples matching: {evidence.get('samples_matching_cycling', 0)} "
+            print(f"Clock-segment cycle samples matching: {evidence.get('samples_matching_cycling', 0)} "
                   f"/ {evidence.get('sample_count', 0)}; "
                   f"held-out full-palette matches: {evidence.get('heldout_samples_matching', 0)}")
+            replay = evidence.get("continuous_scheduler")
+            if replay:
+                print(f"Continuous scheduler: {replay['status']}, "
+                      f"{replay.get('heldout_matches', 0)} / {replay['heldout_samples']} "
+                      "held-out full palettes match")
             print("Capture completion is reported separately. An incomplete trace "
                   "never becomes a complete capture through phase alignment.")
             for issue in report["diagnostics"]:

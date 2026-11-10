@@ -1,9 +1,10 @@
-"""Phase-aware research tests; all generated palettes are synthetic."""
+"""Phase-aware research tests; synthetic cases and an optional pinned private trace."""
+import os
 import unittest
 
 from scummbucket.palette_probe import prepare_cycles, advance_palette
 from scummbucket.room23_capture_research import (
-    ResearchInvalid, parse_room23_hook_log, compare_room23_palette_capture,
+    ResearchInvalid, analyze_room23_capture, parse_room23_hook_log, compare_room23_palette_capture,
 )
 from scummbucket.engine_trace_import import EngineTraceError, parse_scummvm_palette_log
 
@@ -183,6 +184,76 @@ class Room23CaptureResearchTest(unittest.TestCase):
         self.assertEqual(result["segments"][0]["calibration_samples"], 16)
         self.assertEqual(result["heldout_samples_matching"], 16)
         self.assertFalse(result["capture_complete"])
+
+    def test_continuous_forecast_crosses_gap_without_slow_speed_calibration(self):
+        rates = (230, 307, 153, 384, 460, 384, 230, 307)
+        records = [dict(self.records[0], id=i + 1, rate_raw=rate,
+                        start_color=176 + 2*i, end_color=177 + 2*i)
+                   for i, rate in enumerate(rates)]
+        # Independent two-color oracle: one swap on threshold, retain remainder.
+        counters = [0] * len(records)
+        palette = bytearray(self.clut)
+        rows = []
+        for seq in range(1, 88):
+            timer = 6 if seq <= 28 else 60
+            timer_next = 6 if seq <= 27 else 60
+            for i, rate in enumerate(rates):
+                counters[i] += max(timer, timer_next)
+                delay = 16384 // rate
+                if counters[i] >= delay:
+                    counters[i] %= delay
+                    a = records[i]["start_color"] * 3
+                    palette[a:a+6] = palette[a+3:a+6] + palette[a:a+3]
+            rows.append(dict(sequence=seq, var_timer=timer, var_timer_next=timer_next,
+                             millis=100*seq if seq <= 27 else 15000 + (seq-28)*1000,
+                             palette=bytes(palette)))
+        capture = dict(samples=rows, initial_palette=self.clut, complete=False,
+                       stop_reason="missing_end")
+
+        def forecast():
+            return compare_room23_palette_capture(
+                self.clut, records, capture)["continuous_scheduler"]
+
+        replay = forecast()
+        self.assertLess(replay["calibration_samples"], 28)
+        self.assertEqual(replay["status"], "matched")
+        self.assertEqual(replay["heldout_matches"], 87 - replay["calibration_samples"])
+        for prediction in replay["predictions"]:
+            self.assertEqual(prediction["predicted_rotation_ids"], prediction["observed_changed_ids"])
+        corrupted = bytearray(rows[28]["palette"])
+        corrupted[176*3] ^= 1
+        corrupted[0] ^= 1
+        rows[28]["palette"] = bytes(corrupted)
+        changed = forecast()
+        self.assertEqual(changed["status"], "mismatch")
+        self.assertEqual(changed["cycles"][0]["first_mismatch"], 29)
+        mismatch = next(p for p in changed["predictions"] if p["sequence"] == 29)
+        self.assertEqual(mismatch["noncycling_mismatch_indices"], [0])
+        self.assertEqual(changed["heldout_matches"], replay["heldout_matches"] - 1)
+        self.assertEqual([p["predicted_rotation_ids"] for p in replay["predictions"]],
+                         [p["predicted_rotation_ids"] for p in changed["predictions"]])
+
+    @unittest.skipUnless(os.environ.get("SCUMMBUCKET_ROOM23_MIXED_LOG") and
+                         os.environ.get("SCUMMBUCKET_MI2_GAME"),
+                         "Set private mixed trace and original game paths")
+    def test_pinned_mixed_trace_predicts_entire_slow_suffix(self):
+        report = analyze_room23_capture(os.environ["SCUMMBUCKET_MI2_GAME"],
+                                        os.environ["SCUMMBUCKET_ROOM23_MIXED_LOG"])
+        self.assertEqual(report["raw_log_sha256"],
+                         "591c06aa6f518e48ef6e8da1b45f4bc357179640ac8c1fb506d6a1f9488a5e73")
+        self.assertEqual(report["status"], "incomplete")
+        evidence = report["evidence"]
+        self.assertEqual(evidence["stop_reason"], "missing_end")
+        self.assertFalse(evidence["capture_complete"])
+        replay = evidence["continuous_scheduler"]
+        self.assertEqual(replay["calibration_samples"], 3)
+        self.assertEqual(replay["heldout_matches"], 84)
+        slow = [p for p in replay["predictions"] if p["timer_pair"] == [60, 60]]
+        self.assertEqual([p["sequence"] for p in slow], list(range(29, 88)))
+        for p in replay["predictions"]:
+            self.assertEqual(p["predicted_rotation_ids"], p["observed_changed_ids"])
+        self.assertEqual([sum(g["id"] in p["observed_changed_ids"] for p in slow)
+                          for g in replay["cycles"]], [49, 59, 33, 59, 59, 59, 49, 59])
 
     def test_windows_runner_preserves_strict_end_gate(self):
         from pathlib import Path

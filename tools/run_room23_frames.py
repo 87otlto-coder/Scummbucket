@@ -20,7 +20,10 @@ def digest(path):
 
 def run(args):
     exe, game, dest = (p.resolve() for p in (args.exe, args.game, args.output))
-    if args.walk and (not args.save or args.enter_room):
+    room = getattr(args, "room", 23)
+    if room == 7 and args.walk == "control":
+        raise ValueError("Room 7 sweep uses the normal renderer")
+    if room == 23 and args.walk and (not args.save or args.enter_room):
         raise ValueError("use the Room 23 save for a walking run")
     if {name: digest(game / name) for name in ARCHIVES} != ARCHIVES:
         raise ValueError("unexpected DOS game archives")
@@ -42,7 +45,7 @@ def run(args):
     env["PATH"] = str(args.dll_dir) + os.pathsep + env["PATH"]
     if args.headless:
         env.update(SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy", SDL_RENDER_DRIVER="software")
-    meta = {"command": command, "exe_sha256": digest(exe), "archives": ARCHIVES,
+    meta = {"room": room, "command": command, "exe_sha256": digest(exe), "archives": ARCHIVES,
             "headless": args.headless, "debugger_equivalent_entry": args.enter_room, "save_sha256": digest(args.save) if args.save else None,
             "version": subprocess.check_output([str(exe), "--version"], cwd=dest, env=env,
                                                text=True, errors="replace").strip()}
@@ -53,14 +56,14 @@ def run(args):
             (dest / "walk-control.enabled").touch(exist_ok=False)
     (dest / "run.json").write_text(json.dumps(meta, indent=2), encoding="utf8")
     if args.enter_room:
-        (dest / "enter-room23.enabled").touch(exist_ok=False)
+        (dest / f"enter-room{room}.enabled").touch(exist_ok=False)
     (dest / "capture.enabled").touch(exist_ok=False)
     with (dest / "console.log").open("xb") as log:
         proc = subprocess.Popen(command, cwd=dest, env=env, stdout=log, stderr=log)
         deadline = time.monotonic() + args.timeout
         try:
             while proc.poll() is None and time.monotonic() < deadline:
-                if (dest / "present-087.bin").exists() and (dest / "scummbucket-p4-room23.raw.log").exists():
+                if (dest / "present-087.bin").exists() and (dest / f"scummbucket-p4-room{room}.raw.log").exists():
                     time.sleep(1)
                     break
                 time.sleep(0.2)
@@ -79,6 +82,7 @@ if __name__ == "__main__":
     parser.add_argument("--dll-dir", type=Path, default=Path("C:/msys64/ucrt64/bin"))
     parser.add_argument("--music-driver", default="auto")
     parser.add_argument("--save", type=Path)
+    parser.add_argument("--room", type=int, choices=(7, 23), default=23)
     parser.add_argument("--walk", choices=("normal", "control"))
     parser.add_argument("--enter-room", action="store_true")
     parser.add_argument("--headless", action="store_true")

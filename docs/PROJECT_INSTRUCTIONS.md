@@ -146,3 +146,7 @@ Run each expensive check once per required event and platform. Reuse existing jo
 Before cleanup, inventory artifact IDs, names, sizes, digests and producing runs. Inspect the contents and confirm how to recover source and evidence. Delete only identified disposable artifacts. Record decisions and reasons, then re-list the inventory and reconcile deleted IDs, bytes and protected artifacts. Keep the ledger outside the expiring build.
 
 For SCUMM research, preserve resource offsets, palette provenance, tool revisions and synthetic regression inputs. Keep original LucasArts archives and exported frames on the authorized local machine.
+
+## Required incident handover for all AI agents
+
+Read [the 11 November 2026 Actions incident and Windows-only CI policy](ACTIONS_INCIDENT_2026-11-11.md) before creating or modifying workflows, running CI, uploading artifacts or proposing cleanup. The mandatory rule is **Windows-only GitHub-hosted runners**, with no Linux/macOS matrix unless the owner explicitly approves an exception. Preserve research, use the rolling three-successful-build rule where disposable artifacts exist, and never mistake queued GitHub service incidents for failed tests.

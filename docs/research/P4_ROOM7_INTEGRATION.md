@@ -1,5 +1,7 @@
 # Room 7 integration evidence, 10 November 2026
 
+> **Update — 12 November 2026:** This 10 November research log is retained as **historical evidence at the time of the initial Room 7 capture**. Subsequent P3/P4 work on the same debugger-equivalent Room 23→7 sweep added [16/32-color COST decoding](../../scummbucket/classic_costume.py), [scaled costume composition](../../scummbucket/classic_scale.py) and [an independent full-scene verifier](../../tools/verify_room7_scene.py). The follow-up Work session reported **87/87 indexed front-buffer matches (4,008,960 pixels, zero mismatches)** and **778 mismatches with ZP01 disabled**, reduced to zero with clipping restored. Scenery actor 11 was independently matched in frames 36–81, and scaled Guybrush completed the sampled scene. These are **private paired-capture observations**, not newly rerun Windows CI tests. Statements below about 'unsupported' scaled/full-front composition reflect the earlier stage only. **Natural room entry, other routes and editions remain unverified.** See [portable preview status](P4_ROOM7_PORTABLE_PREVIEW.md) and [draft integration review](https://github.com/87otlto-coder/Scummbucket/pull/8).
+
 Remote research branch HEAD was verified as 68994bd1cce91a3bed8adb3dce479fb122a74afa before work. The desktop checkout started there. The separate F-drive checkout was clean at 1b5d291 and was preserved.
 
 ## Archive decoded

@@ -1,6 +1,6 @@
 # Room 7 — portable HTML preview packaging
 
-**Status:** A portable HTML exporter and existing-output packager are implemented and synthetically tested. Browser playback on the user's machine remains unobserved. The original 87-frame indexed reconstruction is a separate verified result.
+**Status (updated 12 November 2026):** Standalone packaging passed synthetic tests **and an automated Chromium playback check of user-supplied real Room 7 preview HTML**. Browser testing on the user's own Firefox installation is not independently observed. The 87-frame indexed reconstruction remains separately verified in its pinned capture context. See [uploaded-preview acceptance evidence](P4_ROOM7_BROWSER_ACCEPTANCE_20261112.md).
 
 ## Why the downloaded HTML was blank
 

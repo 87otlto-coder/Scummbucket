@@ -19,7 +19,7 @@ Applying the known v5 XOR-`0x69` decoding produced the `RNAM` and `LECF` signatu
 - `RMHD`: **784 × 144**, **20** declared room objects.
 - `TRNS`: transparent palette index **191**.
 - `CYCL`: six records with ranges **16–18, 176–177, 178–179, 180–181, 182–183, 184–185**; raw rates **384, 384, 459, 306, 228, 153**; zero flags for all six.
-- This pass checked the listed fixed offsets from the historical research. It **did not independently re-derive** `DCOS[142]` through the `MONKEY2.000` directory-link graph or decode the 784×144 SMAP panorama.
+- The initially pinned offsets were subsequently checked against the original archive's own directory graph: `MONKEY2.000` `DCOS[142]` gives room **7** and room-relative offset **192120**; decoded `MONKEY2.001` `LOFF[7]` points to ROOM source offset **392340**. Their sum is **584460**, the exact start of a bounded `COST` child inside Room 7's `LFLF` bundle. This is independently resolved original-directory provenance, not simply a hardcoded offset. The 784×144 SMAP panorama was **not** re-decoded in this smoke.
 
 ## Costume 142 one-cel structural/RLE check
 
@@ -42,4 +42,4 @@ An isolated Python standard-library smoke script read the two ZIP members, recom
 
 **Not established in this pass:** F-drive file presence, ScummBucket integration-test pass, Room 23 regression, exact Room 7 engine-indexed front-buffer comparison, 87-frame source capture hashes, runtime actor animation states, normal gameplay room entry, or browser visual playback. Those acceptance gates remain separate; draft integration PR #8 must remain unmerged pending its stated requirements.
 
-**Classification:** source bytes and resource structure = independently archive-decoded; pose cel = separately decoded from a pinned offset; animation/runtime fidelity = not tested here.
+**Classification:** source bytes and resource structure = independently archive-decoded; `DCOS[142]` room/link provenance = independently index- and LOFF-resolved; pose cel = separately decoded from that linked source; animation/runtime fidelity = not tested here.

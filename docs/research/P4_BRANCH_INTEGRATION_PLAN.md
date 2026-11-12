@@ -1,5 +1,7 @@
 # P4 research → main: integration plan (12 November 2026)
 
+> **Current state — 12 November 2026:** The historical plan below has been executed through the review checkpoint. [PR #6](https://github.com/87otlto-coder/Scummbucket/pull/6) merged Windows CI plus the main governance history into P4; [PR #7](https://github.com/87otlto-coder/Scummbucket/pull/7) preserved the two P0 research files unchanged. Historical PRs #2 and #3 were closed as superseded with their branches kept intact. [Draft PR #8](https://github.com/87otlto-coder/Scummbucket/pull/8) now proposes P4→`main`, and `main` remains untouched. The [Windows CI run](https://github.com/87otlto-coder/Scummbucket/actions/runs/43169347907) passed (278 tests; 14 skipped; zero failures; no artifacts). The remaining gates are a content/licensing review, private F-drive regression, browser playback of the new standalone preview, and explicit owner approval for the actual merge. The older steps below are preserved as a dated planning record.
+
 This is **an integration plan, not approval to merge the research branch into main**. Preserve the working P4 branch while governance and Windows CI are reconciled.
 
 ## Branch ancestry at preparation

@@ -1,12 +1,21 @@
 # ScummBucket
 
-**Status:** Planning and research | **Roadmap:** v0.3
+**Status:** Active research prototype (P0–P4; not a general-purpose release) | **Charter:** v0.3 historical baseline
 
 ScummBucket is an evidence-driven toolkit for investigating, extracting, reconstructing, previewing and exporting assets from classic LucasArts SCUMM games.
 
 The initial targets are **Monkey Island 2: LeChuck's Revenge (original DOS VGA)**, followed by **The Secret of Monkey Island (original DOS editions)**. The Curse of Monkey Island is a future candidate.
 
 ScummBucket is intended as an asset-extraction and reconstruction toolkit, **not** a replacement for ScummVM or a general-purpose game interpreter.
+
+## Verified research milestones (12 November 2026)
+
+- **Room 23:** Private, fingerprinted original-DOS-MI2 references produced zero indexed mismatches for 87 sampled walking frames in the documented normal and control capture variants. This does not establish every costume, scene or entry path.
+- **Room 7:** The independent [scene verifier](tools/verify_room7_scene.py) was reported to match **87/87 complete 320 × 144 indexed foreground frames (4,008,960 sampled indices, zero mismatches)** against paired instrumented ScummVM frames. The composition used archive-decoded 16/32-color costumes, scaled Guybrush, scenery actor 11, archive-derived ZP01, scrolling panorama and palette scheduling. The capture was a **debugger-equivalent jump from a Room 23 save**; natural entry and other game versions remain unverified.
+- **Previews:** [Standalone Room 7 HTML packaging](docs/research/P4_ROOM7_PORTABLE_PREVIEW.md) embeds indexed PNGs in a single portable file and has synthetic tests. **Actual playback of the regenerated standalone file on the user's machine has not yet been confirmed.**
+- **Windows CI:** The research branch runs the public synthetic suite on `windows-latest`. The [12 November integration run](https://github.com/87otlto-coder/Scummbucket/actions/runs/43169347907) passed 278 tests (14 skipped), with no artifacts. Private copyrighted game fixtures are intentionally absent from CI.
+
+These are **bounded evidence-backed reconstructions**, not a functioning SCUMM interpreter or a claim of comprehensive character/background-animation support. Audio extraction, natural Room 7 entry and cross-edition validation are still open.
 
 ## Project foundations
 
@@ -31,7 +40,7 @@ Reference implementations require independent validation against relevant game e
 
 ## Experimental archive inspector (P1 prototype)
 
-A limited, read-only command-line prototype is available on the P1 feature branch. It currently supports the original DOS Monkey Island 2 `MONKEY2.000` / `MONKEY2.001` pair only. This includes P1 inventory, diagnostics and selective raw-chunk export tools, plus an **experimental P2 image-state decoder** for supported DOS v5 OBIM strips and masks. Full room, animation and audio decoding remain unimplemented.
+The active **P4 research branch** contains a bounded, read-only original-DOS Monkey Island 2 CLI for archive inventory, diagnostics, selective raw extraction, scene candidates and selected background/object/palette exports. The earlier P1 feature branch is an ancestor of this work. Additional **research tools** reconstruct and compare the documented Room 23/7 scenarios using private ScummVM captures. These do **not** constitute a general-purpose room animator or verified audio decoder; unsupported formats and unverified mechanisms remain in scope for future development.
 
 The standard Windows workspace is `F:\Dev\SCUMMBUCKET` with **exactly three top-level folders**: `SOURCE` (owned code, tests and docs), `TOOLS` (external utilities such as instrumented ScummVM), and `FIXTURE` (original games, engine captures, exports, references and reports). The Git checkout is `SOURCE\ScummBucket`. Original MI2 is under `FIXTURE\GAMES\MonkeyIsland2_DOS_VGA`, room palette logs under `FIXTURE\CAPTURES\Room23`, outputs under `FIXTURE\OUTPUT` and validation reports under `FIXTURE\REPORTS\Room23`. For non-destructive migration from the earlier local paths, use [the workspace migration guide](docs/WORKSPACE_MIGRATION.md). From PowerShell, run:
 
@@ -114,7 +123,7 @@ See [P1 prototype documentation](docs/P1_PROTOTYPE.md) for supported behavior, f
 
 ## Current status
 
-P0 format research is documented in [PR #2](https://github.com/87otlto-coder/Scummbucket/pull/2) and remains open. This branch introduces the first **P1 inspection and raw extraction prototype** in [PR #3](https://github.com/87otlto-coder/Scummbucket/pull/3). It has been tested against one user-supplied MI2 archive and synthetic fixtures, but **P1 is not complete**: script dependency interpretation, resilient per-resource recovery, advanced provenance verification and cross-edition support are still outstanding.
+As of 12 November 2026, historical P0 evidence from [closed PR #2](https://github.com/87otlto-coder/Scummbucket/pull/2) is preserved unchanged in [P0 research provenance](docs/research/P0_RESEARCH_PROVENANCE.md). The 161-commit head of [closed PR #3](https://github.com/87otlto-coder/Scummbucket/pull/3) is an ancestor of the current P4 research branch. The accumulated development is under review in [**draft PR #8**](https://github.com/87otlto-coder/Scummbucket/pull/8) and **has not been merged into `main`**. P1/P2/P3/P4 are not declared complete across games or editions; known gaps include cross-edition compatibility, general script-driven scene reconstruction, natural Room 7 entry and audio decoding.
 
 Commercial game files and extracted copyrighted game assets must not be committed to this repository. Use authorized local copies for integration testing; favor synthetic fixtures in version control.
 

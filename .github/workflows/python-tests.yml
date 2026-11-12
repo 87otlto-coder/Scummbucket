@@ -25,3 +25,6 @@ jobs:
       - name: Validate P4 private acceptance runner syntax (without private fixtures)
         shell: pwsh
         run: ./tools/p4_private_acceptance.ps1 -CheckSyntax
+      - name: Validate P4 Python/Pillow native invocation (without private fixtures)
+        shell: pwsh
+        run: ./tools/p4_private_acceptance.ps1 -CheckPythonRuntime

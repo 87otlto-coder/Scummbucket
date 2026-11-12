@@ -6,8 +6,10 @@ import struct
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from scummbucket.cli import main
+from scummbucket.inspector import _read_pair
 from scummbucket.object_images import (
     ImageDecodeError, decode_strip, decode_mask_strip, encode_png,
     decode_object_state, export_object_images,
@@ -166,6 +168,25 @@ class ImageExportTest(unittest.TestCase):
         report = export_object_images(self.source, self.output, room_id=1, object_id=99)
         self.assertEqual(report["status"], "failed")
         self.assertIn("CLUT_COUNT_INVALID", [e["code"] for e in report["diagnostics"]])
+
+    def test_changed_reopened_index_or_resource_refuses_image_export(self):
+        # Validated source fingerprints must still match both pair members.
+        index_bytes, resource_bytes, index_label, resource_label = _read_pair(self.source)
+        original_zip = self.source.read_bytes()
+        for kind, contents, code in (
+            ("index", (bytes([index_bytes[0] ^ 1]) + index_bytes[1:], resource_bytes,
+                       index_label, resource_label), "IMAGE_EXPORT_INDEX_CHANGED"),
+            ("resource", (index_bytes, bytes([resource_bytes[0] ^ 1]) + resource_bytes[1:],
+                          index_label, resource_label), "IMAGE_EXPORT_SOURCE_CHANGED"),
+        ):
+            with self.subTest(kind=kind):
+                output = self.root / ("export-reopen-" + kind)
+                with patch("scummbucket.object_images._read_pair", return_value=contents):
+                    report = export_object_images(self.source, output, room_id=1, object_id=99)
+                self.assertEqual(report["status"], "failed")
+                self.assertIn(code, [d["code"] for d in report["diagnostics"]])
+                self.assertFalse(output.exists(), "No images or manifest may be created")
+        self.assertEqual(self.source.read_bytes(), original_zip)
 
     def test_input_is_not_changed(self):
         before = self.source.read_bytes()

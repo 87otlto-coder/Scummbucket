@@ -335,9 +335,12 @@ def export_object_images(input_path: str | Path, output_dir: str | Path, *,
         problem("MANIFEST_EXISTS", "Existing manifest; refusing overwrite")
         return report
     try:
-        _, raw, _, label = _read_pair(src)
+        index_bytes, raw, index_label, label = _read_pair(src)
     except (InspectionError, OSError, ValueError) as exc:
         problem("IMAGE_EXPORT_INPUT_READ_FAILED", str(exc))
+        return report
+    if sha256(index_bytes).hexdigest() != inventory["sources"][0]["sha256"]:
+        problem("IMAGE_EXPORT_INDEX_CHANGED", "Index file SHA-256 changed after inventory")
         return report
     if sha256(raw).hexdigest() != inventory["sources"][1]["sha256"]:
         problem("IMAGE_EXPORT_SOURCE_CHANGED", "Resource file SHA-256 changed after inventory")

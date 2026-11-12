@@ -4,8 +4,10 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from scummbucket.extraction import extract
+from scummbucket.inspector import _read_pair
 from scummbucket.cli import main
 from test_inspector import index, resource, make_zip, encoded
 
@@ -83,6 +85,25 @@ class ExtractionTest(unittest.TestCase):
         self.assertEqual(r["status"], "failed")
         self.assertIn("EXTRACT_INSPECTION_FAILED", [d["code"] for d in r["diagnostics"]])
         self.assertFalse(self.output.exists())
+
+    def test_changed_reopened_index_or_resource_fails_without_export(self):
+        # Simulate an archive being replaced between inspect() and reopen.
+        # Neither test edits the actual synthetic ZIP.
+        first, second, first_label, second_label = _read_pair(self.zip_path)
+        original_zip_hash = hashlib.sha256(self.zip_path.read_bytes()).hexdigest()
+        for kind, data, diagnostic_fragment in (
+            ("index", (bytes([first[0] ^ 1]) + first[1:], second, first_label, second_label), "Index file changed"),
+            ("resource", (first, bytes([second[0] ^ 1]) + second[1:], first_label, second_label), "Resource file changed"),
+        ):
+            with self.subTest(kind=kind):
+                destination = self.root / ("reopen-" + kind)
+                with patch("scummbucket.extraction._read_pair", return_value=data):
+                    report = extract(self.zip_path, destination, room_id=1, tag="CYCL")
+                self.assertEqual(report["status"], "failed")
+                self.assertIn("EXTRACT_INPUT_CHANGED", [d["code"] for d in report["diagnostics"]])
+                self.assertTrue(any(diagnostic_fragment in d["message"] for d in report["diagnostics"]))
+                self.assertFalse(any(destination.iterdir()), "No raw chunk or manifest may be written")
+        self.assertEqual(hashlib.sha256(self.zip_path.read_bytes()).hexdigest(), original_zip_hash)
 
     def test_input_is_unchanged(self):
         original = self.zip_path.read_bytes()

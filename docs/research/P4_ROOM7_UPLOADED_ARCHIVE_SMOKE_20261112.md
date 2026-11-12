@@ -19,7 +19,7 @@ Applying the known v5 XOR-`0x69` decoding produced the `RNAM` and `LECF` signatu
 - `RMHD`: **784 × 144**, **20** declared room objects.
 - `TRNS`: transparent palette index **191**.
 - `CYCL`: six records with ranges **16–18, 176–177, 178–179, 180–181, 182–183, 184–185**; raw rates **384, 384, 459, 306, 228, 153**; zero flags for all six.
-- The initially pinned offsets were subsequently checked against the original archive's own directory graph: `MONKEY2.000` `DCOS[142]` gives room **7** and room-relative offset **192120**; decoded `MONKEY2.001` `LOFF[7]` points to ROOM source offset **392340**. Their sum is **584460**, the exact start of a bounded `COST` child inside Room 7's `LFLF` bundle. This is independently resolved original-directory provenance, not simply a hardcoded offset. The 784×144 SMAP panorama was **not** re-decoded in this smoke.
+- The initially pinned offsets were subsequently checked against the original archive's own directory graph: `MONKEY2.000` `DCOS[142]` gives room **7** and room-relative offset **192120**; decoded `MONKEY2.001` `LOFF[7]` points to ROOM source offset **392340**. Their sum is **584460**, the exact start of a bounded `COST` child inside Room 7's `LFLF` bundle. This is independently resolved original-directory provenance, not simply a hardcoded offset. The subsequent **native background and depth-layer pass** is recorded below.
 
 ## Costume 142 one-cel structural/RLE check
 
@@ -31,6 +31,19 @@ Applying the known v5 XOR-`0x69` decoding produced the `RNAM` and `LECF` signatu
 - RLE consumed **1378** encoded bytes, ending exactly at the resource boundary (`119 + 12 + 1378 = 1509`). Decoded local-slot-plane SHA-256: `0dd785d9b58e4cdc54c9035a4d6875dbafef662df86a42f153cd031735848b15`.
 
 The decoded *known pose* is structurally complete. An end-of-chunk cel alone is **not proof of live animation timing or a complete animation-state inventory**. ScummBucket's renderer code was not imported/run by this independent smoke script.
+
+## Follow-up: complete native panorama and Z-plane extraction
+
+A separate, read-only Python decoder operated on the same byte-verified uploaded archive using bounded SMAP strip pointers and the documented v5 strip algorithms. It successfully reconstructed **98/98** indexed 8-pixel strips, giving **784 × 144** pixels. Codec distribution was **95 strips using codec 68** and **3 using codec 28**; no transparent-background codec was required.
+
+- Reconstructed indexed panorama SHA-256: `843f5d1d81ed8bb8f7353a0c5b3c52d2229505becbd47a411b3cd4314b5bccfc` — **exact match** to the prior F-drive independent Room 7 panorama research.
+- Initial 768-byte CLUT SHA-256: `a02937d50fc9d91d71df7bb70ac3d43bd73a95ed007bc6372fe8ba7627c0d88d`.
+- Independently expanded native `ZP01` to an **784 × 144** binary mask with **18,366 set pixels**, matching the prior research count. Unpacked mask SHA-256: `4bf76f6b3bdf0a972c0a020b7386fb942621f18d692b3d5a42bd8ce333203214`.
+- The pinned COST cel was also exported to a private transparent **89 × 51** RGBA PNG using Room 7's CLUT; the alpha counts match the separately decoded local slots (**2,225 opaque / 2,314 transparent**).
+
+The newly created `room7_background_native.png`, `room7_ZP01_native.png`, and `room7_costume142_cel0_native.png` remain **private local chat artifacts, not Git resources**. Their PNG-byte SHA-256 values are respectively `50fe01a57626f5472d4b62ea6c7f8be2849cc7fa61ebd572d53a3ed51d8d34eb`, `e2ea0bbfbd38d916ba67230e21c36ece2a09104461c25435dca64ac99c433f2e`, and `cd40bb99425a80579a06973fbad2f024a4cdc36848b4cacb300836a337bf0b35`. These hashes describe encoded PNG files, not source-index equality.
+
+**Boundary:** This confirms archive-native background / depth extraction and a single transparent scenery cel, independently of the F-drive's previously generated files. It does not replay the 87 captured engine frames or verify sprite placement, actor timing, visible Z-clipping across frames, or natural room entry.
 
 ## Input correction
 

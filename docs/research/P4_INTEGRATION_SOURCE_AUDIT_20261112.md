@@ -29,3 +29,8 @@ Suggested gate: inspect each relevant decoder/renderer and patch generator again
 ## Decision
 
 **Leave PR #8 as draft.** Proposed next evidence: an independent Windows private fixture regression, a real standalone-preview playback check, a reviewer-driven code-license decision, then explicit user approval to merge to `main`. No forced pushes, fixture redistribution or destructive migration.
+
+
+## Follow-up: code lineage and archive re-open integrity
+
+See [P4 integration source lineage and distribution gate](P4_INTEGRATION_CODE_LICENSE_REVIEW_20261112.md), recorded after PRs #14/#15. This is a separate review of ScummVM source mechanics and unresolved license decisions; it **does not** change or replace the original dated exposure audit above.

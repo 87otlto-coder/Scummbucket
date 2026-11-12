@@ -16,14 +16,31 @@ param(
     [string] $WorkspaceRoot = 'F:\Dev\SCUMMBUCKET',
     [switch] $Full,
     [switch] $OpenPreview,
-    [switch] $CheckSyntax
+    [switch] $CheckSyntax,
+    [switch] $CheckPythonRuntime
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+if ($CheckSyntax -and $CheckPythonRuntime) {
+    throw 'Choose either -CheckSyntax or -CheckPythonRuntime, not both.'
+}
 if ($CheckSyntax) {
     Write-Output 'P4 private acceptance script parsed successfully (no fixtures accessed).'
+    return
+}
+function Assert-PillowAvailable {
+    # The -c argument deliberately contains no embedded double quotes.
+    # Windows PowerShell 5.1 strips those quotes when invoking native Python.
+    & python -B -c 'import PIL; print(PIL.__version__)'
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Python cannot import Pillow: install the project [gif] optional dependency for this interpreter.'
+    }
+}
+if ($CheckPythonRuntime) {
+    Assert-PillowAvailable
+    Write-Output 'P4 Python/Pillow native invocation passed (no private fixtures accessed).'
     return
 }
 if ($OpenPreview -and -not $Full) {
@@ -103,10 +120,7 @@ foreach ($path in @($game, $normal, $control)) {
         throw "Required private regression fixture missing: $path"
     }
 }
-& python -B -c 'import PIL; print("Pillow available:", PIL.__version__)'
-if ($LASTEXITCODE -ne 0) {
-    throw 'Pillow is required: install the project [gif] optional dependency before full validation.'
-}
+Assert-PillowAvailable
 
 $envNames = @('SCUMMBUCKET_MI2_ARCHIVE', 'SCUMMBUCKET_MI2_GAME', 'SCUMMBUCKET_WALK_NORMAL', 'SCUMMBUCKET_WALK_CONTROL')
 $previous = @{}

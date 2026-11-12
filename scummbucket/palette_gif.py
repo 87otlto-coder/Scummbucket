@@ -286,7 +286,10 @@ def export_palette_gif(
         if len(matches) != 1:
             raise SequenceError("GIF_ROOM_NOT_FOUND",
                                 f"Expected unique room {room_id}, found {len(matches)}")
-        _, stored, _, label = _read_pair(src)
+        index_raw, stored, _, label = _read_pair(src)
+        if sha256(index_raw).hexdigest() != inventory["sources"][0]["sha256"]:
+            raise SequenceError("GIF_SOURCE_CHANGED",
+                                "Source index SHA-256 changed since inspection")
         source_hash = sha256(stored).hexdigest()
         if source_hash != inventory["sources"][1]["sha256"]:
             raise SequenceError("GIF_SOURCE_CHANGED",

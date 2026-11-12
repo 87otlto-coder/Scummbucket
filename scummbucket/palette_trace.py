@@ -191,7 +191,9 @@ def verify_palette_trace(input_path: str | Path, trace_path: str | Path,
         diag("TRACE_ROOM_NOT_FOUND", f"Expected one room {room_id}, found {len(target)}")
         return report
     try:
-        _, raw, _, label = _read_pair(src)
+        index_raw, raw, _, label = _read_pair(src)
+        _valid(hashlib.sha256(index_raw).hexdigest() == inv["sources"][0]["sha256"],
+               "TRACE_ARCHIVE_CHANGED", "Index changed during verification")
         original_sha = hashlib.sha256(raw).hexdigest()
         _valid(original_sha == inv["sources"][1]["sha256"], "TRACE_ARCHIVE_CHANGED",
                "Archive changed during verification")

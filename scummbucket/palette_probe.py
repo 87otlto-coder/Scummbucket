@@ -299,9 +299,11 @@ def palette_probe(input_path: str | Path, output_dir: str | Path, *,
         problem("OUTPUT_COLLISION", "Output directory is a symlink or manifest exists")
         return report
     try:
-        _, raw, _, label = _read_pair(src)
+        index_raw, raw, _, label = _read_pair(src)
+        _require(sha256(index_raw).hexdigest() == inv["sources"][0]["sha256"],
+                 "SOURCE_CHANGED", "Index hash changed after inspection")
         _require(sha256(raw).hexdigest() == inv["sources"][1]["sha256"],
-                 "SOURCE_CHANGED", "Source hash changed after inspection")
+                 "SOURCE_CHANGED", "Resource hash changed after inspection")
         decoded = bytes(x ^ XOR_KEY for x in raw)
         room = scenes[0]
         bg = decode_room_background_indexed(

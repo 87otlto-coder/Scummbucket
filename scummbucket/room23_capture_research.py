@@ -373,7 +373,10 @@ def analyze_room23_capture(input_path: str | Path, raw_path: str | Path, *,
                "The original game failed inspection")
         matching = [r for r in inventory["resources"]["rooms"] if r["id"] == 23]
         _check(len(matching) == 1, "RESEARCH_ROOM_NOT_FOUND", "Room 23 not uniquely indexed")
-        _, stored, _, _ = _read_pair(source)
+        index_raw, stored, _, _ = _read_pair(source)
+        _check(hashlib.sha256(index_raw).hexdigest() == inventory["sources"][0]["sha256"],
+               "RESEARCH_ARCHIVE_CHANGED",
+               "Index hash changed since the pinned source inventory")
         resource_sha = hashlib.sha256(stored).hexdigest()
         report["source_sha256"] = resource_sha
         _check(resource_sha == KNOWN_DOS_VGA_MI2_SHA256,

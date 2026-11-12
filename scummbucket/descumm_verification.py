@@ -96,10 +96,14 @@ def verify_descumm(input_path: str | Path, *, room_id: int, script_id: int,
     report["summary"]["candidates"] = len(report["candidates"])
 
     try:
-        _, stored, _, label = _read_pair(src)
+        index_raw, stored, index_label, label = _read_pair(src)
     except (InspectionError, OSError, ValueError) as exc:
         problems.append(_error("VERIFICATION_SOURCE_READ_FAILED",
                                f"Failed to reopen original game archive: {exc}", source=str(src)))
+        return report
+    if hashlib.sha256(index_raw).hexdigest() != original["sources"][0]["sha256"]:
+        problems.append(_error("VERIFICATION_SOURCE_CHANGED",
+                               "Original index hash changed since inventory; refusing verification", source=index_label))
         return report
     if hashlib.sha256(stored).hexdigest() != original["sources"][1]["sha256"]:
         problems.append(_error("VERIFICATION_SOURCE_CHANGED",

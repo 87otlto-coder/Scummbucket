@@ -119,7 +119,10 @@ def export_cycle_coverage(input_path: str | Path, output_dir: str | Path, *,
                      f"Expected exactly one room {room_id}; found {len(matches)}")
         return result
     try:
-        _, stored, _, label = _read_pair(src)
+        index_raw, stored, _, label = _read_pair(src)
+        if sha256(index_raw).hexdigest() != inventory["sources"][0]["sha256"]:
+            raise PaletteProbeError("COVERAGE_SOURCE_CHANGED",
+                                    "Original index changed between inspection and decode")
         original_sha = sha256(stored).hexdigest()
         if original_sha != inventory["sources"][1]["sha256"]:
             raise PaletteProbeError("COVERAGE_SOURCE_CHANGED",

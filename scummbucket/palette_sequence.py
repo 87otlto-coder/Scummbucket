@@ -213,7 +213,10 @@ def export_palette_sequence(input_path: str | Path, output_dir: str | Path, *,
             diagnostic("SEQUENCE_ROOM_NOT_FOUND",
                        f"Expected one room {room_id}, found {len(target)}")
             return result
-        _, raw, _, label = _read_pair(src)
+        index_raw, raw, _, label = _read_pair(src)
+        if sha256(index_raw).hexdigest() != inventory["sources"][0]["sha256"]:
+            raise SequenceError("SEQUENCE_SOURCE_CHANGED",
+                                "Original index SHA-256 changed since inspection")
         raw_sha = sha256(raw).hexdigest()
         if raw_sha != inventory["sources"][1]["sha256"]:
             raise SequenceError("SEQUENCE_SOURCE_CHANGED",

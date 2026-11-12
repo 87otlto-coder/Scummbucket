@@ -287,7 +287,10 @@ def export_palette_events(input_path: str | Path, output_dir: str | Path, *,
         if len(matches) != 1:
             raise SequenceError("EVENT_ROOM_NOT_FOUND",
                                 f"Expected one room {room_id}; found {len(matches)}")
-        _, stored, _, label = _read_pair(src)
+        index_raw, stored, _, label = _read_pair(src)
+        if sha256(index_raw).hexdigest() != inventory["sources"][0]["sha256"]:
+            raise SequenceError("EVENT_SOURCE_CHANGED",
+                                "Index archive member changed after inspection")
         original_sha = sha256(stored).hexdigest()
         if original_sha != inventory["sources"][1]["sha256"]:
             raise SequenceError("EVENT_SOURCE_CHANGED",

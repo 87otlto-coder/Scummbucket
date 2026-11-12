@@ -147,13 +147,20 @@ def extract(input_path: str | Path, output_dir: str | Path, *, room_id: int | No
         return report
 
     try:
-        _, resource_bytes, _, resource_label = _read_pair(src_path)
+        index_bytes, resource_bytes, index_label, resource_label = _read_pair(src_path)
     except (InspectionError, OSError) as exc:
         errors.append(_diag("EXTRACT_REOPEN_FAILED", f"Cannot reopen source: {exc}", source=str(src_path)))
         return report
+    index_hash = sha256(index_bytes).hexdigest()
+    if index_hash != inventory["sources"][0]["sha256"]:
+        errors.append(_diag("EXTRACT_INPUT_CHANGED",
+                            "Index file changed after inventory; extraction blocked",
+                            source=index_label))
+        return report
     resource_hash = sha256(resource_bytes).hexdigest()
     if resource_hash != inventory["sources"][1]["sha256"]:
-        errors.append(_diag("EXTRACT_INPUT_CHANGED", "Source changed after inventory; extraction blocked",
+        errors.append(_diag("EXTRACT_INPUT_CHANGED",
+                            "Resource file changed after inventory; extraction blocked",
                             source=resource_label))
         return report
 

@@ -36,6 +36,6 @@ After resolving all preflight diagnostics, run:
 
 A dirty/diverged checkout, missing fixture, archive hash mismatch, failed regression, changed output hash, or missing embedded frame fails with an explicit error. A partially written timestamped output is retained as diagnostic evidence and never labeled successful. Only the user may approve deleting redundant outputs. The runner never calls `git fetch`, `git reset`, `git push` or deletes a fixture.
 
-Hosted Windows GitHub Actions executes only `-CheckSyntax` to verify PowerShell loading without private files. It cannot attest to game-capture fidelity. This acceptance remains pinned to the **debugger-equivalent 23→7 entry**; natural gameplay entry and other SCUMM editions remain untested.
+Hosted Windows GitHub Actions executes `-CheckSyntax` and `-CheckPythonRuntime` (PowerShell 5.1 and 7) without private files. These checks attest to script parsing and the native Pillow-import command only; they cannot attest to game-capture fidelity. The script's original PowerShell 5.1 nested-quote bug was fixed and checked under both Windows shells in [PR #12](https://github.com/87otlto-coder/Scummbucket/pull/12). This acceptance remains pinned to the **debugger-equivalent 23→7 entry**; natural gameplay entry and other SCUMM editions remain untested.
 
 Do not commit generated HTML, screenshot frames, archives or local captures. Share only derived hashes and test summaries as appropriate.

@@ -32,6 +32,36 @@ mismatches but 11/8/4 ambiguous suffix frames respectively. They are
 overlapping analyses on the same capture, not independent runs. Direct
 saved-counter decoding resolves ambiguity for the **one provided save**.
 
+## Reproducibility cross-check with the uploaded original DOS archive
+
+The uploaded `mi2.zip` contains original `mi2/MONKEY2.001`, whose
+SHA-256 is `ad045372e0d49626503bb50fca29a687ec8e01ef75d9b8bca702a366d143819e`.
+The supplied `mi2.zip` archive itself has SHA-256
+`fa23ba097c30a66df9fbaf436d0381cd4747220ce7a2b315290dea167535d0cf`.
+
+A second independent read-only verification directly decoded that original
+archive's encrypted Room 7 `ROOM` chunk at decoded offset **392340**,
+and the `CYCL` chunk at decoded offset **392362**. The six archive records
+carry raw cycle rates **384, 384, 459, 306, 228, 153** with ranges
+16–18 and 176–185 and flags zero, independently yielding saved counter
+delays 42, 42, 35, 53, 71, 107.
+
+It decompressed the original user-supplied ScummVM save and found exactly
+one source-consistent 128-byte ColorCycle block, at offset **80203**, with
+saved counters **12, 12, 26, 35, 13, 80**. It then independently replayed
+all six cycles against the 87 PNG palettes and engine-stage hashes
+reported in `play.zip`, using **only per-frame timer pairs from the
+supplied report**. Every predicted 768-byte palette matched:
+
+**87/87 exact; 0 mismatches; phase fitting=false.**
+
+The generated metadata-only cross-check was kept outside Git. This confirms
+that both the independently decoded **archive** definition and separately
+serialized **save** counters reproduce the portable preview. It does **not**
+re-read the private `engine-*.bin` files or prove generalized actor,
+script or ordinary gameplay path fidelity. Do not merge PR #8 based on
+this cross-check alone.
+
 ## Tools and evidence classification
 
 | Tool | Inputs | Evidence obtained |

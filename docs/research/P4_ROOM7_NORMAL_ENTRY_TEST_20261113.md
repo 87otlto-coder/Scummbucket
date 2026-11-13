@@ -16,8 +16,22 @@ from a debugger jump is **not** natural-entry evidence even if the program
 can load it and produces a valid capture. The toolkit cannot authenticate
 the preceding gameplay route from the save bytes alone.
 
-Use the already instrumented **private ScummVM** build in `TOOLS`; do not
-modify, delete or redistribute the build, saves or original game files.
+There are **two distinct execution tracks**:
+
+1. **Original DOS executable in DOSBox**: use the standard copy-protection,
+   difficulty, then F5/Load sequence described in
+   [the original DOS boot protocol](P4_MI2_ORIGINAL_DOS_BOOT_20261113.md).
+   Your existing `SAVEGAME.001` is in this format. This track is necessary to
+   observe where that DOS save loads. It does **not** produce a ScummVM capture
+   or automatically convert the save.
+2. **Instrumented ScummVM in TOOLS**: this document's Python launcher requires
+   a **ScummVM save starting with `SCVM`**. It rejects `SAVEGAME.001`
+   before writing outputs. Do not rename a DOS save to `monkey2.s01`; the
+   formats are not interchangeable.
+
+Use the already instrumented **private ScummVM** build in `TOOLS` only for
+ScummVM-format captures; do not modify, delete or redistribute the build,
+saves or original game files.
 
 ## Step 1 — safely identify the executable and private save
 

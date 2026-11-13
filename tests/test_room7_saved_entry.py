@@ -16,7 +16,7 @@ class Room7SavedEntryTests(unittest.TestCase):
         self.root = Path(self.tmp.name)
         self.capture = self.root / "FIXTURE/CAPTURES/Room7/save-probe"
         self.capture.mkdir(parents=True)
-        save = b"synthetic-only-private-save-placeholder"
+        save = b"SCVM synthetic-only-private-save-placeholder"
         (self.capture / "saves").mkdir()
         (self.capture / "saves/monkey2.s01").write_bytes(save)
         self.save = self.root / "source-save.s01"
@@ -101,11 +101,20 @@ class Room7SavedEntryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Missing explicit"):
             self.check()
 
+    def test_original_dos_save_rejected_even_when_hash_matches(self):
+        raw = b"123" + bytes(37) + b"synthetic DOS save"
+        (self.capture / "saves/monkey2.s01").write_bytes(raw)
+        self.save.write_bytes(raw)
+        self.run["save_sha256"] = hashlib.sha256(raw).hexdigest()
+        self._write_run()
+        with self.assertRaisesRegex(ValueError, "not a ScummVM SCVM"):
+            self.check()
+
     def test_changed_save_is_rejected(self):
         self.save.write_bytes(b"changed-source-save")
         with self.assertRaisesRegex(ValueError, "Original source save differs"):
             self.check()
-        self.save.write_bytes(b"synthetic-only-private-save-placeholder")
+        self.save.write_bytes(b"SCVM synthetic-only-private-save-placeholder")
         (self.capture / "saves/monkey2.s01").write_bytes(b"changed-copy")
         with self.assertRaisesRegex(ValueError, "Copied save does not match"):
             self.check()

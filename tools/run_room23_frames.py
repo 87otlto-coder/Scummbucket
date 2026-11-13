@@ -42,6 +42,17 @@ def validate_native_room7_save(args, exe, game, dest):
     save = args.save.resolve()
     if not save.is_file() or save.stat().st_size == 0:
         raise ValueError("Native Room 7 capture requires a nonempty original save")
+    # This launcher invokes ScummVM, NOT the original DOS interpreter.
+    # Original DOS SAVEGAME.001 files lack the SCVM header and cannot simply
+    # be renamed to monkey2.s01. Reject before creating output directories.
+    with save.open("rb") as stream:
+        signature = stream.read(4)
+    if signature != b"SCVM":
+        raise ValueError(
+            "ScummVM saved-entry capture requires an SCVM save, not an original "
+            "DOS SAVEGAME.001. Load DOS saves using the original DOS executable "
+            "and its startup/menu sequence; do not rename the save."
+        )
     if save.is_relative_to(fixture.parent / "SOURCE"):
         raise ValueError("Original save cannot reside inside SOURCE / Git")
     if not dest.is_relative_to(fixture / "CAPTURES" / "Room7"):

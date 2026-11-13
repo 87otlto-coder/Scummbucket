@@ -60,6 +60,9 @@ def validate(capture, *, original_save=None, game=None, executable=None,
     copied_save = capture / "saves/monkey2.s01"
     if not copied_save.is_file() or sha(copied_save) != save_sha:
         raise ValueError("Copied save does not match run.json fingerprint")
+    with copied_save.open("rb") as stream:
+        if stream.read(4) != b"SCVM":
+            raise ValueError("Recorded save is not a ScummVM SCVM file; original DOS saves are incompatible")
     if original_save is not None and sha(Path(original_save)) != save_sha:
         raise ValueError("Original source save differs from captured copy")
     if game is not None:

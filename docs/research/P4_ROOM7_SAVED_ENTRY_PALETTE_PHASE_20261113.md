@@ -162,6 +162,91 @@ mechanism conclusion. If a later prefix yields determinate held-out
 predictions with no mismatches, verify it against **another independently
 created Room 7 save / capture** before claiming general save-state fidelity.
 
+## Follow-up: fixed 36/48 calibration windows (same capture)
+
+The operator ran both predeclared additional calibration windows. Each
+reused the **same** 87-frame captured save state, so the three windows
+are overlapping experiments, not independent engine captures.
+
+| Calibration | Held out | Determinate exact | Ambiguous | Definite mismatches | Unique phases |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 24 | 63 | 52 | 11 | 0 | 1 |
+| 36 | 51 | 43 | 8 | 0 | 1 |
+| 48 | 39 | 35 | 4 | 0 | 2 |
+
+All three returned `forecast_ambiguous` rather than an exact complete
+forecast. None had an empty calibration solution, a determinate
+cycle mismatch, or noncycle color changes.
+
+The original 24-frame baseline identified six active cycles and its
+ambiguous frames as **29, 33, 38, 40, 45, 47, 57, 58, 69, 76, 82**.
+Per-cycle calibrated candidate counts were:
+
+| Cycle | Color range | Candidate phases | Held-out ambiguous frames |
+| ---: | --- | ---: | ---: |
+| 1 | 16–18 | 6 | 0 |
+| 2 | 176–177 | 6 | 0 |
+| 3 | 178–179 | 1 | 0 |
+| 4 | 180–181 | 4 | 4 |
+| 5 | 182–183 | 5 | 4 |
+| 6 | 184–185 | 5 | 3 |
+
+The 11 ambiguous frame occurrences are distributed among cycles 4–6.
+The counter candidates for the other cycles can be non-unique while
+their **visible palette forecasts** remain determinate.
+
+## New source-backed test: read counters directly from the saved game
+
+Subsequent investigation of the original, user-uploaded `monkey2-1.s01`
+showed that ScummVM v124 **stores the 16 ColorCycle records directly**
+in the save. The unique source-anchored serialized block includes
+six counters **12, 12, 26, 35, 13, 80**, respectively, at decompressed
+offset 80203. The parser derives offsets by matching archive-decoded
+cycle definitions and **does not** hardcode that private offset.
+See [direct saved-counter evidence](P4_ROOM7_DIRECT_SAVED_COUNTERS_20261113.md).
+
+The new `tools.verify_room7_saved_palette_counters` forecasts **all 87**
+post-cycle palettes from those recorded counters, the first observed
+pre-cycle palette and the observed timer increments. Unlike the 24/36/48
+calibration, **no counter is selected or corrected using the observed
+post-cycle palettes**.
+
+Run that independent-source counter forecast against the preserved
+capture with an entirely new report filename:
+
+~~~powershell
+$root = 'F:\Dev\SCUMMBUCKET'
+$repo = "$root\SOURCE\ScummBucket"
+$fixture = "$root\FIXTURE"
+$id = 'native-save-72c00ab603b64f9597b10cf952c9662e'
+$capture = "$fixture\CAPTURES\Room7\$id"
+$export = "$fixture\OUTPUT\Room7\native-20261110-a"
+$report = "$fixture\REPORTS\Room7\$id-saved-counters-unfitted.json"
+
+Push-Location $repo
+try {
+    python -B -m tools.verify_room7_saved_palette_counters `
+        --capture $capture --export $export --report $report
+    $status = $LASTEXITCODE
+    if ($status -eq 2) {
+        Write-Warning "Source-counter forecast disagrees; preserve the report"
+    } elseif ($status -ne 0) {
+        throw "Unexpected verifier status: $status"
+    }
+    Write-Host "REPORT: $report"
+} finally {
+    Pop-Location
+}
+~~~
+
+The output includes the exact counter block fingerprint, per-frame
+palette-index mismatch lists, per-cycle mismatch counts, first
+disagreement and whether any noncycle colors changed. A mismatch is
+an important **result**, potentially reflecting palette/timer activity
+between saving and the first captured frame. Do **not** secretly shift
+counters to make the result pass. If necessary, that is a new,
+explicitly labeled load-transition investigation.
+
 ## Remaining scope restrictions
 
 The saved-entry capture validates background/mask and engine-to-backend

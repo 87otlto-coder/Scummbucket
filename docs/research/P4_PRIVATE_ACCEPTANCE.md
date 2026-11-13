@@ -39,3 +39,15 @@ A dirty/diverged checkout, missing fixture, archive hash mismatch, failed regres
 Hosted Windows GitHub Actions executes `-CheckSyntax` and `-CheckPythonRuntime` (PowerShell 5.1 and 7) without private files. These checks attest to script parsing and the native Pillow-import command only; they cannot attest to game-capture fidelity. The script's original PowerShell 5.1 nested-quote bug was fixed and checked under both Windows shells in [PR #12](https://github.com/87otlto-coder/Scummbucket/pull/12). This acceptance remains pinned to the **debugger-equivalent 23→7 entry**; natural gameplay entry and other SCUMM editions remain untested.
 
 Do not commit generated HTML, screenshot frames, archives or local captures. Share only derived hashes and test summaries as appropriate.
+
+## Recorded Windows result (13 November 2026)
+
+The user ran `-Full` on clean, fast-forwarded research commit `4ffac2a2bcba6e19508bb4098d34da8ee57fab7b` and reported **288 tests, 7 skipped, zero unexpected failures**, the original Room 23 costume check and Room 7 COST[142] check both passed, and **87 × 320 × 144 indexed comparisons with zero mismatches**; the ZP01-disabled negative control produced 778 differences as expected. See [the dated Windows private acceptance report](P4_PRIVATE_ACCEPTANCE_20261113.md) for evidence classification, output location, skipped tests and scope limits. This does **not** establish normal gameplay entry, browser playback or license clearance.
+
+When Windows PowerShell blocks the `.ps1` because of execution policy, run it in a one-off child process without a machine-wide policy change:
+
+~~~powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket\tools\p4_private_acceptance.ps1' -WorkspaceRoot 'F:\Dev\SCUMMBUCKET' -Full
+~~~
+
+Use this only for the known, reviewed script in the trusted local checkout; execution-policy bypass should not be used indiscriminately.

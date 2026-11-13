@@ -119,8 +119,9 @@ def validate(capture, *, original_save=None, game=None, executable=None,
 
     positions, rows, palettes = [], [], set()
     previous_ms = None
-    for n, line in enumerate(samples, 1):
-        # This prefix is already schema- and sequence-checked above.
+    for n, line in enumerate(samples[:expected_frames], 1):
+        # Pair only the captured engine/present prefix; the validated tail
+        # has no corresponding frame binaries and must not be fabricated.
         try:
             observed_seq, timer, next_timer = (int(t) for t in line[2:5])
             observed_palette = bytes.fromhex(line[6])

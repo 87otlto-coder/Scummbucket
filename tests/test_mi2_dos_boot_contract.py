@@ -24,8 +24,14 @@ class OriginalDosBootContractTests(unittest.TestCase):
     def test_dos_saves_are_not_passed_to_scummvm_launcher(self):
         source = (ROOT / "tools/run_room23_frames.py").read_text()
         scene = (ROOT / "tools/verify_room7_saved_entry.py").read_text()
-        self.assertIn('signature != b"SCVM"', source)
-        self.assertIn('stream.read(4) != b"SCVM"', scene)
+        # Validate the decompressed save format, never the first raw bytes:
+        # legitimate ScummVM .s01 files are commonly gzip containers.
+        self.assertIn("inspect_scummvm_save(save)", source)
+        self.assertIn("inspect_scummvm_save(copied_save)", scene)
+        self.assertIn('"current_room"', source)
+        self.assertIn('"current_room"', scene)
+        self.assertIn("Not a ScummVM SCVM save", (
+            ROOT / "scummbucket/scummvm_save.py").read_text())
         notes = (ROOT / "docs/research/P4_ROOM7_NORMAL_ENTRY_TEST_20261113.md").read_text()
         self.assertIn("P4_MI2_ORIGINAL_DOS_BOOT_20261113.md", notes)
         self.assertIn("two distinct execution tracks", notes)

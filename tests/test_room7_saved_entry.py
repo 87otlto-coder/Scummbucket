@@ -22,7 +22,7 @@ class Room7SavedEntryTests(unittest.TestCase):
         self.save = self.root / "source-save.s01"
         self.save.write_bytes(save)
         self.run = {
-            "room": 7, "archives": ARCHIVES,
+            "room": 7, "archives": dict(ARCHIVES),
             "debugger_equivalent_entry": False,
             "exe_sha256": "a" * 64,
             "save_sha256": hashlib.sha256(save).hexdigest(),
@@ -136,7 +136,7 @@ class Room7SavedEntryTests(unittest.TestCase):
         self._write_run()
         with self.assertRaisesRegex(ValueError, "Unexpected game edition"):
             self.check()
-        self.run["archives"] = ARCHIVES
+        self.run["archives"] = dict(ARCHIVES)
         self._write_run()
         log = self.capture / "scummbucket-p4-room7.raw.log"
         log.write_text(log.read_text(encoding="utf8").replace(

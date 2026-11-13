@@ -26,6 +26,8 @@ def validate_native_room7_save(args, exe, game, dest):
     """
     if not getattr(args, "native_room7_save", False):
         return
+    # Canonicalize paths before containment checks (Windows 8.3 path aliases).
+    exe, game, dest = (Path(p).resolve() for p in (exe, game, dest))
     if getattr(args, "room", 23) != 7 or args.save is None or args.enter_room or args.walk:
         raise ValueError(
             "--native-room7-save requires --room 7 and --save; "

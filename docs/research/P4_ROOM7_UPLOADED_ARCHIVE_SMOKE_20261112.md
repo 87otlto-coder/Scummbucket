@@ -45,6 +45,21 @@ The newly created `room7_background_native.png`, `room7_ZP01_native.png`, and `r
 
 **Boundary:** This confirms archive-native background / depth extraction and a single transparent scenery cel, independently of the F-drive's previously generated files. It does not replay the 87 captured engine frames or verify sprite placement, actor timing, visible Z-clipping across frames, or natural room entry.
 
+## 13 November follow-up — COST 142 animation-directory coverage
+
+The same pinned archive was re-examined at the **complete v5 32-colour COST animation-offset table**, rather than only one cel pointer. The high animation identifier is **14** (slots 0–14 inclusive). Of these 15 table entries, **only animation IDs 6 and 14 are populated**; the other 13 have a zero relative pointer (unused).
+
+| Animation ID | COST-relative record | Active limb mask | Command start | Length field |
+| --- | ---: | --- | ---: | ---: |
+| 6 | 106 | `0x8000` (limb 0) | 0 | 0 |
+| 14 | 111 | `0x8000` (limb 0) | 0 | 0 |
+
+The command-data pointer resolves to relative offset **116**, and command zero selects graphic code **0**. Limb-0's graphic table resolves to relative offset **117**; its code-0 cel pointer resolves to **119**, the same previously hashed **89 × 51** cel. The encoded graphic occupies the remaining COST bytes and its decoded local-slot digest remains `0dd785d9b58e4cdc54c9035a4d6875dbafef662df86a42f153cd031735848b15`.
+
+**Interpretation:** both archive-defined supported animation-table entries select the **same one cel**. This is strong archive evidence that scenery actor 11's *observed movement* in the pinned Room 7 sweep is primarily a **script/camera positioning mechanism**, not a multi-cel costume sequence. This does not establish exact timing, runtime draw phase, scale, visibility or palette effects, and cannot be generalized to other costumes or scenes.
+
+A private regression test, `tests/test_private_room7_costume142.py`, now checks the linked COST, the 15-entry animation table and cel fingerprint when `SCUMMBUCKET_MI2_ARCHIVE` is supplied. Hosted CI **skips** that original-archive test because it contains no game data. The separate Windows fixture-free tests still run. This addition does not replace `p4_private_acceptance.ps1 -Full` against all original 87 captures.
+
 ## Input correction
 
 A separate upload named `mi1.zip` was inspected. It contains a `mk1/` hierarchy and `MK1.EXE` (Mortal Kombat 1), and has **no** `MONKEY2.000/.001` pair or common Monkey Island SCUMM members. It must **not** be treated as a Monkey Island 1 fixture.

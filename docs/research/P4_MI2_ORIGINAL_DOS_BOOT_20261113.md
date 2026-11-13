@@ -22,7 +22,7 @@ The original game's F5 interface provides Save/Load operations.
 
 **Do not use** `tools.run_room23_frames --native-room7-save` to open the
 uploaded `SAVEGAME.001`. That launcher is ScummVM-specific and now explicitly
-requires an `SCVM` header; the original DOS saved game has no such header.
+requires ScummVM v124 content (possibly gzip-wrapped, with `SCVM` inside); the original DOS saved game has no such header.
 
 ## Reusable interactive boot sequence for a test agent
 

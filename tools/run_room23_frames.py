@@ -8,6 +8,8 @@ import shutil
 import subprocess
 import time
 
+from scummbucket.scummvm_save import inspect_scummvm_save
+
 ARCHIVES = {
     "MONKEY2.000": "cde7aa8980317e3a750fbb3b49884cdddaf1ff3d4231a0c840b22cceed9033f1",
     "MONKEY2.001": "ad045372e0d49626503bb50fca29a687ec8e01ef75d9b8bca702a366d143819e",
@@ -42,27 +44,25 @@ def validate_native_room7_save(args, exe, game, dest):
     save = args.save.resolve()
     if not save.is_file() or save.stat().st_size == 0:
         raise ValueError("Native Room 7 capture requires a nonempty original save")
-    # This launcher invokes ScummVM, NOT the original DOS interpreter.
-    # Original DOS SAVEGAME.001 files lack the SCVM header and cannot simply
-    # be renamed to monkey2.s01. Reject before creating output directories.
-    with save.open("rb") as stream:
-        signature = stream.read(4)
-    if signature != b"SCVM":
-        raise ValueError(
-            "ScummVM saved-entry capture requires an SCVM save, not an original "
-            "DOS SAVEGAME.001. Load DOS saves using the original DOS executable "
-            "and its startup/menu sequence; do not rename the save."
-        )
     if save.is_relative_to(fixture.parent / "SOURCE"):
         raise ValueError("Original save cannot reside inside SOURCE / Git")
     if not dest.is_relative_to(fixture / "CAPTURES" / "Room7"):
         raise ValueError("Capture output must remain under FIXTURE/CAPTURES/Room7")
+    # ScummVM saves may be gzip-wrapped; SCVM appears after decompression.
+    # Inspect content, not filename, before creating any output directories.
+    save_state = inspect_scummvm_save(save)
+    if save_state["current_room"] != 7 or save_state["room_resource"] != 7:
+        raise ValueError(
+            f"ScummVM save contains Room {save_state['current_room']} "
+            f"(resource {save_state['room_resource']}), expected Room 7"
+        )
+    return save_state
 
 
 def run(args):
     exe, game, dest = (p.resolve() for p in (args.exe, args.game, args.output))
     room = getattr(args, "room", 23)
-    validate_native_room7_save(args, exe, game, dest)
+    save_state = validate_native_room7_save(args, exe, game, dest)
     if room == 7 and args.walk == "control":
         raise ValueError("Room 7 sweep uses the normal renderer")
     if room == 23 and args.walk and (not args.save or args.enter_room):
@@ -95,6 +95,7 @@ def run(args):
             "version": subprocess.check_output([str(exe), "--version"], cwd=dest, env=env,
                                                text=True, errors="replace").strip()}
     if getattr(args, "native_room7_save", False):
+        meta["save_state"] = save_state
         meta["entry_provenance"] = {
             "method": "loaded_private_save_no_debugger_or_injected_walk",
             "save_origin_verified": False,

@@ -4,6 +4,8 @@ from types import SimpleNamespace
 import tempfile
 import unittest
 
+from fixture_scummvm_save import synthetic_scummvm_save
+
 from tools.run_room23_frames import validate_native_room7_save
 
 
@@ -19,7 +21,7 @@ class NativeRoom7LauncherTests(unittest.TestCase):
         self.exe.write_bytes(b"synthetic executable")
         self.save = self.root / "FIXTURE/CAPTURES/saved-game.s01"
         self.save.parent.mkdir(parents=True, exist_ok=True)
-        self.save.write_bytes(b"SCVM synthetic private save")
+        self.save.write_bytes(synthetic_scummvm_save(room=7))
         self.output = self.root / "FIXTURE/CAPTURES/Room7/native-NEW"
         self.args = SimpleNamespace(
             room=7, save=self.save, enter_room=False, walk=None,
@@ -32,7 +34,7 @@ class NativeRoom7LauncherTests(unittest.TestCase):
     def test_clean_native_saved_room7_capture_is_admitted(self):
         self.check()
         self.assertFalse(self.output.exists(), "preflight must be read-only")
-        self.assertEqual(self.save.read_bytes(), b"SCVM synthetic private save")
+        self.assertEqual(self.save.read_bytes(), synthetic_scummvm_save(room=7))
 
     def test_debugger_jump_and_injected_walk_are_refused(self):
         for name, value in (("enter_room", True), ("walk", "normal"),
@@ -56,7 +58,13 @@ class NativeRoom7LauncherTests(unittest.TestCase):
 
     def test_dos_save_is_rejected_before_any_output(self):
         self.save.write_bytes(b"123" + bytes(37) + b"synthetic DOS state")
-        with self.assertRaisesRegex(ValueError, "not an original DOS SAVEGAME"):
+        with self.assertRaisesRegex(ValueError, "original DOS SAVEGAME"):
+            self.check()
+        self.assertFalse(self.output.exists())
+
+    def test_room23_scummvm_save_refused_before_output(self):
+        self.save.write_bytes(synthetic_scummvm_save(room=23))
+        with self.assertRaisesRegex(ValueError, "Room 23.*expected Room 7"):
             self.check()
         self.assertFalse(self.output.exists())
 
@@ -92,7 +100,7 @@ class NativeRoom7LauncherTests(unittest.TestCase):
     def test_original_save_must_not_reside_inside_git_source(self):
         source_save = self.root / "SOURCE/ScummBucket/example.s01"
         source_save.parent.mkdir(parents=True)
-        source_save.write_bytes(b"SCVM synthetic private save")
+        source_save.write_bytes(synthetic_scummvm_save(room=7))
         self.args.save = source_save
         with self.assertRaisesRegex(ValueError, "cannot reside inside SOURCE"):
             self.check()

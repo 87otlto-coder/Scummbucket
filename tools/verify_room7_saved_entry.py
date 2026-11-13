@@ -13,6 +13,7 @@ import re
 
 from tools.compare_room23_frames import engine, present
 from tools.run_room23_frames import ARCHIVES
+from scummbucket.scummvm_save import inspect_scummvm_save
 
 METHOD = "loaded_private_save_no_debugger_or_injected_walk"
 HEX64 = re.compile(r"[0-9a-f]{64}\Z")
@@ -60,9 +61,11 @@ def validate(capture, *, original_save=None, game=None, executable=None,
     copied_save = capture / "saves/monkey2.s01"
     if not copied_save.is_file() or sha(copied_save) != save_sha:
         raise ValueError("Copied save does not match run.json fingerprint")
-    with copied_save.open("rb") as stream:
-        if stream.read(4) != b"SCVM":
-            raise ValueError("Recorded save is not a ScummVM SCVM file; original DOS saves are incompatible")
+    saved = inspect_scummvm_save(copied_save)
+    if saved["current_room"] != 7 or saved["room_resource"] != 7:
+        raise ValueError(f"Recorded save is Room {saved['current_room']}, not Room 7")
+    if run.get("save_state") != saved:
+        raise ValueError("Recorded saved-game state metadata differs from copied save")
     if original_save is not None and sha(Path(original_save)) != save_sha:
         raise ValueError("Original source save differs from captured copy")
     if game is not None:
@@ -147,6 +150,9 @@ def validate(capture, *, original_save=None, game=None, executable=None,
             "distinct_final_palettes": len(palettes),
             "actor11_state_records": sum(r["actor11_reported"] for r in rows),
             "copied_save_sha256": save_sha,
+            "saved_room": saved["current_room"],
+            "save_version": saved["save_version"],
+            "save_container": saved["container"],
             "original_save_matched": original_save is not None,
             "original_archives_rehashed": game is not None,
             "executed_binary_rehashed": executable is not None,

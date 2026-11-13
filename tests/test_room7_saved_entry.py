@@ -7,6 +7,8 @@ import unittest
 
 from tools.run_room23_frames import ARCHIVES
 from tools.verify_room7_saved_entry import validate, METHOD
+from fixture_scummvm_save import synthetic_scummvm_save
+from scummbucket.scummvm_save import inspect_scummvm_save
 
 
 class Room7SavedEntryTests(unittest.TestCase):
@@ -16,7 +18,7 @@ class Room7SavedEntryTests(unittest.TestCase):
         self.root = Path(self.tmp.name)
         self.capture = self.root / "FIXTURE/CAPTURES/Room7/save-probe"
         self.capture.mkdir(parents=True)
-        save = b"SCVM synthetic-only-private-save-placeholder"
+        save = synthetic_scummvm_save(room=7)
         (self.capture / "saves").mkdir()
         (self.capture / "saves/monkey2.s01").write_bytes(save)
         self.save = self.root / "source-save.s01"
@@ -26,6 +28,7 @@ class Room7SavedEntryTests(unittest.TestCase):
             "debugger_equivalent_entry": False,
             "exe_sha256": "a" * 64,
             "save_sha256": hashlib.sha256(save).hexdigest(),
+            "save_state": inspect_scummvm_save(self.capture / "saves/monkey2.s01"),
             "entry_provenance": {
                 "method": METHOD, "save_origin_verified": False,
                 "natural_gameplay_entry_verified": False,
@@ -107,14 +110,24 @@ class Room7SavedEntryTests(unittest.TestCase):
         self.save.write_bytes(raw)
         self.run["save_sha256"] = hashlib.sha256(raw).hexdigest()
         self._write_run()
-        with self.assertRaisesRegex(ValueError, "not a ScummVM SCVM"):
+        with self.assertRaisesRegex(ValueError, "original DOS SAVEGAME"):
+            self.check()
+
+    def test_room23_scummvm_save_refused_even_with_matching_metadata(self):
+        raw = synthetic_scummvm_save(room=23)
+        (self.capture / "saves/monkey2.s01").write_bytes(raw)
+        self.save.write_bytes(raw)
+        self.run["save_sha256"] = hashlib.sha256(raw).hexdigest()
+        self.run["save_state"] = inspect_scummvm_save(self.save)
+        self._write_run()
+        with self.assertRaisesRegex(ValueError, "Recorded save is Room 23"):
             self.check()
 
     def test_changed_save_is_rejected(self):
         self.save.write_bytes(b"changed-source-save")
         with self.assertRaisesRegex(ValueError, "Original source save differs"):
             self.check()
-        self.save.write_bytes(b"SCVM synthetic-only-private-save-placeholder")
+        self.save.write_bytes(synthetic_scummvm_save(room=7))
         (self.capture / "saves/monkey2.s01").write_bytes(b"changed-copy")
         with self.assertRaisesRegex(ValueError, "Copied save does not match"):
             self.check()

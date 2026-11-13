@@ -25,7 +25,8 @@ There are **two distinct execution tracks**:
    observe where that DOS save loads. It does **not** produce a ScummVM capture
    or automatically convert the save.
 2. **Instrumented ScummVM in TOOLS**: this document's Python launcher requires
-   a **ScummVM save starting with `SCVM`**. It rejects `SAVEGAME.001`
+   a **ScummVM v124 save** (optionally gzip-wrapped, with `SCVM` inside).
+   It validates both saved room fields and rejects `SAVEGAME.001`
    before writing outputs. Do not rename a DOS save to `monkey2.s01`; the
    formats are not interchangeable.
 
@@ -34,6 +35,12 @@ ScummVM-format captures; do not modify, delete or redistribute the build,
 saves or original game files.
 
 ## Step 1 — safely identify the executable and private save
+
+The newly supplied `monkey2.s01` is a valid gzip-wrapped ScummVM v124
+save whose stored current room and room resource are both **23**.
+It is therefore **not** suitable for direct Room 7 capture. A real
+`current_room=7` save is required before using `--native-room7-save`.
+See [the serialized save examination](P4_ROOM23_UPLOADED_SCUMMVM_SAVE_20261113.md).
 
 The pinned old debugger-run `run.json` records the executable path in
 `command[0]` and its SHA-256. Confirm the existing `TOOLS` file still

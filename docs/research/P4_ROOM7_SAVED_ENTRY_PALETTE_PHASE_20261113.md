@@ -107,6 +107,61 @@ definite disagreement. It retains the diagnostic report in both cases.
 The local private result, if supplied, will determine the next engineering
 step; do not invent a pass from synthetic CI.
 
+## Saved-entry 24/63 held-out result — operator follow-up
+
+The operator ran the new phase tool against their private
+`native-save-72c00ab603b64f9597b10cf952c9662e` capture using
+`--calibration-frames 24`, and supplied the full console summary:
+
+| Diagnostic | Observed |
+| --- | ---: |
+| Status | `forecast_ambiguous` |
+| Calibration frames | 24 |
+| Held-out frames | 63 |
+| **Determinate exact full-palette matches** | **52** |
+| **Ambiguous held-out frames** | **11** |
+| **Determinate held-out palette mismatches** | **0** |
+| Held-out cycle mismatches | 0 |
+| Noncycle palette changes | 0 |
+| Cycles with no calibration solution | None |
+| Cycles with uniquely identified phase | 1 |
+
+**Interpretation:** the observed initial palette, archive-derived cycle
+configuration and *some* inferred initial counter phases predict 52 held-out
+palettes exactly. The other 11 are **indeterminate**, not mismatches.
+Five cycles have more than one compatible phase, but multiple compatible
+phases may make the **same visible palette prediction** in most frames.
+This result increases confidence in the saved-state phase hypothesis but
+does **not** identify all real counter bytes or constitute 63/63
+deterministic palette validation. The previously reported 3/87 zero-phase
+matches and these 52/63 calibrated heldout matches are **different tests**
+with different assumptions and should not be combined.
+
+The retained report path is:
+
+`FIXTURE/REPORTS/Room7/native-save-72c00ab603b64f9597b10cf952c9662e-palette-phase-24.json`
+
+The figures above are from the user-supplied PowerShell transcript. Full
+per-cycle phase lists, exact 11 frame indices and engine binaries were not
+supplied to this chat; do not invent them.
+
+### Predeclared diagnostic extension
+
+For further **exploratory** phase identification, run the existing CLI again
+with fixed calibration prefixes **36** and **48**, each writing a distinct,
+non-overwriting private report. This leaves **51** and **39** held-out
+frames, respectively. Report all results including ambiguity and mismatch;
+do not selectively cite whichever calibration length matches best. The
+24-frame result remains the primary reference, because it holds out the
+longest suffix. These additional windows are not a fresh independent
+blind validation, as the original 24-frame summary has already been seen.
+
+Inspect `per_cycle[].calibration_matching_phases` and the exact
+`heldout_ambiguous_frames` from the original report before drawing a
+mechanism conclusion. If a later prefix yields determinate held-out
+predictions with no mismatches, verify it against **another independently
+created Room 7 save / capture** before claiming general save-state fidelity.
+
 ## Remaining scope restrictions
 
 The saved-entry capture validates background/mask and engine-to-backend

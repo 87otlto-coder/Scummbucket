@@ -100,11 +100,13 @@ passed.
 
 ## Boundaries and next work
 
-This bundle and the separate counter cross-check strengthen evidence for a faithful **static indexed
-background plus palette-cycling water preview**. It is **not** the output
-of `tools.verify_room7_saved_palette_counters`; it contains neither
-the direct-counter verifier's JSON nor its 87-frame unfitted predicted
-palette comparison. No conclusion about that newer test is justified.
+The bundle and separate save-counter cross-check support an accurate
+**static indexed background with palette-cycling water** for this one
+saved state. The archive is **not** the output of the source-backed
+`tools.verify_room7_saved_palette_counters` command; it contains neither
+that tool's JSON nor raw 87 engine frame binaries. The separate
+save-plus-preview cross-check did yield **87/87 correct palettes**, but
+the private engine-binary comparison remains an independent final gate.
 
 The outstanding next report is the unique, non-overwriting private
 `FIXTURE/REPORTS/Room7/native-save-72c00ab603b64f9597b10cf952c9662e-saved-counters-unfitted.json`.

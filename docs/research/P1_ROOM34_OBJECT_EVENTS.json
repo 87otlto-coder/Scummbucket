@@ -1,0 +1,353 @@
+{
+  "schema_version": "0.1",
+  "subject": "MI2 DOS room34 object358 source-derived behavior evidence",
+  "data_policy": "Derived metadata only; no original script bytes, rendered assets or dialogue included",
+  "source_files": {
+    "game_resource_sha256": "ad045372e0d49626503bb50fca29a687ec8e01ef75d9b8bca702a366d143819e",
+    "lscr_201_chunk": {
+      "offset": 2740982,
+      "size": 5050,
+      "sha256": "3dd3377827386229962e9aae8d681426115ad228efe1ecf36d7469154d1fbc09"
+    },
+    "lscr_202_chunk": {
+      "offset": 2746032,
+      "size": 1107,
+      "sha256": "1bb2578f20c0aad5146995f7d40b5cfdd0fe6b5c25a65faaffeddb5f12c82ee9"
+    },
+    "descumm_report_201": {
+      "name": "script-201-20261108-000910.txt",
+      "encoding": "UTF-16LE",
+      "sha256": "dcb0a892ee9206418ff35699e9e2a77c6ff4aa7cdeeb59a0b668c077f8dac876"
+    },
+    "descumm_report_202": {
+      "name": "script-202-20261108-000910.txt",
+      "encoding": "UTF-16LE",
+      "sha256": "addf2480f01240e92ed38937e8ef1eaf177eb18e4f7d7dbc3fe27a3b2ac19aeb"
+    }
+  },
+  "verification": {
+    "tool": "ScummVM Tools descumm, independent external Windows executable",
+    "script201": {
+      "candidate_opcodes": 11,
+      "confirmed_starts": 11,
+      "not_emitted": 0,
+      "conflicts": 0
+    },
+    "script202": {
+      "candidate_opcodes": 6,
+      "confirmed_starts": 6,
+      "not_emitted": 0,
+      "conflicts": 0
+    },
+    "statement": "Verified opcode starts only; neither execution, image appearance, nor timing has been observed."
+  },
+  "image_states_declared": 16,
+  "classification": "interactive_script_directed_image_state_changes",
+  "classification_basis": "Disassembled dialogue/cutscene conditional state selection and reset; autonomous looping not observed",
+  "random_select": {
+    "number_source": [
+      "Var[339]",
+      "Var[340]"
+    ],
+    "number_range": [
+      1,
+      5
+    ],
+    "random_operation": "getRandomNr(2)",
+    "random_range_inclusive": [
+      0,
+      2
+    ],
+    "temporary_state_register": "Var[100]",
+    "scratch_register": "Var[483]",
+    "formula": "min(15, (3*n - 1) + r)",
+    "semantic_source": "ScummVM engines/scumm/script_v5.cpp o5_getRandomNr and common/random.cpp RandomSource::getRandomNumber",
+    "possible_states_by_number": {
+      "1": [
+        2,
+        3,
+        4
+      ],
+      "2": [
+        5,
+        6,
+        7
+      ],
+      "3": [
+        8,
+        9,
+        10
+      ],
+      "4": [
+        11,
+        12,
+        13
+      ],
+      "5": [
+        14,
+        15,
+        15
+      ]
+    }
+  },
+  "instruction_events": [
+    {
+      "script_id": 201,
+      "relative_instruction_offset_hex": "06EE",
+      "source_byte_offset": 2742765,
+      "object_id": 358,
+      "operation": "drawObject",
+      "state_operand_type": "literal",
+      "state_operand_value": 1,
+      "alignment_evidence": "external_descumm_opcode_start_match",
+      "instruction_alignment_verified": true,
+      "runtime_execution_observed": false,
+      "visual_output_observed": false
+    },
+    {
+      "script_id": 201,
+      "relative_instruction_offset_hex": "073D",
+      "source_byte_offset": 2742844,
+      "object_id": 358,
+      "operation": "drawObject",
+      "state_operand_type": "variable_reference",
+      "state_operand_value": 100,
+      "alignment_evidence": "external_descumm_opcode_start_match",
+      "instruction_alignment_verified": true,
+      "runtime_execution_observed": false,
+      "visual_output_observed": false
+    },
+    {
+      "script_id": 201,
+      "relative_instruction_offset_hex": "0821",
+      "source_byte_offset": 2743072,
+      "object_id": 358,
+      "operation": "drawObject",
+      "state_operand_type": "variable_reference",
+      "state_operand_value": 100,
+      "alignment_evidence": "external_descumm_opcode_start_match",
+      "instruction_alignment_verified": true,
+      "runtime_execution_observed": false,
+      "visual_output_observed": false
+    },
+    {
+      "script_id": 201,
+      "relative_instruction_offset_hex": "0D59",
+      "source_byte_offset": 2744408,
+      "object_id": 358,
+      "operation": "drawObject",
+      "state_operand_type": "literal",
+      "state_operand_value": 1,
+      "alignment_evidence": "external_descumm_opcode_start_match",
+      "instruction_alignment_verified": true,
+      "runtime_execution_observed": false,
+      "visual_output_observed": false
+    },
+    {
+      "script_id": 201,
+      "relative_instruction_offset_hex": "0D7B",
+      "source_byte_offset": 2744442,
+      "object_id": 358,
+      "operation": "setState",
+      "state_operand_type": "literal",
+      "state_operand_value": 0,
+      "alignment_evidence": "external_descumm_opcode_start_match",
+      "instruction_alignment_verified": true,
+      "runtime_execution_observed": false,
+      "visual_output_observed": false
+    },
+    {
+      "script_id": 201,
+      "relative_instruction_offset_hex": "0DB5",
+      "source_byte_offset": 2744500,
+      "object_id": 358,
+      "operation": "drawObject",
+      "state_operand_type": "literal",
+      "state_operand_value": 1,
+      "alignment_evidence": "external_descumm_opcode_start_match",
+      "instruction_alignment_verified": true,
+      "runtime_execution_observed": false,
+      "visual_output_observed": false
+    },
+    {
+      "script_id": 201,
+      "relative_instruction_offset_hex": "0DBC",
+      "source_byte_offset": 2744507,
+      "object_id": 358,
+      "operation": "setState",
+      "state_operand_type": "literal",
+      "state_operand_value": 0,
+      "alignment_evidence": "external_descumm_opcode_start_match",
+      "instruction_alignment_verified": true,
+      "runtime_execution_observed": false,
+      "visual_output_observed": false
+    },
+    {
+      "script_id": 201,
+      "relative_instruction_offset_hex": "1046",
+      "source_byte_offset": 2745157,
+      "object_id": 358,
+      "operation": "drawObject",
+      "state_operand_type": "literal",
+      "state_operand_value": 1,
+      "alignment_evidence": "external_descumm_opcode_start_match",
+      "instruction_alignment_verified": true,
+      "runtime_execution_observed": false,
+      "visual_output_observed": false
+    },
+    {
+      "script_id": 201,
+      "relative_instruction_offset_hex": "104D",
+      "source_byte_offset": 2745164,
+      "object_id": 358,
+      "operation": "setState",
+      "state_operand_type": "literal",
+      "state_operand_value": 0,
+      "alignment_evidence": "external_descumm_opcode_start_match",
+      "instruction_alignment_verified": true,
+      "runtime_execution_observed": false,
+      "visual_output_observed": false
+    },
+    {
+      "script_id": 201,
+      "relative_instruction_offset_hex": "1271",
+      "source_byte_offset": 2745712,
+      "object_id": 358,
+      "operation": "drawObject",
+      "state_operand_type": "literal",
+      "state_operand_value": 1,
+      "alignment_evidence": "external_descumm_opcode_start_match",
+      "instruction_alignment_verified": true,
+      "runtime_execution_observed": false,
+      "visual_output_observed": false
+    },
+    {
+      "script_id": 201,
+      "relative_instruction_offset_hex": "1278",
+      "source_byte_offset": 2745719,
+      "object_id": 358,
+      "operation": "setState",
+      "state_operand_type": "literal",
+      "state_operand_value": 0,
+      "alignment_evidence": "external_descumm_opcode_start_match",
+      "instruction_alignment_verified": true,
+      "runtime_execution_observed": false,
+      "visual_output_observed": false
+    },
+    {
+      "script_id": 202,
+      "relative_instruction_offset_hex": "0173",
+      "source_byte_offset": 2746412,
+      "object_id": 358,
+      "operation": "drawObject",
+      "state_operand_type": "literal",
+      "state_operand_value": 1,
+      "alignment_evidence": "external_descumm_opcode_start_match",
+      "instruction_alignment_verified": true,
+      "runtime_execution_observed": false,
+      "visual_output_observed": false
+    },
+    {
+      "script_id": 202,
+      "relative_instruction_offset_hex": "019E",
+      "source_byte_offset": 2746455,
+      "object_id": 358,
+      "operation": "drawObject",
+      "state_operand_type": "variable_reference",
+      "state_operand_value": 100,
+      "alignment_evidence": "external_descumm_opcode_start_match",
+      "instruction_alignment_verified": true,
+      "runtime_execution_observed": false,
+      "visual_output_observed": false
+    },
+    {
+      "script_id": 202,
+      "relative_instruction_offset_hex": "0282",
+      "source_byte_offset": 2746683,
+      "object_id": 358,
+      "operation": "drawObject",
+      "state_operand_type": "variable_reference",
+      "state_operand_value": 100,
+      "alignment_evidence": "external_descumm_opcode_start_match",
+      "instruction_alignment_verified": true,
+      "runtime_execution_observed": false,
+      "visual_output_observed": false
+    },
+    {
+      "script_id": 202,
+      "relative_instruction_offset_hex": "0305",
+      "source_byte_offset": 2746814,
+      "object_id": 358,
+      "operation": "drawObject",
+      "state_operand_type": "literal",
+      "state_operand_value": 1,
+      "alignment_evidence": "external_descumm_opcode_start_match",
+      "instruction_alignment_verified": true,
+      "runtime_execution_observed": false,
+      "visual_output_observed": false
+    },
+    {
+      "script_id": 202,
+      "relative_instruction_offset_hex": "031D",
+      "source_byte_offset": 2746838,
+      "object_id": 358,
+      "operation": "setState",
+      "state_operand_type": "literal",
+      "state_operand_value": 0,
+      "alignment_evidence": "external_descumm_opcode_start_match",
+      "instruction_alignment_verified": true,
+      "runtime_execution_observed": false,
+      "visual_output_observed": false
+    },
+    {
+      "script_id": 202,
+      "relative_instruction_offset_hex": "042C",
+      "source_byte_offset": 2747109,
+      "object_id": 358,
+      "operation": "setState",
+      "state_operand_type": "literal",
+      "state_operand_value": 0,
+      "alignment_evidence": "external_descumm_opcode_start_match",
+      "instruction_alignment_verified": true,
+      "runtime_execution_observed": false,
+      "visual_output_observed": false
+    }
+  ],
+  "additional_context": {
+    "object357": {
+      "role": "actor placement/walking target; argument to scripts 25/26; separate state reset",
+      "set_state_zero": {
+        "script_id": 202,
+        "relative_instruction_offset_hex": "0428",
+        "source_byte_offset": 2747105
+      },
+      "joint_animation_verified": false
+    },
+    "timing": {
+      "fixed_delay_values_present": [
+        30,
+        120
+      ],
+      "gates": [
+        "breakHere",
+        "WaitForMessage",
+        "WaitForActor",
+        "conditional branch",
+        "cutscene override"
+      ],
+      "elapsed_milliseconds_verified": false,
+      "frame_rate_verified": false
+    },
+    "palette_cycle_flag_warnings": {
+      "count": 4,
+      "relationship_to_object358": "unresolved/unrelated in current evidence"
+    }
+  },
+  "unresolved": [
+    "visual state 0 semantics",
+    "actual appearances of state images",
+    "gameplay reachability and event timestamps",
+    "state 16 use in any other codepath",
+    "autonomous animated scenery elsewhere in room"
+  ]
+}

@@ -41,6 +41,8 @@ def inspect_scummvm_save(path):
     name = raw[12:44].split(b"\x00", 1)[0].decode("utf-8", "replace")
     if raw[44:48] != b"THMB":
         raise SaveFormatError("Expected v124 THMB section at offset 44")
+    if len(raw) < 52:
+        raise SaveFormatError("Truncated or invalid thumbnail/serialized state")
     thumb_size = struct.unpack_from(">I", raw, 48)[0]
     if thumb_size < 8 or 44 + thumb_size + 26 + 21 > len(raw):
         raise SaveFormatError("Truncated or invalid thumbnail/serialized state")

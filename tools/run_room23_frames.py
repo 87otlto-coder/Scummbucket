@@ -18,15 +18,44 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def validate_native_room7_save(args, exe, game, dest):
+    """Read-only safety gate; does not authenticate how the save was created.
+
+    The source save may be in the user's ScummVM directory. The copied save,
+    generated captures and reports must never live inside the source checkout.
+    """
+    if not getattr(args, "native_room7_save", False):
+        return
+    if getattr(args, "room", 23) != 7 or args.save is None or args.enter_room or args.walk:
+        raise ValueError(
+            "--native-room7-save requires --room 7 and --save; "
+            "do not use --enter-room or --walk"
+        )
+    fixture = game.parent.parent
+    if fixture.name.upper() != "FIXTURE":
+        raise ValueError("Native Room 7 capture game must be under FIXTURE/GAMES")
+    if not exe.is_file() or not exe.is_relative_to(fixture.parent / "TOOLS"):
+        raise ValueError("Native Room 7 capture requires an existing TOOLS executable")
+    save = args.save.resolve()
+    if not save.is_file() or save.stat().st_size == 0:
+        raise ValueError("Native Room 7 capture requires a nonempty original save")
+    if save.is_relative_to(fixture.parent / "SOURCE"):
+        raise ValueError("Original save cannot reside inside SOURCE / Git")
+    if not dest.is_relative_to(fixture / "CAPTURES" / "Room7"):
+        raise ValueError("Capture output must remain under FIXTURE/CAPTURES/Room7")
+
+
 def run(args):
     exe, game, dest = (p.resolve() for p in (args.exe, args.game, args.output))
     room = getattr(args, "room", 23)
+    validate_native_room7_save(args, exe, game, dest)
     if room == 7 and args.walk == "control":
         raise ValueError("Room 7 sweep uses the normal renderer")
     if room == 23 and args.walk and (not args.save or args.enter_room):
         raise ValueError("use the Room 23 save for a walking run")
     if {name: digest(game / name) for name in ARCHIVES} != ARCHIVES:
         raise ValueError("unexpected DOS game archives")
+    save_digest = digest(args.save) if args.save else None
     dest.mkdir(parents=True, exist_ok=False)
     saves = dest / "saves"
     saves.mkdir()
@@ -39,6 +68,8 @@ def run(args):
                "--no-fullscreen", "--no-filtering", "--stretch-mode=center", f"--music-driver={args.music_driver}"]
     if args.save:
         shutil.copyfile(args.save, saves / "monkey2.s01")
+        if digest(saves / "monkey2.s01") != save_digest:
+            raise ValueError("Copied saved game differs from the supplied source")
         command.append("--save-slot=1")
     command.append("monkey2")
     env = os.environ.copy()
@@ -46,9 +77,15 @@ def run(args):
     if args.headless:
         env.update(SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy", SDL_RENDER_DRIVER="software")
     meta = {"room": room, "command": command, "exe_sha256": digest(exe), "archives": ARCHIVES,
-            "headless": args.headless, "debugger_equivalent_entry": args.enter_room, "save_sha256": digest(args.save) if args.save else None,
+            "headless": args.headless, "debugger_equivalent_entry": args.enter_room, "save_sha256": save_digest,
             "version": subprocess.check_output([str(exe), "--version"], cwd=dest, env=env,
                                                text=True, errors="replace").strip()}
+    if getattr(args, "native_room7_save", False):
+        meta["entry_provenance"] = {
+            "method": "loaded_private_save_no_debugger_or_injected_walk",
+            "save_origin_verified": False,
+            "natural_gameplay_entry_verified": False,
+        }
     if args.walk:
         meta["walk"] = args.walk
         (dest / "walk.enabled").touch(exist_ok=False)
@@ -85,6 +122,11 @@ if __name__ == "__main__":
     parser.add_argument("--room", type=int, choices=(7, 23), default=23)
     parser.add_argument("--walk", choices=("normal", "control"))
     parser.add_argument("--enter-room", action="store_true")
+    parser.add_argument(
+        "--native-room7-save", action="store_true",
+        help="Require a private Room 7 saved-game capture without debugger jump or research walk; "
+             "save origin remains unverified",
+    )
     parser.add_argument("--headless", action="store_true")
     parser.add_argument("--timeout", type=int, default=120)
     run(parser.parse_args())

@@ -80,8 +80,10 @@ class Room7SavedPalettePhaseTests(unittest.TestCase):
     def test_ambiguous_future_never_selects_arbitrary_phase(self):
         samples = [{"timer_pair": [0, 0],
                     "post_palette": bytes(self.initial)} for _ in range(8)]
+        # One held-out update: different surviving counter residues
+        # disagree about whether the first rotation has occurred.
         samples += [{"timer_pair": [1, 1],
-                     "post_palette": bytes(self.initial)} for _ in range(22)]
+                     "post_palette": bytes(self.initial)}]
         result = analyze_saved_palette_cycles(
             self.records, bytes(self.initial), samples, calibration_frames=8)
         self.assertEqual(result["status"], "forecast_ambiguous")

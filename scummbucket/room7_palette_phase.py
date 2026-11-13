@@ -120,7 +120,7 @@ def analyze_saved_palette_cycles(records, initial_palette, samples, *,
                  if not c["calibration_matching_phases"]]
     cycle_mismatches = sum(c["heldout_mismatching_frames"] for c in per_cycle)
     status = ("calibration_unresolved" if no_phases else
-              "heldout_mismatch" if cycle_mismatches or full_mismatches else
+              "heldout_mismatch" if cycle_mismatches or full_mismatches or noncycle_changes else
               "forecast_ambiguous" if ambiguous_frames else
               "heldout_matched")
     return {

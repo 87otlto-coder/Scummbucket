@@ -115,14 +115,18 @@ if ($report.status -ne 'ready') {
 $game = Join-Path $fixture 'GAMES\MonkeyIsland2_DOS_VGA'
 $normal = Join-Path $fixture 'CAPTURES\Room23\walk-20261110-a-normal'
 $control = Join-Path $fixture 'CAPTURES\Room23\walk-20261110-a-control'
+$costumeReport = Join-Path $fixture 'REPORTS\Room23\walk-20261110-a.json'
 foreach ($path in @($game, $normal, $control)) {
     if (-not (Test-Path -LiteralPath $path -PathType Container)) {
         throw "Required private regression fixture missing: $path"
     }
 }
+if (-not (Test-Path -LiteralPath $costumeReport -PathType Leaf)) {
+    throw "Required Room 23 costume regression evidence missing: $costumeReport"
+}
 Assert-PillowAvailable
 
-$envNames = @('SCUMMBUCKET_MI2_ARCHIVE', 'SCUMMBUCKET_MI2_GAME', 'SCUMMBUCKET_WALK_NORMAL', 'SCUMMBUCKET_WALK_CONTROL')
+$envNames = @('SCUMMBUCKET_MI2_ARCHIVE', 'SCUMMBUCKET_MI2_GAME', 'SCUMMBUCKET_WALK_NORMAL', 'SCUMMBUCKET_WALK_CONTROL', 'SCUMMBUCKET_COSTUME_FIXTURE')
 $previous = @{}
 foreach ($key in $envNames) {
     $previous[$key] = [Environment]::GetEnvironmentVariable($key, 'Process')
@@ -131,6 +135,9 @@ foreach ($key in $envNames) {
 [Environment]::SetEnvironmentVariable('SCUMMBUCKET_MI2_GAME', $game, 'Process')
 [Environment]::SetEnvironmentVariable('SCUMMBUCKET_WALK_NORMAL', $normal, 'Process')
 [Environment]::SetEnvironmentVariable('SCUMMBUCKET_WALK_CONTROL', $control, 'Process')
+# test_classic_costume.py uses the fixture root to compare 87 original
+# Room 23 normal/control engine frames; a missing variable silently SKIPS it.
+[Environment]::SetEnvironmentVariable('SCUMMBUCKET_COSTUME_FIXTURE', $fixture, 'Process')
 
 Push-Location $repo
 try {

@@ -76,6 +76,12 @@ class NativeRoom7LauncherTests(unittest.TestCase):
         wrong = self.root / "SOURCE/GAMES/MonkeyIsland2_DOS_VGA"
         with self.assertRaisesRegex(ValueError, "FIXTURE/GAMES"):
             validate_native_room7_save(self.args, self.exe, wrong, self.output)
+        other = self.root / "FIXTURE/OTHER/MonkeyIsland2_DOS_VGA"
+        with self.assertRaisesRegex(ValueError, "FIXTURE/GAMES"):
+            validate_native_room7_save(self.args, self.exe, other, self.output)
+        mislabeled = self.root / "FIXTURE/GAMES/MonkeyIsland2_unknown"
+        with self.assertRaisesRegex(ValueError, "FIXTURE/GAMES"):
+            validate_native_room7_save(self.args, self.exe, mislabeled, self.output)
 
     def test_original_save_must_not_reside_inside_git_source(self):
         source_save = self.root / "SOURCE/ScummBucket/example.s01"

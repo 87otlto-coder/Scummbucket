@@ -34,8 +34,9 @@ def validate_native_room7_save(args, exe, game, dest):
             "do not use --enter-room or --walk"
         )
     fixture = game.parent.parent
-    if fixture.name.upper() != "FIXTURE":
-        raise ValueError("Native Room 7 capture game must be under FIXTURE/GAMES")
+    if (fixture.name.upper() != "FIXTURE" or game.parent.name.upper() != "GAMES"
+            or game.name.upper() != "MONKEYISLAND2_DOS_VGA"):
+        raise ValueError("Native Room 7 capture game must be under FIXTURE/GAMES/MonkeyIsland2_DOS_VGA")
     if not exe.is_file() or not exe.is_relative_to(fixture.parent / "TOOLS"):
         raise ValueError("Native Room 7 capture requires an existing TOOLS executable")
     save = args.save.resolve()

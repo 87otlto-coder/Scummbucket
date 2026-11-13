@@ -185,8 +185,9 @@ class PortablePreviewTests(unittest.TestCase):
                 expected_frames=4)
 
     def test_game_save_room23_refused(self):
-        self.save.write_bytes(
-            synthetic_scummvm_save(room=23) + b"other data")
+        # Construct a syntactically valid gzip-wrapped Room 23 save,
+        # not a valid gzip stream followed by malformed trailing bytes.
+        self.save.write_bytes(synthetic_scummvm_save(room=23))
         with self.assertRaisesRegex(PortableRoom7Error, "not Room 7"):
             self.check()
 

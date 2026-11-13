@@ -202,7 +202,7 @@ def verify_saved_preview(preview_zip, save_path, archive_bytes, *,
             "preview_zip": digest(preview_zip.read_bytes()),
             "serialized_cycle_block": saved_cycles["block_sha256"],
         },
-        "saved_room": saved_state["current_room"],
+        "saved_room": save_state["current_room"],
         "saved_cycle_counters": {
             str(row["id"]): row["saved_counter"] for row in saved_cycles["cycles"]
         },

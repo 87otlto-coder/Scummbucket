@@ -54,10 +54,10 @@ class Room7SavedEntryTests(unittest.TestCase):
             display = (f"R23D1 {n} {1000+n*100} 320 200 surface\n").encode()
             (self.capture / f"present-{n:03}.bin").write_bytes(display + bytes(320*200*3))
 
-    def _write_log(self):
+    def _write_log(self, count=2):
         lines = ["SBP4|BEGIN|7|1000|" + self.palette.hex()]
         lines.extend(f"SBP4|SAMPLE|{n}|6|6|{1000+n*100}|{self.palette.hex()}"
-                     for n in (1, 2))
+                     for n in range(1, count + 1))
         (self.capture / "scummbucket-p4-room7.raw.log").write_text(
             "\n".join(lines) + "\n", encoding="utf8")
 
@@ -73,6 +73,48 @@ class Room7SavedEntryTests(unittest.TestCase):
         self.assertFalse(result["natural_gameplay_route_verified"])
         self.assertFalse(result["independent_scene_reconstruction_verified"])
         self.assertTrue(result["summary"]["original_save_matched"])
+
+    def test_palette_trace_may_outlive_frame_probe_without_discarding_evidence(self):
+        # Full-scale 256-sample hook with a 2-frame synthetic engine probe.
+        # Only frames 1/2 may be byte-compared; 3..256 are schema checked.
+        self._write_log(count=256)
+        result = self.check()
+        summary = result["summary"]
+        self.assertEqual(summary["frames_checked"], 2)
+        self.assertEqual(summary["trace_samples_total"], 256)
+        self.assertEqual(summary["trace_samples_paired_to_frames"], 2)
+        self.assertEqual(summary["trace_samples_unpaired"], 254)
+        self.assertEqual(summary["trace_unpaired_first_sequence"], 3)
+        self.assertEqual(summary["trace_unpaired_last_sequence"], 256)
+        self.assertTrue(summary["trace_unpaired_schema_sequence_checked"])
+        self.assertFalse(summary["trace_unpaired_engine_compared"])
+        self.assertEqual(len(result["frames"]), 2)
+        self.assertFalse((self.capture / "engine-003.bin").exists())
+
+    def test_nonsequential_unpaired_trace_suffix_is_not_hidden(self):
+        self._write_log(count=256)
+        log = self.capture / "scummbucket-p4-room7.raw.log"
+        raw = log.read_text(encoding="utf8")
+        raw = raw.replace("SBP4|SAMPLE|88|", "SBP4|SAMPLE|99|")
+        log.write_text(raw, encoding="utf8")
+        with self.assertRaisesRegex(ValueError, "Nonsequential palette trace"):
+            self.check()
+
+    def test_corrupt_palette_in_unpaired_suffix_is_not_hidden(self):
+        self._write_log(count=256)
+        log = self.capture / "scummbucket-p4-room7.raw.log"
+        raw = log.read_text(encoding="utf8")
+        original = f"SBP4|SAMPLE|256|6|6|{1000+256*100}|{self.palette.hex()}"
+        changed = f"SBP4|SAMPLE|256|6|6|{1000+256*100}|FF"
+        self.assertIn(original, raw)
+        log.write_text(raw.replace(original, changed), encoding="utf8")
+        with self.assertRaisesRegex(ValueError, "Invalid palette length at sample 256"):
+            self.check()
+
+    def test_truncated_trace_prefix_remains_a_failure(self):
+        self._write_log(count=1)
+        with self.assertRaisesRegex(ValueError, "Expected at least 2 palette samples"):
+            self.check()
 
     def test_debugger_entry_or_walk_metadata_is_rejected(self):
         for key, value in (("debugger_equivalent_entry", True), ("walk", "normal")):

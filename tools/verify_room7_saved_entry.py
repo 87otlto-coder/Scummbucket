@@ -88,15 +88,39 @@ def validate(capture, *, original_save=None, game=None, executable=None,
     begins = [line for line in lines if line.startswith("SBP4|BEGIN|")]
     if len(begins) != 1 or not begins[0].startswith("SBP4|BEGIN|7|"):
         raise ValueError("Missing or inconsistent observed Room 7 trace beginning")
+    # The frame-probe records exactly expected_frames engine/present pairs,
+    # but the independent palette hook may continue recording until its own
+    # sample cap (256). Do not falsely reject a complete 87-frame capture
+    # merely because its same-run trace contains more sequential observations.
+    # Parse and validate ALL records before pairing only the captured prefix.
     samples = [line.split("|") for line in lines if line.startswith("SBP4|SAMPLE|")]
-    if len(samples) != expected_frames:
-        raise ValueError(f"Expected {expected_frames} real palette samples, found {len(samples)}")
+    if len(samples) < expected_frames:
+        raise ValueError(
+            f"Expected at least {expected_frames} palette samples for "
+            f"{expected_frames} frame pairs; found {len(samples)}"
+        )
+    for sequence, sample in enumerate(samples, 1):
+        if len(sample) != 7 or sample[:2] != ["SBP4", "SAMPLE"]:
+            raise ValueError(f"Invalid palette trace sample fields at {sequence}")
+        try:
+            sample_id, timer, next_timer, millis = map(int, sample[2:6])
+            palette = bytes.fromhex(sample[6])
+        except ValueError as exc:
+            raise ValueError(f"Malformed palette trace sample at {sequence}") from exc
+        if sample_id != sequence:
+            raise ValueError(
+                f"Nonsequential palette trace sample: expected {sequence}, "
+                f"got {sample_id}"
+            )
+        if len(palette) != 768:
+            raise ValueError(f"Invalid palette length at sample {sequence}: {len(palette)}")
+        if timer < 0 or next_timer < 0 or millis < 0:
+            raise ValueError(f"Invalid negative timer/timestamp at sample {sequence}")
 
     positions, rows, palettes = [], [], set()
     previous_ms = None
     for n, line in enumerate(samples, 1):
-        if len(line) != 7 or line[:2] != ["SBP4", "SAMPLE"]:
-            raise ValueError(f"Invalid trace sample fields at frame {n}")
+        # This prefix is already schema- and sequence-checked above.
         try:
             observed_seq, timer, next_timer = (int(t) for t in line[2:5])
             observed_palette = bytes.fromhex(line[6])
@@ -157,6 +181,18 @@ def validate(capture, *, original_save=None, game=None, executable=None,
             "original_archives_rehashed": game is not None,
             "executed_binary_rehashed": executable is not None,
             "trace_has_end": any(s.startswith("SBP4|END|") for s in lines),
+            "trace_sha256": sha(capture / "scummbucket-p4-room7.raw.log"),
+            "trace_samples_total": len(samples),
+            "trace_samples_paired_to_frames": expected_frames,
+            "trace_samples_unpaired": len(samples) - expected_frames,
+            "trace_unpaired_first_sequence": (
+                expected_frames + 1 if len(samples) > expected_frames else None
+            ),
+            "trace_unpaired_last_sequence": (
+                len(samples) if len(samples) > expected_frames else None
+            ),
+            "trace_unpaired_schema_sequence_checked": True,
+            "trace_unpaired_engine_compared": False,
         },
     }
 

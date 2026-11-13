@@ -89,8 +89,14 @@ rather than silently jump to the requested room.
 The saved-entry validator fingerprints the copied original save, checks the
 original game/executable bytes when paths are supplied, checks both sets
 of 87 frame binaries and their structure, matches Room 7 camera geometry
-and the engine frame timer/post-cycle palette to the source trace. It creates
-a new metadata-only report **only** at an explicitly supplied path.
+and the engine frame timer/post-cycle palette to the source trace. The
+palette logger may contain **more samples than frame pairs** (e.g., 256
+palette observations for 87 captured engine/present frames). The validator
+requires the 87-frame paired prefix and validates all extra log rows for
+format, numbering and palette length, while reporting the unpaired tail
+separately. It **does not** claim the extra samples were independently
+compared with engine buffers. It creates a new metadata-only report
+**only** at an explicitly supplied path.
 
 ~~~powershell
 $report = Join-Path $fixture ('REPORTS\Room7\' + $runId + '-gate.json')
@@ -123,3 +129,32 @@ source game or labeling an unsupported layer as matched.
 
 **Do not merge draft PR #8** on the strength of this protocol alone.
 Licensing/attribution and broader entry-route coverage remain separate gates.
+
+## 13 November: saved Room 7 capture resumption after an overlong palette trace
+
+The operator's `monkey2-1.s01` (confirmed save Room 7) passed metadata
+inspection and successfully completed `tools.run_room23_frames`. The
+initial evidence validator then reported `Expected 87 real palette samples,
+found 256`. That was a validator framing assumption, **not** evidence that
+the captured 87 frame pairs were corrupt. An independent palette hook may
+record more than the frame probe's 87 pairs.
+
+**Resume read-only from the existing capture**; never rerun, overwrite or
+truncate `scummbucket-p4-room7.raw.log` just to manufacture 87 samples.
+After updating to the corrected research-branch commit, identify the
+existing capture (its `run.json` must fingerprint the expected save),
+then rerun the evidence gate using the **same** capture directory and a
+new report path. Exact runtime/camera/palette outcomes remain to be
+determined by the local private validator.
+
+If validation passes, run `tools.compare_room7` against the unchanged
+archive-derived world `OUTPUT/Room7/native-20261110-a` in a distinct
+`REPORTS/Room7` output folder. A new entry state may produce substantive
+mismatches, especially in palette cycle phase or visible actors; keep the
+difference report and treat such failures as evidence, not as an invitation
+to overwrite the pinned control capture.
+
+The reported 256 samples may include **169 unpaired** observations if all
+87 frame pairs are present. All log rows must be well formed, contiguous,
+and have valid 768-byte palettes; only the captured 87 rows get the
+independent engine/post-palette comparison.

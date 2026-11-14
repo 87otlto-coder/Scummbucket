@@ -85,6 +85,10 @@ if ($LASTEXITCODE -ne 0) {
 if (!(Test-Path -LiteralPath (Join-Path $out 'animation.json'))) {
     throw "No completion manifest; preserve partial evidence in $out"
 }
+python -B -m tools.verify_room7_navigation_export $out
+if ($LASTEXITCODE -ne 0) {
+    throw "Native PNG integrity check failed; preserve evidence in $out"
+}
 Write-Host "Verified native export: $out"
 Write-Host "Open: $(Join-Path $out 'play.html')"
 ~~~
@@ -123,3 +127,22 @@ rendered indexed PNG and palette hashes against animation.json, inspect
 both exterior segments in browser playback and compare an independently
 selected set of native frames with the stored raw reference. Never silently
 declare this achieved from fixture-free CI.
+
+
+## Read-only independent integrity check
+
+The verifier tools.verify_room7_navigation_export reopens every generated PNG
+and validates file SHA-256, indexed bytes SHA-256, full 768-byte palette,
+strict filenames, native geometry, segment tick spans, timeline ordering and
+the exact PNG inventory declared by animation.json. It does not open game
+archives or ScummVM captures, and it is distinct from the compositor's
+pixel comparison against raw ScummVM front buffers. Both gates are necessary
+to call the saved export complete. This verifier can be rerun at any point:
+
+~~~powershell
+Set-Location -LiteralPath 'F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket'
+python -B -m tools.verify_room7_navigation_export 'FULL-PATH-TO-NEW-OUTPUT'
+~~~
+
+Tests for malformed PNGs, missing/extra files, fabricated gaps,
+reordered timestamps and incorrect metadata use only synthetic images.

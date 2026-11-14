@@ -11,18 +11,20 @@ from uuid import uuid4
 from tools.run_room23_frames import ARCHIVES, digest, validate_native_room7_save
 
 
-def capture(root, build):
+def capture(root, build, *, doorway=False):
     fixture = root / "FIXTURE"
     game = fixture / "GAMES/MonkeyIsland2_DOS_VGA"
     save = game / "monkey2-1.s01"
     exe = root / "TOOLS" / build / "scummvm.exe"
-    dest = fixture / "CAPTURES/Room7" / ("navigation-" + uuid4().hex)
+    dest = fixture / "CAPTURES/Room7" / (("doorway-" if doorway else "navigation-") + uuid4().hex)
     args = SimpleNamespace(native_room7_save=True, room=7, save=save, enter_room=False, walk=None)
     state = validate_native_room7_save(args, exe, game, dest)
     if digest(save) != "39035338ed89bdfe754f31e390f247c83095f1938aeae6877c0373ad7f72aa0d":
         raise ValueError("Unexpected Room 7 save")
     if any(digest(game / name) != expected for name, expected in ARCHIVES.items()):
         raise ValueError("Unexpected DOS VGA archives")
+    if doorway and digest(exe) != (exe.parent / "doorway-exe.sha256").read_text().strip():
+        raise ValueError("Doorway build digest mismatch")
     dest.mkdir(exist_ok=False)
     saves = dest / "saves"
     saves.mkdir()
@@ -37,14 +39,18 @@ def capture(root, build):
            "--scaler=normal", "--scale-factor=1", "--no-aspect-ratio", "--no-fullscreen",
            "--no-filtering", "--stretch-mode=center", "--debuglevel=3", "--music-driver=auto", "monkey2"]
     (dest / "run.json").write_text(json.dumps(dict(command=cmd, exe_sha256=digest(exe),
-        archives=ARCHIVES, save=state, input_method="ordinary game controls", limit_room_frames=2400),
+        archives=ARCHIVES, save=state, input_method="ordinary game controls", **({"capture_mode": "doorway", "limit_ticks": 2400, "limit_presents": 4800}
+        if doorway else {"limit_room_frames": 2400})),
         indent=2), encoding="utf8")
-    (dest / "capture.enabled").touch(exist_ok=False)
+    (dest / ("doorway.enabled" if doorway else "capture.enabled")).touch(exist_ok=False)
     env = os.environ.copy()
     env["PATH"] = "C:/msys64/ucrt64/bin" + os.pathsep + env["PATH"]
     print(dest, flush=True)
     with (dest / "console.log").open("xb") as log:
         subprocess.run(cmd, env=env, cwd=dest, stdout=log, stderr=log, check=True)
+    if doorway:
+        from tools.room7_doorway import finish
+        return finish(root, dest, fixture / "REPORTS/Room7" / dest.name)
     if not (dest / "engine-001.bin").is_file() or b"\nnavigation " not in (
             dest / "engine-001.bin").read_bytes().partition(b"\nDATA\n")[0]:
         raise ValueError("Navigation hook did not produce a frame")

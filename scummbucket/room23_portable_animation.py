@@ -134,11 +134,14 @@ def prepare(export_dir, raw_log):
         raise ValueError("Original raw SBP4 trace hash differs from export")
     capture = parse_room23_hook_log(raw)
     if (capture["complete"] != metadata.get("capture_complete") or
+        capture["stop_reason"] != metadata.get("stop_reason") or
         capture["begin_millis"] != metadata.get("begin_millis")):
         raise ValueError("Raw trace completion or start time differs from export")
     records = metadata.get("frames")
     if not isinstance(records,list) or not records or len(records) != len(capture["samples"]):
         raise ValueError("Export's frame count differs from the authenticated raw trace")
+    if metadata["heldout_matches"] != len(records) - metadata["calibration_samples"]:
+        raise ValueError("Held-out sample count inconsistent with source trace")
     _, gaps, _ = _split_on_clock_discontinuities(capture["samples"])
     if gaps != metadata.get("clock_gaps"):
         raise ValueError("Export gap annotations do not match original raw log")

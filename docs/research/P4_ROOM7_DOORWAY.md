@@ -23,3 +23,38 @@ Tick rows give end-of-loop room ID, actor room, world X/Y, active box, camera X/
 ## Validation and diagnostics
 
 A private idle smoke run of build a produced Room 7 actor and SDL records. Game-window approval timed out before navigation. At the tick limit ScummVM opened its debugger and continued producing SDL frames. The run was stopped and its partial files retained at FIXTURE/CAPTURES/Room7/doorway-118c94263cf44af9b856906a6824c0f1. Build b disables capture at the tick cap and separately bounds SDL frames. Both compiler logs remain under TOOLS, including the inherited unsigned-xstart warning and Git version lookup diagnostic in the isolated build copy. The corrected executable linked successfully. A synthetic three-frame round trip at 148, 247 and 401 ms passed full FFV1 decode, timestamp and RGB verification. Interior gameplay evidence remains pending.
+
+
+## Source-script trace replay (subsequent checkpoint)
+
+The 14 November continuous user-run doorway capture established **Room 7 -> Room 12 -> Room 7** at consecutive engine ticks, with restored positions (54,54) -> (259,58) and (265,59) -> (55,55). This closes the earlier continuous-room-coverage gap; it does **not** by itself establish the source instructions and operands that triggered the transition.
+
+Use the existing pinned doorway build with ScummVM's built-in SCRIPTS and OPCODES channels. This is not a new custom ScummVM patch. The script-tracing launcher adds --debugflags=SCRIPTS,OPCODES, --debug-channels-only and --dump-scripts; it creates a new dumps directory under a new unique private capture. The existing executable, save and archive hashes remain pinned by the normal launcher.
+
+From **Windows PowerShell**:
+
+~~~powershell
+$ErrorActionPreference = 'Stop'
+$repo = 'F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket'
+Set-Location -LiteralPath $repo
+if ((git branch --show-current).Trim() -ne 'research/p4-engine-palette-trace') {
+    throw 'Wrong Git branch; do not overwrite or switch a dirty checkout'
+}
+if ((git status --porcelain)) {
+    throw 'Checkout has uncommitted changes; inspect before updating'
+}
+git fetch origin research/p4-engine-palette-trace
+if ($LASTEXITCODE -ne 0) { throw 'Git fetch failed' }
+git merge --ff-only origin/research/p4-engine-palette-trace
+if ($LASTEXITCODE -ne 0) { throw 'Fast-forward failed; no forced changes' }
+python -B -m tools.room7_doorway_script_trace --root 'F:\Dev\SCUMMBUCKET'
+if ($LASTEXITCODE -ne 0) { throw "Script trace exited $LASTEXITCODE; preserve capture" }
+~~~
+
+**Game route:** restored Room 7 right-side bridge -> walk left into the ship -> in Room 12, walk down the stairs and back up -> return to Room 7 -> stop outside -> close ScummVM normally. Do not open the debugger, change rooms artificially, or leave the game idle until the 2,400-tick/4,800-presentation recording limit.
+
+The launcher writes to new matching FIXTURE/CAPTURES/Room7/doorway-<uuid> and FIXTURE/REPORTS/Room7/doorway-<uuid> directories. The report includes doorway.json, doorway.mkv, script_trace.json and timestamped frames. The private capture includes ticks.tsv, presents.tsv, run.json, console.log, runtime.log and dumps (game script bytes; **do not commit or publish**). Keep all original files read-only.
+
+script_trace.json records executed script numbers, engine opcode handler names, reported offsets, probable opcode starts and hashes of private dump files. It explicitly does not equate opcode log entries with specific engine ticks or decode opcode operands. Source-level confirmation requires matching the executed sites to the original SCUMM v5 resource bytes or disassembly, then verifying the target room/object operands. Missing opcode channel output is reported as incomplete; do not treat an automatically successful room-transition recording as script-level proof.
+
+**Share:** ZIP the new report's script_trace.json, new capture's console.log, runtime.log, ticks.tsv, run.json, plus any error output. Preserve the dumps locally unless requested for a private inspection; never put game scripts into Git. The full video is optional because the previous doorway video has already been verified.

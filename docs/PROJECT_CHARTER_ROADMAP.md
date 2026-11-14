@@ -14,6 +14,16 @@ ScummBucket should allow users to explore original resources, view animated char
 
 The project is not intended to replace ScummVM or become a general-purpose game interpreter.
 
+## Workspace Structure (approved 2026-11-09)
+
+The Windows root is F:\Dev\SCUMMBUCKET with exactly three top-level folders:
+
+- SOURCE\ScummBucket — project Git repository, code, tests, scripts, configuration, research notes and documentation.
+- TOOLS — third-party utilities, including ScummVM-P4-Trace instrumented source/build; system-wide compilers such as C:\msys64 may stay installed separately.
+- FIXTURE — original game inputs (GAMES by title/edition), captured engine evidence (CAPTURES), visual references (REFERENCE), generated assets (OUTPUT), and provenance manifests/diagnostics (REPORTS).
+
+Use these locations consistently in future commands. Keep game archives read-only and outside Git. Never add new root folders, silently overwrite, delete or relocate existing data. Use [the copy-first workspace migration procedure](WORKSPACE_MIGRATION.md) for older C:/D: locations; retain original historical evidence labels.
+
 ## Primary Objectives
 
 1. Identify and inspect supported original game archives.

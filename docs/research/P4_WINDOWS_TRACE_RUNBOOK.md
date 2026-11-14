@@ -1,0 +1,97 @@
+# P4 Room 23 — Windows capture runbook (ScummVM v2026.4.0)
+
+**Status, 2026-11-09:** The user reported successful compilation of the corrected ScummVM V2 hook on Windows, then supplied a complete 256-sample normal-cadence palette log from Room 23, matching the phase-aware source model in 256/256 samples (253 held out). A subsequent file labeled stress still recorded only 6/6 timer pairs; **the true 60/60 stress experiment remains unverified**. The local workspace now uses F:\Dev\SCUMMBUCKET\SOURCE, TOOLS and FIXTURE; see the [verified-copy migration procedure](../WORKSPACE_MIGRATION.md).
+
+This runbook uses a separate experimental ScummVM checkout so the original ScummVM installation and original game archives stay untouched.
+
+## 1. Windows PowerShell — clone, pin and instrument
+
+Requires Git and Python available in PowerShell. Commands work regardless of the starting PowerShell directory:
+
+~~~powershell
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
+git fetch origin
+git switch research/p4-engine-palette-trace
+git pull --ff-only origin research/p4-engine-palette-trace
+
+python -m unittest discover -s tests -p "test_engine_trace_bridge.py" -v
+python -m unittest discover -s tests -p "test_palette_trace.py" -v
+
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\tools\setup_scummvm_trace.ps1"
+~~~
+
+This script clones ScummVM v2026.4.0 into F:\Dev\SCUMMBUCKET\TOOLS\ScummVM-P4-Trace, checks both the exact tag commit and the original C++ blob fingerprint, and installs only the guarded palette hook, retaining an original-source backup. It can also **upgrade the failed V1 hook to V2 in an existing checkout**, if source and backup match the exact generated files; no new clone is needed. An existing different checkout is refused, not overwritten.
+
+Expected in a fresh checkout: `PATCH_APPLICABLE`, `PATCH_APPLIED`, and the pinned commit SHA. Expected when repairing the V1 compile failure: `UPGRADE_APPLICABLE`, then `PATCH_UPGRADED_V1_TO_V2`. If V2 is already present, expect `PATCH_ALREADY_CURRENT`. Stop if tests or source guards fail.
+
+## 2. MSYS2 UCRT64 terminal — minimal SCUMM-only build
+
+Install [MSYS2](https://www.msys2.org/) if needed. Open the **MSYS2 UCRT64** terminal, not ordinary PowerShell or the MSYS2 MSYS terminal. Follow the [MSYS2 update instructions](https://www.msys2.org/), typically by running pacman -Syu, restarting the terminal if prompted, then completing updates.
+
+Run:
+
+~~~bash
+pacman -S --needed base-devel git mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-SDL2 mingw-w64-ucrt-x86_64-pkgconf
+
+bash /f/Dev/SCUMMBUCKET/SOURCE/ScummBucket/tools/build_scummvm_trace_msys2.sh /f/Dev/SCUMMBUCKET/TOOLS/ScummVM-P4-Trace
+~~~
+
+The build script checks UCRT64, the compiler, SDL2, and presence of our source hook. It runs ScummVM's own configure script (only the SCUMM engine) and make -j 4, then checks that the compiled scummvm.exe exists. No existing executable is replaced.
+
+**Windows compilation has not been run by the assistant.** If it fails, capture the earliest compiler or linker error so the exact dependency or source incompatibility can be resolved. Do not disable the source pinning or silently modify hook logic.
+
+## 3. Windows PowerShell — actual default-cadence palette capture
+
+The original MI2 files are expected under F:\Dev\SCUMMBUCKET\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA (both MONKEY2.000 and MONKEY2.001). The helper verifies that MONKEY2.001 has SHA-256 ad045372e0d49626503bb50fca29a687ec8e01ef75d9b8bca702a366d143819e before launch.
+
+~~~powershell
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\tools\run_scummvm_palette_capture.ps1" -Mode normal
+~~~
+
+The helper launches the patched exe, sets the private trace output environment variable, and adds the standard MSYS2 UCRT64 DLL directory to the process PATH.
+
+In the patched ScummVM window:
+
+- Add/start the original DOS VGA MI2 game directory if needed.
+- From a room other than 23, open the debugger (normally Ctrl+Alt+D).
+- Enter these two debugger commands, in order: **scumm_vars[19] 6**, then **room 23**.
+- The room-jump command itself exits the debugger. Do not type continue afterward.
+- Stay in Room 23 for at least 256 callbacks (nominally about 26 seconds), or move to another nonzero room and allow another engine update to close the trace. Then quit the patched ScummVM.
+
+The corrected V2 engine writes a single file named `scummbucket-p4-room23.raw.log` **in the experimental ScummVM checkout's working directory** using `Common::DumpFile` (no `getenv`/C stdio). Before launch the PowerShell helper refuses an existing file; after ScummVM exits it moves the raw log into a uniquely timestamped gitignored export location, preserving even incomplete attempts. It **first attempts a separate bounded phase-aware forensic analysis for both complete and incomplete logs**, saved as `*.phase-research.json`. It then checks for an explicit END record; only completed logs proceed to the strict importer and baseline verifier. The phase-aware report does not repair or replace the raw data. See [research procedure](P4_ROOM23_PHASE_AWARE_VERIFICATION.md).
+
+Each run gets new, non-overwriting outputs:
+
+- F:\Dev\SCUMMBUCKET\FIXTURE\CAPTURES\Room23\room23-normal-TIMESTAMP.raw.log
+- F:\Dev\SCUMMBUCKET\FIXTURE\REPORTS\Room23\room23-normal-TIMESTAMP.phase-research.json (forensic, even if END is missing)
+- F:\Dev\SCUMMBUCKET\FIXTURE\REPORTS\Room23\room23-normal-TIMESTAMP.trace.json (strict import when END present)
+- F:\Dev\SCUMMBUCKET\FIXTURE\REPORTS\Room23\room23-normal-TIMESTAMP.verify.json (strict baseline when import succeeds)
+
+If no hook log appears, the eligible engine/capture conditions may not have been reached. If the log lacks an END record, it remains evidence of an incomplete run, not a success.
+
+## 4. Repeat at the experimental 60-unit interval
+
+Use a **new patched ScummVM process** for the second log:
+
+~~~powershell
+cd "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\tools\run_scummvm_palette_capture.ps1" -Mode stress
+~~~
+
+**Corrected after the first mislabeled stress attempt:** From a different room, enter **room 23** first; this automatically resumes execution. Once visibly in Room 23, reopen the debugger, enter **scumm_vars[19] 60**, then enter **scumm_vars[19]** to confirm the readback is **60**, then type **continue**. Stay in the running room for ~35–40 seconds to collect many genuine 60/60 updates. You may then reopen the debugger, enter **room 22**, let it resume briefly so the hook emits `END|N|room_exit`, and exit. Initial normal-speed samples before the override are acceptable and should remain in the unaltered log. A full 256 samples at 1 Hz would take ~4.3 minutes, but a shorter room-exit capture is sufficient for this test. 
+
+**The helper's `-Mode stress` is not a timer override.** A previous file labeled stress contained **256/256 timer pairs 6/6** despite being a complete capture. The current helper now reports every observed timer pair and refuses to classify a stress attempt as successful unless the raw log includes at least one genuine **60/60** pair; it emits `CAPTURE_MODE_NOT_OBSERVED` otherwise. More samples at 60 are needed for scientific comparison. See [complete normal-speed trace diagnosis](P4_ROOM23_COMPLETE_6UNIT_TRACE.md).
+
+The earlier 1-Hz debugger test showed that the engine timer override persisted and the water animation became visually abrupt. This experiment now records the **actual ordered RGB palettes**, including transitional timer pairs.
+
+## Result handling and limitations
+
+- The first V1 compile failed on forbidden standard-library APIs; that cause is now addressed in V2 but the new full build needs verification. Preserve the **first new** error if one appears.
+- A failed import or mismatch in palette comparison is a research finding, not something to hide or fix by changing the expected data.
+- The capture is limited to DOS VGA Monkey Island 2, Room 23; it does not include final layered compositing, object or actor movement.
+- The captured initial palette may differ from the static room CLUT after script execution; our verifier reports an explicit initial-state mismatch.
+- Engine timestamps are callback times, not guaranteed display/vsync times.
+- No original proprietary game archive, patched engine binary or raw trace should be committed.
+
+See [engine capture protocol](P4_SCUMMVM_ENGINE_TRACE_CAPTURE.md), [scheduler evidence](P4_ROOM23_SCHEDULER_SWEEP.md), [pinned patcher](../../tools/instrument_scummvm_palette.py), [trace importer](../../scummbucket/engine_trace_import.py), [upstream source](https://github.com/scummvm/scummvm/tree/v2026.4.0) and [official MSYS2 packages](https://packages.msys2.org/).

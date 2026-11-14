@@ -27,7 +27,12 @@ simulate a complete SCUMM room and does not infer a room restart at the gap.
 - scummbucket/room23_portable_animation.py validates the existing native
   export's indexed frames *again* against their manifest and the exact
   original SBP4 raw trace: hash, timer pair, post-cycle palette, timestamp,
-  source archive identity, phase calibration and gap annotations.
+  source archive identity, phase calibration and gap annotations. The
+  historical manifest contains **two further CYCL observations** (whether
+  source colors reinitialized, and how many cycling indices changed across
+  the gap). These are recalculated with the **original game CLUT and CYCL**
+  after checking archive hashes; comparing timestamp-only gap records would
+  incorrectly reject the verified historical export.
 - tools/package_room23_portable_animation.py creates two exclusive files
   alongside existing sample PNGs: play-standalone.html (all images embedded
   as verified PNG data URLs) and animation.json (completion marker last).
@@ -61,7 +66,10 @@ if ($LASTEXITCODE -ne 0) { throw 'Fast-forward failed' }
 $fx = 'F:\Dev\SCUMMBUCKET\FIXTURE'
 $native = Join-Path $fx 'OUTPUT\Room23\native-mixed-20261110-v1'
 $raw = Join-Path $fx 'CAPTURES\Room23\room23-normal-20261110-081315-043.raw.log'
-foreach ($file in @((Join-Path $native 'manifest.json'), $raw)) {
+$game = Join-Path $fx 'GAMES\MonkeyIsland2_DOS_VGA'
+foreach ($file in @((Join-Path $native 'manifest.json'), $raw,
+                    (Join-Path $game 'MONKEY2.000'),
+                    (Join-Path $game 'MONKEY2.001'))) {
     if (!(Test-Path -LiteralPath $file)) {
         throw "Missing original Room 23 source: $file"
     }
@@ -71,10 +79,10 @@ if ((Test-Path -LiteralPath (Join-Path $native 'play-standalone.html')) -or
     throw 'Portable output already exists; inspect it, do not overwrite'
 }
 
-python -B -m tools.package_room23_portable_animation $native --raw-log $raw
+python -B -m tools.package_room23_portable_animation $native --raw-log $raw --game $game
 if ($LASTEXITCODE -ne 0) { throw 'Packaging failed; preserve partial files' }
 
-python -B -m tools.verify_room23_portable_animation $native --raw-log $raw
+python -B -m tools.verify_room23_portable_animation $native --raw-log $raw --game $game
 if ($LASTEXITCODE -ne 0) { throw 'Integrity verification failed' }
 
 Write-Host "Preview: $(Join-Path $native 'play-standalone.html')"
@@ -104,3 +112,41 @@ the original 87-frame private export on the operator machine.
 After this acceptance, an independently validated Room 23 foreground
 composition against the 87 paired raw engine-front captures is a
 **separate** P4 task, not part of this palette-only milestone.
+
+
+## 14 November follow-up: source-backed clock-gap compatibility correction
+
+The first private Windows attempt advanced the repository to b4f7281 but
+did not package the preview: its PowerShell else statement was submitted as
+a separate command and rejected. The subsequent verifier, correctly run
+against the existing historical export and original SBP4 trace, failed at
+"Export gap annotations do not match original raw log" because the new
+code compared a timing-only gap record with the original research's
+**enriched** gap record. The user independently confirmed:
+
+- Original raw log hash matches the historical export and has 87 samples.
+- The discontinuity is sample 27/28, 12,828 milliseconds.
+- Historical clock gap includes
+  source_cycle_colors_reinitialized_at_first_post_gap_sample=false and
+  changed_cycling_indices_across_gap=14.
+- Neither animation.json nor play-standalone.html existed after that
+  attempt. Do not invent a successful package or overwrite old evidence.
+
+The original source research's compare_room23_palette_capture derives
+those fields from the original archive CLUT, the CYCL index ranges and the
+two actual neighboring SBP4 palettes. The corrected portable verifier
+**recomputes** both from the pinned original DOS VGA game archive, verifies
+source CYCL and CLUT against the old manifest, and rejects any discrepancy.
+It does not strip fields, edit the original trace/manifest or silently accept
+the old manifest's extras. The corrected package/verify CLI needs
+--game pointing to the read-only original game directory when these
+source-derived annotations are present.
+
+**PowerShell 5.1 warning:** send each control-flow statement as a complete
+block. Do not submit a standalone else after a previous if has already
+completed. The command above deliberately has no else and never prints
+a success message after a failed exit code.
+
+The corrected source code and fixture-free CI tests are a separate gate
+from actual private success. Only the operator's new package and its
+read-only verifier output can complete this checkpoint.

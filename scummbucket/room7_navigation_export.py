@@ -10,6 +10,8 @@ from __future__ import annotations
 import json
 import re
 
+from .native_animation_common import embed_segment_timeline
+
 FRAME = re.compile(r"frame-[0-9]{4}\.png\Z")
 
 PLAYER = """<!doctype html>
@@ -165,5 +167,4 @@ def render_player(manifest):
             "omitted_ticks_before": section["omitted_ticks_before"],
             "frames": [[frame["file"], frame["present_ms"] - initial] for frame in section["frames"]],
         })
-    return PLAYER.replace("__ANIMATION_TIMELINE__",
-                          json.dumps(timeline, separators=(",", ":")))
+    return embed_segment_timeline(PLAYER, timeline, marker="__ANIMATION_TIMELINE__")

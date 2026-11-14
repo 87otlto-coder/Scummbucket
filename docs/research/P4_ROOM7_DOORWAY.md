@@ -29,7 +29,7 @@ A private idle smoke run of build a produced Room 7 actor and SDL records. Game-
 
 The 14 November continuous user-run doorway capture established **Room 7 -> Room 12 -> Room 7** at consecutive engine ticks, with restored positions (54,54) -> (259,58) and (265,59) -> (55,55). This closes the earlier continuous-room-coverage gap; it does **not** by itself establish the source instructions and operands that triggered the transition.
 
-Use the existing pinned doorway build with ScummVM's built-in SCRIPTS and OPCODES channels. This is not a new custom ScummVM patch. The script-tracing launcher adds --debugflags=SCRIPTS,OPCODES, --debug-channels-only and --dump-scripts; it creates a new dumps directory under a new unique private capture. The existing executable, save and archive hashes remain pinned by the normal launcher.
+Use the existing pinned doorway build with ScummVM's built-in SCRIPTS and OPCODES channels. This is not a new custom ScummVM patch. The script-tracing launcher adds --debugflags=SCRIPTS,OPCODES and --dump-scripts; it creates a new dumps directory under a new unique private capture. It MUST NOT set --debug-channels-only: in the SCUMM engine Scumm::debugC forwards to ordinary debug(), and the latter discards every message when that option is enabled. The existing executable, save and archive hashes remain pinned by the normal launcher.
 
 From **Windows PowerShell**:
 
@@ -58,3 +58,11 @@ The launcher writes to new matching FIXTURE/CAPTURES/Room7/doorway-<uuid> and FI
 script_trace.json records executed script numbers, engine opcode handler names, reported offsets, probable opcode starts and hashes of private dump files. It explicitly does not equate opcode log entries with specific engine ticks or decode opcode operands. Source-level confirmation requires matching the executed sites to the original SCUMM v5 resource bytes or disassembly, then verifying the target room/object operands. Missing opcode channel output is reported as incomplete; do not treat an automatically successful room-transition recording as script-level proof.
 
 **Share:** ZIP the new report's script_trace.json, new capture's console.log, runtime.log, ticks.tsv, run.json, plus any error output. Preserve the dumps locally unless requested for a private inspection; never put game scripts into Git. The full video is optional because the previous doorway video has already been verified.
+
+### 14 November diagnostic: intentionally failed opcode-channel gate
+
+The user ran the original trace launcher from commit 86085e4. The ordinary doorway loop **passed** (291 consecutive ticks, 751 presentations). Room 7 -> Room 12 is at ticks 139/140, and Room 12 -> Room 7 at 245/246. The final report correctly returned script_opcode_debug_channel_missing; console.log contained only 229 bytes of startup text, and runtime.log only a 222-byte open/close log. The executable and dump-scripts option worked (private entry/exit and room scripts were enumerated).
+
+**Source-backed root cause:** SCUMM engines/scumm/debugger.cpp has a legacy debugC(DEBUG_OPCODES,...) wrapper which, after checking the channel, calls ordinary debug(). common/debug.cpp suppresses ordinary debug() whenever gDebugChannelsOnly is true, as selected by --debug-channels-only in base/main.cpp. Thus the prior script-trace launch suppressed its own opcode log. The fix removes that command-line switch, retains explicit channels, and adds a regression test rejecting reintroduction of the incompatible switch.
+
+A new run is required to obtain executed opcode sites; **no engine recompilation is necessary**. Preserve doorway-9e2a36535af54a9ca2f75a1d0be1aebb as valid navigation/video evidence, but NOT as script execution evidence. The existing raw private dumps can support disassembly research without another game run, but they do not independently prove which script paths executed. This corrected command was not yet confirmed against a fresh Windows game run at the time of this update.

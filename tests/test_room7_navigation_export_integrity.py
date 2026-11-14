@@ -55,13 +55,13 @@ class NativeRoom7IntegrityTests(unittest.TestCase):
     def test_rejects_png_mutation(self):
         image = Image.new("P", (320,144), 250)
         image.save(self.folder / "frame-0002.png")
-        with self.assertRaisesRegex(ValueError, "Encoded PNG SHA-256 mismatch"):
+        with self.assertRaisesRegex(ValueError, "PNG file digest/format mismatch"):
             verify_export(self.folder)
 
     def test_rejects_manifest_pixel_digest_mutation(self):
         self.manifest["segments"][0]["frames"][1]["indexed_sha256"] = "f" * 64
         (self.folder / "animation.json").write_text(json.dumps(self.manifest))
-        with self.assertRaisesRegex(ValueError, "Indexed pixels or palette mismatch"):
+        with self.assertRaisesRegex(ValueError, "Indexed pixel digest mismatch"):
             verify_export(self.folder)
 
     def test_rejects_gap_fabrication(self):

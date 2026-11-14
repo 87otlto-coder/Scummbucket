@@ -186,7 +186,7 @@ class Room23PortableAnimationTests(unittest.TestCase):
                 self._manifest()
                 with self.subTest(tampered=tampered):
                     with self.assertRaisesRegex(ValueError,"gap annotations"):
-                        self._prepare()
+                        self._prepare_enriched()
 
     def test_historical_clut_and_cycle_provenance_mismatch_rejected(self):
         cycles=[dict(id=1,start_color=1,end_color=2,flags=0,rate_raw=16384,offset=0)]

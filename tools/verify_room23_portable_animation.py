@@ -13,9 +13,9 @@ from scummbucket.room23_portable_animation import (
 )
 
 
-def verify(folder, raw_log):
+def verify(folder, raw_log, game=None):
     folder=Path(folder)
-    expected,html=prepare(folder,raw_log)
+    expected,html=prepare(folder,raw_log,game=game)
     recorded=json.loads((folder/MANIFEST_FILENAME).read_text(encoding="utf-8"))
     if recorded!=expected:
         raise ValueError("Portable Room 23 animation manifest differs from verified source")
@@ -38,8 +38,9 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("export",type=Path)
     parser.add_argument("--raw-log",type=Path,required=True)
+    parser.add_argument("--game",type=Path,help="Original DOS VGA game directory for source CLUT/CYCL verification")
     args=parser.parse_args()
-    print(json.dumps(verify(args.export,args.raw_log),indent=2))
+    print(json.dumps(verify(args.export,args.raw_log,game=args.game),indent=2))
 
 
 if __name__=="__main__":

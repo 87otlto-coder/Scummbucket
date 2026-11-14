@@ -16,6 +16,7 @@ from scummbucket.native_animation_common import (
 from scummbucket.room23_capture_research import (
     parse_room23_hook_log, _split_on_clock_discontinuities
 )
+from tools.verify_room23_portable_animation import verify
 
 
 def digest(data):
@@ -100,6 +101,23 @@ class Room23PortableAnimationTests(unittest.TestCase):
         self.assertTrue((self.export/"animation.json").exists())
         with self.assertRaises(FileExistsError):
             self._package()
+
+    def test_readonly_roundtrip_audit_and_tamper_rejection(self):
+        self._package()
+        with patch.object(portable,"INDEX_SHA",self.plane_hash):
+            result=verify(self.export,self.log)
+            self.assertEqual(result["status"],"room23_native_palette_package_verified")
+            self.assertEqual(result["frame_count"],4)
+            self.assertEqual(result["segment_count"],2)
+            (self.export/"play-standalone.html").write_text("tampered")
+            with self.assertRaisesRegex(ValueError,"HTML differs"):
+                verify(self.export,self.log)
+
+    def test_rejects_forged_holdout_count(self):
+        self.manifest["heldout_matches"]=1
+        self._manifest()
+        with self.assertRaisesRegex(ValueError,"Held-out sample count"):
+            self._prepare()
 
     def test_rejects_wrong_raw_capture(self):
         self.log.write_text(self.log.read_text().replace("|6|6|100|","|6|5|100|"))

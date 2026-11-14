@@ -66,3 +66,21 @@ The user ran the original trace launcher from commit 86085e4. The ordinary doorw
 **Source-backed root cause:** SCUMM engines/scumm/debugger.cpp has a legacy debugC(DEBUG_OPCODES,...) wrapper which, after checking the channel, calls ordinary debug(). common/debug.cpp suppresses ordinary debug() whenever gDebugChannelsOnly is true, as selected by --debug-channels-only in base/main.cpp. Thus the prior script-trace launch suppressed its own opcode log. The fix removes that command-line switch, retains explicit channels, and adds a regression test rejecting reintroduction of the incompatible switch.
 
 A new run is required to obtain executed opcode sites; **no engine recompilation is necessary**. Preserve doorway-9e2a36535af54a9ca2f75a1d0be1aebb as valid navigation/video evidence, but NOT as script execution evidence. The existing raw private dumps can support disassembly research without another game run, but they do not independently prove which script paths executed. This corrected command was not yet confirmed against a fresh Windows game run at the time of this update.
+
+
+### 14 November — executed doorway scripts and source operands independently verified
+
+A subsequent user-run script-trace archive, doorway-4ecbce57669248bc816e4993b3306ca9.zip, contains 274 consecutive engine ticks, 678 timestamped presentations, 7,473 observed SCUMM v5 opcode executions over 303 unique sites, and 59 privately dumped script resource references (hashes only in the public metadata report). The fixed opcode channels produced evidence successfully after removal of --debug-channels-only. Its Room 7 -> 12 transition is ticks 139/140, with world positions (54,54) -> (259,58), plane 1 -> 2, scale 150 -> 179. Return Room 12 -> 7 is ticks 211/212, positions (265,59) -> (55,55), plane 2 -> 1, scale 180 -> 150. Those positions are observations from the engine tick recorder.
+
+The original DOS VGA game files provided privately were independently re-read and matched the pinned MONKEY2.000 and MONKEY2.001 SHA-256 checksums. The original MONKEY2.001 resource is XOR decoded with key 0x69, LOFF room locations validated and the executed opcode sites aligned within the VERB subchunk of their respective OBCD object resources:
+
+| Execution | Original room/object label | SCUMM opcode offset (relative to ROOM, after opcode byte) | Decoded destination | Post-entry walk destination |
+| --- | --- | ---: | --- | --- |
+| o5_loadRoomWithEgo at script 40 | Room 7, object 40, ship | 76330 (absolute decoded archive byte 468669 for opcode) | Room 12, object 102, stairway | (221,87) |
+| o5_loadRoomWithEgo at script 102 | Room 12, object 102, stairway | 30666 (absolute decoded archive byte 941184 for opcode) | Room 7, object 40, ship | (105,77) |
+
+For the v5 opcode 0x24, ScummVM engines/scumm/script_v5.cpp reads a direct 16-bit object number, an 8-bit room number, and two signed 16-bit walk coordinates; room.cpp startScene handles room change and object-relative entry positioning. The source-derived walk coordinates are *subsequent targets*, not the actor's first observed origin in the destination room. No per-opcode engine tick is present in the legacy debug log. These two one-time opcode executions are source-aligned and their order agrees with the two consecutively logged room transitions, but exact intra-tick timing or additional entry-script side effects cannot be assigned without further instrumentation.
+
+Independent FFV1 decoding of all 678 uploaded video frames reproduced every exported RGB PNG's raw pixel hash and the decoded framehash record. All 678 presentation timestamps matched doorway.json. The original present-*.bin buffers were not included in this new upload and remain outside this independent audit. No private script dumps or original game resource bytes were committed to SOURCE.
+
+The independent, read-only source audit can be reproduced with the metadata-only verifier supplied alongside the private chat evidence. This establishes the two transition opcode operands; further gameplay replay is not necessary to identify these specific source-level targets. Any further inquiry into entry-script positioning would require a separate narrower question and trace.

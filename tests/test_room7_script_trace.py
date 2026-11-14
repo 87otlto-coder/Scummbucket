@@ -5,6 +5,7 @@ import tempfile
 import unittest
 
 from tools.analyze_room7_script_trace import analyze, summarize
+from tools.capture_room7_navigation import add_script_trace_flags
 
 
 def tick(number, room, x, y, walkbox, scale, plane):
@@ -15,6 +16,15 @@ def tick(number, room, x, y, walkbox, scale, plane):
 
 
 class Room7ScriptTraceTests(unittest.TestCase):
+    def test_legacy_scumm_debug_channel_compatibility(self):
+        command = add_script_trace_flags(["scummvm.exe", "--debuglevel=3", "monkey2"])
+        self.assertEqual(command[-1], "monkey2")
+        self.assertIn("--debugflags=SCRIPTS,OPCODES", command)
+        self.assertIn("--dump-scripts", command)
+        self.assertNotIn("--debug-channels-only", command)
+        with self.assertRaisesRegex(ValueError, "incompatible"):
+            add_script_trace_flags(["scummvm.exe", "--debug-channels-only", "monkey2"])
+
     def test_executed_opcode_site_and_offset_evidence(self):
         detail = summarize([
             "DEBUG: runScript(203) from 14-7",
@@ -75,6 +85,7 @@ class Room7ScriptTraceTests(unittest.TestCase):
             capture, report = self._make_capture(Path(tmp), valid=False)
             result = analyze(capture, report)
             self.assertEqual(result["status"], "script_opcode_debug_channel_missing")
+            self.assertEqual(result["evidence"]["script_opcode_sites"], "engine_debug_channel_not_observed")
 
     def test_wrong_room_sequence_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:

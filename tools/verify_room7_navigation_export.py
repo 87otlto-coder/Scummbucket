@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 import re
 
-from PIL import Image
+from scummbucket.native_animation_common import inspect_indexed_png
 
 
 NAME = re.compile(r"frame-[0-9]{4}\.png\Z")
@@ -69,22 +69,12 @@ def verify_export(folder):
                 previous_ms is not None and ms < previous_ms
             ):
                 raise ValueError(f"Invalid timestamp at indexed frame {expected_frame}")
-            source = (folder / name).read_bytes()
-            if digest(source) != record.get("png_sha256"):
-                raise ValueError(f"Encoded PNG SHA-256 mismatch at frame {expected_frame}")
-            try:
-                with Image.open(BytesIO(source)) as img:
-                    if img.format != "PNG" or img.mode != "P" or img.size != (320, 144):
-                        raise ValueError(f"Unexpected native PNG geometry/mode at frame {expected_frame}")
-                    indices = img.tobytes()
-                    palette = img.getpalette()
-            except OSError as exc:
-                raise ValueError(f"Cannot decode PNG frame {expected_frame}: {exc}") from exc
-            if palette is None or len(palette) != 768:
-                raise ValueError(f"Invalid indexed palette at frame {expected_frame}")
-            if (digest(indices) != record.get("indexed_sha256") or
-                    digest(bytes(palette)) != record.get("palette_sha256")):
-                raise ValueError(f"Indexed pixels or palette mismatch at frame {expected_frame}")
+            inspect_indexed_png(
+                folder / name, size=(320, 144),
+                index_sha=record.get("indexed_sha256"),
+                palette_sha=record.get("palette_sha256"),
+                png_sha=record.get("png_sha256"),
+            )
             expected_names.add(name)
             expected_frame += 1
             previous_ms = ms

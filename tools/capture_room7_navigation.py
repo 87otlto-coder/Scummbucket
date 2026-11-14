@@ -11,7 +11,9 @@ from uuid import uuid4
 from tools.run_room23_frames import ARCHIVES, digest, validate_native_room7_save
 
 
-def capture(root, build, *, doorway=False):
+def capture(root, build, *, doorway=False, script_trace=False):
+    if script_trace and not doorway:
+        raise ValueError("Script trace requires the continuous doorway capture")
     fixture = root / "FIXTURE"
     game = fixture / "GAMES/MonkeyIsland2_DOS_VGA"
     save = game / "monkey2-1.s01"
@@ -26,6 +28,8 @@ def capture(root, build, *, doorway=False):
     if doorway and digest(exe) != (exe.parent / "doorway-exe.sha256").read_text().strip():
         raise ValueError("Doorway build digest mismatch")
     dest.mkdir(exist_ok=False)
+    if script_trace:
+        (dest / "dumps").mkdir(exist_ok=False)
     saves = dest / "saves"
     saves.mkdir()
     shutil.copyfile(save, saves / "monkey2.s01")
@@ -38,8 +42,12 @@ def capture(root, build, *, doorway=False):
     cmd = [str(exe), f"--config={ini}", f"--logfile={dest / 'runtime.log'}", "--save-slot=1",
            "--scaler=normal", "--scale-factor=1", "--no-aspect-ratio", "--no-fullscreen",
            "--no-filtering", "--stretch-mode=center", "--debuglevel=3", "--music-driver=auto", "monkey2"]
+    if script_trace:
+        cmd[-1:-1] = ["--debugflags=SCRIPTS,OPCODES", "--debug-channels-only", "--dump-scripts"]
     (dest / "run.json").write_text(json.dumps(dict(command=cmd, exe_sha256=digest(exe),
-        archives=ARCHIVES, save=state, input_method="ordinary game controls", **({"capture_mode": "doorway", "limit_ticks": 2400, "limit_presents": 4800}
+        archives=ARCHIVES, save=state, input_method="ordinary game controls",
+        **({"script_trace": "SCUMM SCRIPTS and OPCODES debug channels; private script dumps"} if script_trace else {}),
+        **({"capture_mode": "doorway", "limit_ticks": 2400, "limit_presents": 4800}
         if doorway else {"limit_room_frames": 2400})),
         indent=2), encoding="utf8")
     (dest / ("doorway.enabled" if doorway else "capture.enabled")).touch(exist_ok=False)
@@ -50,7 +58,12 @@ def capture(root, build, *, doorway=False):
         subprocess.run(cmd, env=env, cwd=dest, stdout=log, stderr=log, check=True)
     if doorway:
         from tools.room7_doorway import finish
-        return finish(root, dest, fixture / "REPORTS/Room7" / dest.name)
+        report = fixture / "REPORTS/Room7" / dest.name
+        finish(root, dest, report)
+        if script_trace:
+            from tools.analyze_room7_script_trace import analyze
+            analyze(dest, report)
+        return report
     if not (dest / "engine-001.bin").is_file() or b"\nnavigation " not in (
             dest / "engine-001.bin").read_bytes().partition(b"\nDATA\n")[0]:
         raise ValueError("Navigation hook did not produce a frame")

@@ -11,6 +11,19 @@ from uuid import uuid4
 from tools.run_room23_frames import ARCHIVES, digest, validate_native_room7_save
 
 
+def add_script_trace_flags(cmd):
+    """Enable SCUMM's legacy debugC channels without suppressing debug() output.
+
+    Scumm::debugC(DEBUG_OPCODES, ...) forwards to global debug(), which returns
+    immediately if --debug-channels-only is set. Do not silently lose traces.
+    """
+    if "--debug-channels-only" in cmd:
+        raise ValueError("SCUMM opcode trace is incompatible with --debug-channels-only")
+    if not cmd or not cmd[-1] == "monkey2":
+        raise ValueError("Expected monkey2 target last in doorway launch command")
+    return [*cmd[:-1], "--debugflags=SCRIPTS,OPCODES", "--dump-scripts", cmd[-1]]
+
+
 def capture(root, build, *, doorway=False, script_trace=False):
     if script_trace and not doorway:
         raise ValueError("Script trace requires the continuous doorway capture")
@@ -43,7 +56,7 @@ def capture(root, build, *, doorway=False, script_trace=False):
            "--scaler=normal", "--scale-factor=1", "--no-aspect-ratio", "--no-fullscreen",
            "--no-filtering", "--stretch-mode=center", "--debuglevel=3", "--music-driver=auto", "monkey2"]
     if script_trace:
-        cmd[-1:-1] = ["--debugflags=SCRIPTS,OPCODES", "--debug-channels-only", "--dump-scripts"]
+        cmd = add_script_trace_flags(cmd)
     (dest / "run.json").write_text(json.dumps(dict(command=cmd, exe_sha256=digest(exe),
         archives=ARCHIVES, save=state, input_method="ordinary game controls",
         **({"script_trace": "SCUMM SCRIPTS and OPCODES debug channels; private script dumps"} if script_trace else {}),

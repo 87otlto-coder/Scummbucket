@@ -143,7 +143,8 @@ def analyze(capture, report):
                   else "script_opcode_debug_channel_missing",
         "evidence": {
             "room_changes": "engine_observed_on_consecutive_ticks",
-            "script_opcode_sites": "engine_debug_channel_observed",
+            "script_opcode_sites": ("engine_debug_channel_observed" if trace["opcode_observations"]
+                                    else "engine_debug_channel_not_observed"),
             "script_dump_files": "engine_dumped_private_resource_bytes_hash_only",
             "opcode_operands": "not_captured_by_debug_channel",
             "direct_opcode_to_tick_synchronization": False,

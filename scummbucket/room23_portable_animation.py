@@ -13,8 +13,11 @@ from .native_animation_common import (
     embed_segment_timeline, frame_data_uri, inspect_indexed_png,
 )
 from .room23_capture_research import (
-    _split_on_clock_discontinuities, parse_room23_hook_log, MAX_LOG_BYTES,
+    _entries_differ, _split_on_clock_discontinuities, parse_room23_hook_log,
+    MAX_LOG_BYTES,
 )
+from .inspector import XOR_KEY, _read_pair, inspect
+from .palette_probe import decode_room_background_indexed
 from .room23_export import INDEX_SHA
 from .room23_capture_research import KNOWN_DOS_VGA_MI2_SHA256
 
@@ -100,7 +103,75 @@ def _bounded_json(path, maximum=8*1024*1024):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def prepare(export_dir, raw_log):
+def _load_source_room23(game):
+    """Read the verified original room CLUT and source CYCL definitions.
+
+    Required for independently verifying the historical extra clock-gap
+    annotations; the SBP4 callback log alone cannot establish source CLUT.
+    """
+    game=Path(game)
+    inventory=inspect(game)
+    if inventory.get("status")!="success":
+        raise ValueError("Original DOS VGA game archive inspection failed")
+    index,resource,_,_=_read_pair(game)
+    if (sha256(index).hexdigest()!=INDEX_ARCHIVE_SHA or
+        sha256(resource).hexdigest()!=KNOWN_DOS_VGA_MI2_SHA256):
+        raise ValueError("Original Room 23 source archive SHA-256 mismatch")
+    rooms=[row for row in inventory["resources"]["rooms"] if row["id"]==23]
+    if len(rooms)!=1:
+        raise ValueError("Original Room 23 resource is missing or ambiguous")
+    room=rooms[0]
+    bg=decode_room_background_indexed(
+        bytes(byte ^ XOR_KEY for byte in resource),
+        room_offset=room["room_offset"],room_length=room["room_size"])
+    if bg["pixel_indices_sha256"]!=INDEX_SHA or (
+        bg["width"],bg["height"])!=(320,144):
+        raise ValueError("Original Room 23 source index plane does not match")
+    return bg["initial_palette"],room["palette_cycles"]
+
+
+def _verified_clock_gaps(capture,metadata,game=None):
+    """Preserve *and recompute* historical palette-cycle gap annotations.
+
+    _split_on_clock_discontinuities only returns timing fields. The original
+    Room 23 research additionally compares the two neighboring palettes
+    against source CYCL ranges and original CLUT. Never strip these details.
+    """
+    _,base_gaps,_=_split_on_clock_discontinuities(capture["samples"])
+    original=metadata.get("clock_gaps")
+    if not isinstance(original,list):
+        raise ValueError("Missing historical Room 23 clock gap annotations")
+    needs_source=any(
+        "source_cycle_colors_reinitialized_at_first_post_gap_sample" in gap or
+        "changed_cycling_indices_across_gap" in gap
+        for gap in original
+    )
+    if needs_source:
+        if game is None:
+            raise ValueError("Original Room 23 source CLUT required for enriched clock gaps; pass --game")
+        palette,source_cycles=_load_source_room23(game)
+        if (sha256(palette).hexdigest()!=metadata.get("source_clut_sha256") or
+            source_cycles!=metadata.get("source_cycles")):
+            raise ValueError("Source CLUT or CYCL definitions differ from original Room 23 export")
+        cycled=[color for cycle in source_cycles
+                for color in range(cycle["start_color"],cycle["end_color"]+1)]
+        if not cycled or len(set(cycled))!=len(cycled):
+            raise ValueError("Invalid or overlapping Room 23 palette cycle ranges")
+        for gap in base_gaps:
+            previous=capture["samples"][gap["after_sequence"]-1]["palette"]
+            next_palette=capture["samples"][gap["before_sequence"]-1]["palette"]
+            gap["source_cycle_colors_reinitialized_at_first_post_gap_sample"]=not bool(
+                _entries_differ(palette,next_palette,tuple(cycled)))
+            gap["changed_cycling_indices_across_gap"]=len(
+                _entries_differ(previous,next_palette,tuple(cycled)))
+    if base_gaps!=original:
+        raise ValueError(
+            "Export gap annotations do not match source and original raw log: "
+            f"historical={original!r}; recomputed={base_gaps!r}")
+    return base_gaps
+
+
+def prepare(export_dir, raw_log, game=None):
     """Verify every sample, phase provenance and trace clock before packaging.
 
     Source export's phase calibration and full-palette prediction must have
@@ -142,9 +213,7 @@ def prepare(export_dir, raw_log):
         raise ValueError("Export's frame count differs from the authenticated raw trace")
     if metadata["heldout_matches"] != len(records) - metadata["calibration_samples"]:
         raise ValueError("Held-out sample count inconsistent with source trace")
-    _, gaps, _ = _split_on_clock_discontinuities(capture["samples"])
-    if gaps != metadata.get("clock_gaps"):
-        raise ValueError("Export gap annotations do not match original raw log")
+    gaps=_verified_clock_gaps(capture,metadata,game=game)
     by_after = {gap["after_sequence"]: gap for gap in gaps}
     sections = []
     timeline = []
@@ -218,13 +287,13 @@ def prepare(export_dir, raw_log):
     return output, embed_segment_timeline(PLAYER,timeline,marker="__TIMELINE__")
 
 
-def package(export_dir, raw_log):
+def package(export_dir, raw_log, game=None):
     """Use exclusive creation; leave existing source frames and metadata intact."""
     folder=Path(export_dir)
     destinations=[folder/MANIFEST_FILENAME,folder/HTML_FILENAME]
     if any(path.exists() for path in destinations):
         raise FileExistsError("Portable Room 23 output already exists; do not overwrite")
-    manifest,html=prepare(folder,raw_log)
+    manifest,html=prepare(folder,raw_log,game=game)
     # Completion marker is the metadata JSON, last. A lone HTML indicates an
     # interrupted package and must never be mistaken for accepted output.
     with destinations[1].open("x",encoding="utf-8") as output:

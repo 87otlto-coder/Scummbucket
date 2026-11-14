@@ -141,6 +141,77 @@ class Room23PortableAnimationTests(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             self._prepare()
 
+    def test_historical_enriched_clock_gap_requires_original_source(self):
+        # The real 87-frame export has extra source-CYCL observations
+        # which cannot be inferred from an SBP4 timestamp-only trace.
+        cycles=[dict(id=1,start_color=1,end_color=2,flags=0,rate_raw=16384,offset=0)]
+        self.manifest["source_cycles"]=cycles
+        self.manifest["source_clut_sha256"]=digest(self.palette)
+        historical=dict(self.gaps[0])
+        historical.update(
+            source_cycle_colors_reinitialized_at_first_post_gap_sample=False,
+            changed_cycling_indices_across_gap=1,
+        )
+        self.manifest["clock_gaps"]=[historical]
+        self._manifest()
+        with self.assertRaisesRegex(ValueError,"pass --game"):
+            self._prepare()
+        with patch.object(portable,"_load_source_room23",return_value=(self.palette,cycles)):
+            with patch.object(portable,"INDEX_SHA",self.plane_hash):
+                result,html=portable.prepare(self.export,self.log,game="synthetic-original")
+                self.assertEqual(result["clock_gaps"],[historical])
+                self.assertEqual(result["frame_count"],4)
+                self.assertEqual(html.count("data:image/png;base64,"),4)
+                pkg=portable.package(self.export,self.log,game="synthetic-original")
+                self.assertEqual(pkg["clock_gaps"],[historical])
+                audit=verify(self.export,self.log,game="synthetic-original")
+                self.assertEqual(audit["status"],"room23_native_palette_package_verified")
+
+    def test_historical_enriched_clock_gap_tampering_rejected(self):
+        cycles=[dict(id=1,start_color=1,end_color=2,flags=0,rate_raw=16384,offset=0)]
+        self.manifest["source_cycles"]=cycles
+        self.manifest["source_clut_sha256"]=digest(self.palette)
+        historical=dict(self.gaps[0])
+        historical.update(
+            source_cycle_colors_reinitialized_at_first_post_gap_sample=False,
+            changed_cycling_indices_across_gap=1,
+        )
+        with patch.object(portable,"_load_source_room23",return_value=(self.palette,cycles)):
+            for tampered in (
+                {**historical,"changed_cycling_indices_across_gap":14},
+                {**historical,"source_cycle_colors_reinitialized_at_first_post_gap_sample":True},
+                {**historical,"interpretation":"room_reset_proven"},
+            ):
+                self.manifest["clock_gaps"]=[tampered]
+                self._manifest()
+                with self.subTest(tampered=tampered):
+                    with self.assertRaisesRegex(ValueError,"gap annotations"):
+                        self._prepare()
+
+    def test_historical_clut_and_cycle_provenance_mismatch_rejected(self):
+        cycles=[dict(id=1,start_color=1,end_color=2,flags=0,rate_raw=16384,offset=0)]
+        self.manifest["source_cycles"]=cycles
+        self.manifest["source_clut_sha256"]=digest(self.palette)
+        historical=dict(self.gaps[0])
+        historical.update(
+            source_cycle_colors_reinitialized_at_first_post_gap_sample=False,
+            changed_cycling_indices_across_gap=1,
+        )
+        self.manifest["clock_gaps"]=[historical]
+        self._manifest()
+        with patch.object(portable,"_load_source_room23",
+                          return_value=(bytes(768),cycles)):
+            with self.assertRaisesRegex(ValueError,"Source CLUT or CYCL"):
+                self._prepare_enriched()
+        with patch.object(portable,"_load_source_room23",
+                          return_value=(self.palette,[])):
+            with self.assertRaisesRegex(ValueError,"Source CLUT or CYCL"):
+                self._prepare_enriched()
+
+    def _prepare_enriched(self):
+        with patch.object(portable,"INDEX_SHA",self.plane_hash):
+            return portable.prepare(self.export,self.log,game="synthetic-original")
+
     def test_rejects_clock_gap_mutation(self):
         self.manifest["clock_gaps"]=[]
         self._manifest()

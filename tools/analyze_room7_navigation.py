@@ -8,6 +8,7 @@ from PIL import Image, ImageChops, ImageDraw
 from scummbucket.classic_costume import ClassicCostume, compose
 from scummbucket.classic_scale import paint_scaled
 from scummbucket.inspector import inspect, XOR_KEY
+from scummbucket.room7_navigation_export import make_manifest, render_player
 from tools.compare_room23_frames import engine, present
 from tools.run_room23_frames import ARCHIVES, digest
 
@@ -46,7 +47,7 @@ def walk_stops(costume, facing):
     return stops
 
 
-def analyze(fixture, capture, dest):
+def analyze(fixture, capture, dest, *, export_native=False):
     game = fixture / "GAMES/MonkeyIsland2_DOS_VGA"
     if any(digest(game / name) != value for name, value in ARCHIVES.items()):
         raise ValueError("Archive hash mismatch")
@@ -69,6 +70,7 @@ def analyze(fixture, capture, dest):
         raise ValueError("Need matching engine and presentation records")
     dest.mkdir(parents=True, exist_ok=False)
     rows = []
+    exported = []
     route = world.convert("RGB")
     route_pen = ImageDraw.Draw(route)
     retained = None
@@ -135,6 +137,22 @@ def analyze(fixture, capture, dest):
                 archive_walk_stop_bits=stops)
             if mismatch:
                 delta.save(dest / f"errors-{seq:04}.png")
+            elif export_native:
+                if len(palettes[3]) != 768:
+                    raise ValueError(f"Invalid 256-color runtime palette at {seq}")
+                raster = masked.tobytes()
+                frame_image = Image.frombytes("P", (320, 144), raster)
+                frame_image.putpalette(palettes[3])
+                filename = f"frame-{seq:04}.png"
+                path = dest / filename
+                with path.open("xb") as output:
+                    frame_image.save(output, format="PNG")
+                exported.append(dict(
+                    frame=seq, file=filename, present_ms=ms,
+                    indexed_sha256=sha256(raster).hexdigest(),
+                    palette_sha256=sha256(palettes[3]).hexdigest(),
+                    png_sha256=sha256(path.read_bytes()).hexdigest(),
+                ))
             if affected and draw:
                 overlay = Image.frombytes("P",(320,144),front)
                 overlay.putpalette(palettes[-1])
@@ -152,6 +170,14 @@ def analyze(fixture, capture, dest):
     failures = [r["frame"] for r in rows if r["comparison"] is None or r["comparison"]["masked_errors"]]
     if failures:
         raise ValueError(f"Unverified indexed frames: {len(failures)}, first {failures[0]}. See {dest}")
+    if export_native:
+        manifest = make_manifest(rows, exported, archive_hashes=ARCHIVES, capture=capture)
+        with (dest / "play.html").open("x", encoding="utf-8") as output:
+            output.write(render_player(manifest))
+        # The manifest is the final completion marker; partial frames do not
+        # constitute an accepted export when validation aborts earlier.
+        with (dest / "animation.json").open("x", encoding="utf-8") as output:
+            json.dump(manifest, output, indent=2)
     return rows
 
 
@@ -159,5 +185,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("fixture","capture","dest"):
         parser.add_argument(name,type=Path)
+    parser.add_argument("--export-native", action="store_true", help="Emit exact indexed Room 7 exterior frames, segmented HTML player and manifest")
     args = parser.parse_args()
-    analyze(args.fixture,args.capture,args.dest)
+    analyze(args.fixture,args.capture,args.dest,export_native=args.export_native)

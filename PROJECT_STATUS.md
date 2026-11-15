@@ -9,12 +9,15 @@ does not extend compatibility to MI1, other platforms, or Curse of Monkey Island
 Original archive corpus audit passed **1,047/1,047 stored states** across
 **595 objects / 110 rooms**, covering 3,356,800 pixels, with zero RGBA/mask
 assembly disagreements. Both paths share low-level decoders; runtime fidelity
-and state selection remain unverified. Six new targeted synthetic tests passed.
+and state selection remain unverified. Six new targeted synthetic tests passed locally; hosted Windows run 296
+subsequently passed **482 tests, 15 skipped** including the new state parser/audit.
 
 Pinned ScummVM source confirms that the existing draw hook follows a redraw
 early return. A new pre-gate actor-state overlay passed native syntax and
 object compilation, but **linking/runtime capture are not validated**.
-The Windows execution environment became unavailable before the next step.
+Pre-redraw state parsing and raw-record/gate audits are now implemented and
+hosted-tested; no new native capture has been obtained.
+The Windows execution environment became unavailable before linking/capture.
 Private outputs were not subsequently re-readable; observed aggregates and
 source/tests were recovered into GitHub. See
 [corpus and redraw research](docs/research/P4_CORPUS_AND_REDRAW_RESEARCH_20261115.md).

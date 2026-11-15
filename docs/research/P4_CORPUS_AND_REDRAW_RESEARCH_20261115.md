@@ -153,3 +153,33 @@ capture ordinary-input Room 7 behavior including non-redraw samples.
 Compare pre-draw snapshots against actual draw rows on overlapping ticks.
 Only then test archive reconstruction on non-redraw frames without a fitted
 last-pose insertion. Room 12 residuals and Room 34 runtime remain deferred.
+
+
+## Hosted continuation after native environment loss
+
+GitHub Windows run 295 passed for recovered corpus/overlay code at 8b08c79.
+A separate pre-redraw state parser and raw-record audit were then implemented
+through connected GitHub operations. Windows run 296 passed at 5f802f0:
+**482 tests run, 15 skipped**, confirmed from the hosted job logs.
+
+scummbucket/actor_capture_state.py parses all 75 scalar/cursor/palette values,
+rejects malformed widths/ranges/flags, and reports differences from actual
+draw rows without replacing either phase's data.
+
+tools/audit_actor_state_capture.py checks original raw/front hashes and
+room/tick identities, state/draw ordering, duplicate identities and redraw-gate
+consistency. Missing channel data remains MISSING_STATE_CHANNEL/PARTIAL;
+it cannot pass as complete actor state. Successful structural checks do not
+claim visible-scene fidelity or native timing. No old capture was relabeled
+as having the new channel, and no new runtime state audit was claimed executed.
+
+Eight additional synthetic parser/audit tests passed in that hosted run.
+Five additional cross-mechanism integration tests exercise real synthetic
+OBIM and COST decoders through the event compositor without mocked actor
+painting: mixed order, prior-layer restoration through masks, independent
+palettes, nonzero viewport/transparent state selection, and opaque use of a
+nominal TRNS index. See the latest PR CI for their validation outcome.
+
+Native next steps remain blocked by the unavailable Windows environment.
+The preparatory parser and its structural audit are now available; native
+linking, fresh capture and real state/draw comparison are still required.

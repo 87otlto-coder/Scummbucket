@@ -6,6 +6,7 @@ loading, and the existing ScummBucket P4 image decoders. Experimental only.
 from hashlib import sha256
 from pathlib import Path
 from struct import unpack_from
+from types import SimpleNamespace
 from PIL import Image
 from .inspector import inspect, _read_pair, XOR_KEY, chunks
 from .palette_probe import decode_room_background_indexed
@@ -100,4 +101,74 @@ def compose_actor(scene, costume, pose, viewport=(0,0,320,144), *, mask_enabled=
     if plane and mask_enabled:
         mask=Image.frombytes('L',(sw,sh),scene['masks'][plane]).crop(cut).tobytes()
         pixels=bytes(b if m else p for p,b,m in zip(pixels,bg,mask))
+    return bytes(pixels)
+
+
+
+def compose_actor_layers(scene, costumes, draw_rows, viewport=(0,0,320,144), *,
+                         mask_enabled=True):
+    """Paint observed actors in explicitly recorded order at native scale.
+
+    Important: masking one actor restores the *previous composite*, not the
+    empty room background. An occluded nearer actor must reveal previously
+    painted actors where the selected depth mask hides it.
+
+    This is only a bounded indexed compositor; it cannot infer script state,
+    object visibility, actor order, palette animation or presentation phase.
+    Palette mapping comes from observed 32-slot Actor::_palette, not source
+    COST palette, when the draw record includes the field.
+    """
+    left,top,width,height=viewport
+    sw,sh=scene["manifest"]["dimensions"]
+    if (min(left,top)<0 or min(width,height)<1 or
+        left+width>sw or top+height>sh):
+        raise ValueError("Viewport outside source scene")
+    if not isinstance(draw_rows,list) or len(draw_rows)>256:
+        raise ValueError("Invalid ordered actor draw list")
+    if not isinstance(costumes,dict):
+        raise ValueError("Need COST decoders keyed by costume ID")
+    base=Image.frombytes("L",(sw,sh),scene["background"]).crop(
+        (left,top,left+width,top+height)).tobytes()
+    pixels=bytearray(base)
+    masks={}
+    for row in draw_rows:
+        if not isinstance(row,dict):
+            raise ValueError("Invalid recorded actor draw row")
+        x,y,plane=row["screen_x"],row["draw_y"],row["plane"]
+        sx,sy=row["scales"]
+        facing,cost_id=row["facing"],row["costume"]
+        if (type(sx) is not int or type(sy) is not int or
+            sx!=sy or not 0<=sx<=255 or facing not in (0,90,180,270)):
+            raise ValueError("Unsupported draw-phase actor geometry")
+        if plane and plane not in scene["masks"]:
+            raise ValueError("Missing requested depth plane")
+        if cost_id not in costumes:
+            raise ValueError(f"Missing original COST {cost_id}")
+        source=costumes[cost_id]
+        indices=row["cursors"]
+        stopped=row["stopped"]
+        if (not isinstance(indices,list) or len(indices)!=16 or
+            type(stopped) is not int or not 0<=stopped<=65535 or
+            any(type(n) is not int or not 0<=n<=65535 for n in indices)):
+            raise ValueError("Invalid costume limb/stopped state")
+        visible=[65535 if stopped&(1<<i) else n for i,n in enumerate(indices)]
+        overrides=row.get("palette_override")
+        if overrides is not None:
+            if (not isinstance(overrides,list) or len(overrides)!=32 or
+                any(type(v) is not int or not 0<=v<=255 for v in overrides)):
+                raise ValueError("Unsupported live actor palette override")
+            if not 1<=source.colors<=32:
+                raise ValueError("Unsupported original costume palette size")
+            costume=SimpleNamespace(force_right=source.force_right,
+                  palette=bytes(overrides[:source.colors]),limb=source.limb)
+        else:
+            costume=source
+        previous=bytes(pixels)
+        paint_scaled(costume,pixels,width,x,y,facing,visible,sx)
+        if plane and mask_enabled:
+            if plane not in masks:
+                masks[plane]=Image.frombytes("L",(sw,sh),scene["masks"][plane]).crop(
+                    (left,top,left+width,top+height)).tobytes()
+            pixels[:]=bytes(old if m else new for old,new,m in
+                            zip(previous,pixels,masks[plane]))
     return bytes(pixels)

@@ -2,11 +2,13 @@
 from copy import deepcopy
 from hashlib import sha256
 from types import SimpleNamespace
+from unittest.mock import patch
 import unittest
 
 from scummbucket.observed_scene_replay import (
     observed_frame_packet, replay_observed_frame, compare_native_frame)
 from tools.replay_observed_scene import read_observed_packet
+from tools.compare_cross_room_scene import costumes_from_archive
 
 
 class ObservedReplayTests(unittest.TestCase):
@@ -85,6 +87,17 @@ class ObservedReplayTests(unittest.TestCase):
 
 
 class RawObservationTests(unittest.TestCase):
+    def test_costume_archive_reopen_and_scene_fingerprints_are_checked(self):
+        sources = [dict(sha256=sha256(v).hexdigest()) for v in (b'index', b'resource')]
+        inventory = dict(status='success', sources=sources, directory_links=dict(entries=[]))
+        with (patch('tools.compare_cross_room_scene.inspect', return_value=inventory),
+              patch('tools.compare_cross_room_scene._read_pair',
+                    return_value=(b'index', b'changed', '', ''))):
+            with self.assertRaisesRegex(ValueError, 'changed after inspection'):
+                costumes_from_archive('synthetic', set())
+            with self.assertRaisesRegex(ValueError, 'differs from source scene'):
+                costumes_from_archive('synthetic', set(), expected_sources=[dict(sha256='bad')])
+
     def make_raw(self, camera='camera 160 72 0 0 320 144 320 144'):
         palette = bytes([7])*768
         background = bytes(46080)

@@ -60,7 +60,8 @@ def compare(game, capture, indexed_report, room_id):
            for a, b in zip(rows, rows[1:])):
         raise ValueError("Observed frame/tick order regression")
     scene = load_scene(game, room_id)
-    costumes = costumes_from_archive(game, {a["costume"] for r in rows for a in r["actors"]})
+    costumes = costumes_from_archive(game, {a["costume"] for r in rows for a in r["actors"]},
+                                     expected_sources=scene['manifest']['sources'])
     findings, packets = [], []
     for row in rows:
         raw = (capture / f"engine-{row['indexed_frame']:03}.bin").read_bytes()

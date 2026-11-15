@@ -70,6 +70,12 @@ def compare(game,capture,destination):
     if scene["manifest"]["dimensions"]!=[320,144]:
         raise ValueError("Unexpected original Room 12 source dimensions")
     costumes=costumes_from_archive(game,{a["costume"] for row in frames for a in row["actors"]})
+    # Fail before creating any new output if the original indexed capture
+    # changed. Later composition discrepancies stay visible in the report.
+    for row in frames:
+        source=capture/f"engine-{row['indexed_frame']:03}.bin"
+        if not source.is_file() or digest(source.read_bytes())!=row["raw_sha256"]:
+            raise ValueError(f"Indexed Room 12 source changed at frame {row['indexed_frame']}")
     destination.mkdir(parents=True,exist_ok=False)
     findings=[]
     totals=Counter()

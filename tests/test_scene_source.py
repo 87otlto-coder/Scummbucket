@@ -1,7 +1,7 @@
 import unittest
 from struct import pack
 from types import SimpleNamespace
-from scummbucket.scene_source import decode_boxes,decode_scales,source_scale,compose_actor
+from scummbucket.scene_source import decode_boxes,decode_scales,source_scale,compose_actor,compose_actor_layers
 
 class SceneSourceTests(unittest.TestCase):
     def test_scale_slot_truncation_clamp_and_reverse_slope(self):
@@ -34,3 +34,42 @@ class SceneSourceTests(unittest.TestCase):
         pose=[0,0,2,255,255,180,1]+[0]+[65535]*15
         self.assertEqual(compose_actor(scene,costume,pose,(0,0,8,8))[0],3)
         self.assertEqual(compose_actor(scene,costume,pose,(0,0,8,8),mask_enabled=False)[0],7)
+
+
+    def test_multi_actor_depth_restores_previous_composite_not_bare_background(self):
+        cel=SimpleNamespace(rel_x=0,rel_y=0,width=1,height=1,slots=b'\1',
+                            move_x=0,move_y=0)
+        costume=SimpleNamespace(force_right=False,colors=16,palette=b'\0\7'+bytes(14),
+                                limb=lambda n,p:None if p==65535 else (0,cel))
+        scene=dict(manifest=dict(dimensions=[8,8]),background=bytes([3])*64,
+                   masks={2:bytes([255])+bytes(63)})
+        def draw(actor,plane,color):
+            palette=[0]*32
+            palette[1]=color
+            return dict(id=actor,screen_x=0,draw_y=0,plane=plane,scales=[255,255],
+                        facing=180,costume=20,logical_frame=0,stopped=0,
+                        cursors=[0]+[65535]*15,palette_override=palette)
+        first=draw(7,0,7)
+        second=draw(8,2,9)
+        masked=compose_actor_layers(scene,{20:costume},[first,second],(0,0,8,8))
+        bare=compose_actor_layers(scene,{20:costume},[first,second],(0,0,8,8),
+                                  mask_enabled=False)
+        self.assertEqual(masked[0],7)
+        self.assertEqual(bare[0],9)
+        self.assertEqual(masked[1],3)
+
+    def test_live_palette_override_and_stopped_limb_are_explicit(self):
+        cel=SimpleNamespace(rel_x=0,rel_y=0,width=1,height=1,slots=b'\1',
+                            move_x=0,move_y=0)
+        costume=SimpleNamespace(force_right=False,colors=16,palette=b'\0\7'+bytes(14),
+                                limb=lambda n,p:None if p==65535 else (0,cel))
+        scene=dict(manifest=dict(dimensions=[8,8]),background=bytes([3])*64,masks={})
+        record=dict(id=7,screen_x=0,draw_y=0,plane=0,scales=[255,255],facing=180,
+                    costume=20,stopped=0,cursors=[0]+[65535]*15,
+                    palette_override=[0,12]+[0]*30)
+        self.assertEqual(compose_actor_layers(scene,{20:costume},[record],(0,0,8,8))[0],12)
+        record["stopped"]=1
+        self.assertEqual(compose_actor_layers(scene,{20:costume},[record],(0,0,8,8))[0],3)
+        record["palette_override"]=[999]*32
+        with self.assertRaisesRegex(ValueError,"palette override"):
+            compose_actor_layers(scene,{20:costume},[record],(0,0,8,8))

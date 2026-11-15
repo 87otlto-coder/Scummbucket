@@ -159,6 +159,8 @@ def compose_actor_layers(scene, costumes, draw_rows, viewport=(0,0,320,144), *,
                 raise ValueError("Unsupported live actor palette override")
             if not 1<=source.colors<=32:
                 raise ValueError("Unsupported original costume palette size")
+            # The ScummVM classic renderer treats 255 as a request for the
+            # original COST palette slot, rather than literal index 255.
             costume=SimpleNamespace(force_right=source.force_right,
                   palette=bytes(source.palette[i] if overrides[i] == 255 else overrides[i] for i in range(source.colors)),limb=source.limb)
         else:

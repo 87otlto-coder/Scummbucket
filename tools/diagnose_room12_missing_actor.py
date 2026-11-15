@@ -133,6 +133,7 @@ def diagnose(game,capture,comparison_path,indexed_path):
     details=[]
     totals=Counter()
     hypothetical=Counter()
+    hypothesis_trials=Counter()
     for number in sorted(problem):
         row=by_frame[number]
         recorded=selected[number]
@@ -174,6 +175,7 @@ def diagnose(game,capture,comparison_path,indexed_path):
                 candidates[insertion]=dict(errors=errors,
                     delta_vs_baseline=recorded["indexed_errors"]-errors)
                 hypothetical[label+"."+insertion]+=errors
+                hypothesis_trials[label+"."+insertion]+=1
             variants[label]=dict(original_observed_frame=original_frame,
                                  state=dict(position=[guybrush["screen_x"],guybrush["draw_y"]],
                                             facing=guybrush["facing"],
@@ -199,7 +201,9 @@ def diagnose(game,capture,comparison_path,indexed_path):
         problem_frames=len(details),
         original_residual_pixels=sum(totals.values()),
         residual_categories=dict(totals),
-        hypothetical_aggregate_errors=dict(hypothetical),
+        hypothetical_aggregate_errors={
+            label:dict(errors=value,frames=hypothesis_trials[label])
+            for label,value in sorted(hypothetical.items())},
         counterfactual_semantics="Insert only previously observed actor1 state; not evidence it was actually drawn",
         interpretation_warning="Cache, missing draw trace and additional object layer remain hypotheses; observed full-scene indexed equality unproven",
         frames=details)
@@ -217,6 +221,13 @@ def main():
     report=diagnose(args.game,args.capture,args.comparison,args.indexed)
     text=json.dumps(report,indent=2)
     if args.output is not None:
+        # Private-only path. Do not silently place source/game-derived
+        # reports in the repository or in a public CI artifact.
+        private_root=args.capture.resolve().parents[2]
+        permitted=(private_root/"REPORTS"/"P5").resolve()
+        if (not permitted.is_dir() or args.output.suffix.lower()!=".json" or
+            args.output.parent.resolve()!=permitted):
+            raise ValueError("Optional diagnostic output must be a new JSON file directly under FIXTURE/REPORTS/P5")
         with args.output.open("x",encoding="utf-8") as destination:
             destination.write(text)
     print(text)

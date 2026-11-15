@@ -80,6 +80,8 @@ def recover(root, capture):
         else:
             try:
                 evidence=action(capture,report)
+                if not target.is_file():
+                    raise ValueError("Verifier returned without creating its exclusive evidence report")
                 results[label]=dict(status="verified_in_this_run",
                                     report=str(target),
                                     source_status=evidence.get("status"),

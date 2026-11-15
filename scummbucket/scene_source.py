@@ -160,7 +160,7 @@ def compose_actor_layers(scene, costumes, draw_rows, viewport=(0,0,320,144), *,
             if not 1<=source.colors<=32:
                 raise ValueError("Unsupported original costume palette size")
             costume=SimpleNamespace(force_right=source.force_right,
-                  palette=bytes(overrides[:source.colors]),limb=source.limb)
+                  palette=bytes(source.palette[i] if overrides[i] == 255 else overrides[i] for i in range(source.colors)),limb=source.limb)
         else:
             costume=source
         previous=bytes(pixels)

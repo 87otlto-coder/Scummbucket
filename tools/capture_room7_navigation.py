@@ -24,21 +24,33 @@ def add_script_trace_flags(cmd):
     return [*cmd[:-1], "--debugflags=SCRIPTS,OPCODES", "--dump-scripts", cmd[-1]]
 
 
-def capture(root, build, *, doorway=False, script_trace=False):
+def capture(root, build, *, doorway=False, script_trace=False, cross_room=False):
     if script_trace and not doorway:
         raise ValueError("Script trace requires the continuous doorway capture")
+    if cross_room and not doorway:
+        raise ValueError("Cross-room indexed capture requires doorway mode")
     fixture = root / "FIXTURE"
     game = fixture / "GAMES/MonkeyIsland2_DOS_VGA"
     save = game / "monkey2-1.s01"
     exe = root / "TOOLS" / build / "scummvm.exe"
-    dest = fixture / "CAPTURES/Room7" / (("doorway-" if doorway else "navigation-") + uuid4().hex)
+    prefix = "cross-room-" if cross_room else ("doorway-" if doorway else "navigation-")
+    dest = fixture / "CAPTURES/Room7" / (prefix + uuid4().hex)
     args = SimpleNamespace(native_room7_save=True, room=7, save=save, enter_room=False, walk=None)
     state = validate_native_room7_save(args, exe, game, dest)
     if digest(save) != "39035338ed89bdfe754f31e390f247c83095f1938aeae6877c0373ad7f72aa0d":
         raise ValueError("Unexpected Room 7 save")
     if any(digest(game / name) != expected for name, expected in ARCHIVES.items()):
         raise ValueError("Unexpected DOS VGA archives")
-    if doorway and digest(exe) != (exe.parent / "doorway-exe.sha256").read_text().strip():
+    if cross_room:
+        build_manifest = exe.parent / "cross-room-build.json"
+        if not build_manifest.is_file():
+            raise ValueError("Missing independently linked cross-room build manifest")
+        linked = json.loads(build_manifest.read_text(encoding="utf-8"))
+        if (linked.get("status") != "linked_executable_version_checked_not_runtime_capture" or
+            digest(exe) != linked.get("exe_sha256") or
+            digest(exe) != (exe.parent / "cross-room-exe.sha256").read_text().strip()):
+            raise ValueError("Cross-room executable fingerprint or build status mismatch")
+    elif doorway and digest(exe) != (exe.parent / "doorway-exe.sha256").read_text().strip():
         raise ValueError("Doorway build digest mismatch")
     dest.mkdir(exist_ok=False)
     if script_trace:
@@ -60,10 +72,17 @@ def capture(root, build, *, doorway=False, script_trace=False):
     (dest / "run.json").write_text(json.dumps(dict(command=cmd, exe_sha256=digest(exe),
         archives=ARCHIVES, save=state, input_method="ordinary game controls",
         **({"script_trace": "SCUMM SCRIPTS and OPCODES debug channels; private script dumps"} if script_trace else {}),
-        **({"capture_mode": "doorway", "limit_ticks": 2400, "limit_presents": 4800}
+        **({"capture_mode": "cross_room", "indexed_rooms": [7,12],
+            "source_capture_kind": "indexed front + depth + ordered draw_actor",
+            "association_policy": "tick keyed; no one-to-one SDL/engine frame assumption",
+            "limit_ticks": 2400, "limit_presents": 4800}
+        if cross_room else
+        {"capture_mode": "doorway", "limit_ticks": 2400, "limit_presents": 4800}
         if doorway else {"limit_room_frames": 2400})),
         indent=2), encoding="utf8")
     (dest / ("doorway.enabled" if doorway else "capture.enabled")).touch(exist_ok=False)
+    if cross_room:
+        (dest / "capture.enabled").touch(exist_ok=False)
     env = os.environ.copy()
     env["PATH"] = "C:/msys64/ucrt64/bin" + os.pathsep + env["PATH"]
     print(dest, flush=True)
@@ -76,6 +95,9 @@ def capture(root, build, *, doorway=False, script_trace=False):
         if script_trace:
             from tools.analyze_room7_script_trace import analyze
             analyze(dest, report)
+        if cross_room:
+            from tools.verify_cross_room_capture import verify
+            verify(dest, report)
         return report
     if not (dest / "engine-001.bin").is_file() or b"\nnavigation " not in (
             dest / "engine-001.bin").read_bytes().partition(b"\nDATA\n")[0]:

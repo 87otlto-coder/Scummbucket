@@ -85,8 +85,14 @@ def analyze(capture, report):
     """Write a new metadata-only report; never export script bytes into SOURCE."""
     capture, report = Path(capture), Path(report)
     run = json.loads((capture / "run.json").read_text(encoding="utf-8"))
-    if run.get("capture_mode") != "doorway" or not run.get("script_trace"):
-        raise ValueError("Not a script-tracing doorway capture")
+    mode = run.get("capture_mode")
+    if mode not in ("doorway", "cross_room") or not run.get("script_trace"):
+        raise ValueError("Not a script-tracing doorway/cross-room capture")
+    if mode == "cross_room":
+        if (run.get("indexed_rooms") != [7, 12] or
+            not (capture / "doorway.enabled").is_file() or
+            not (capture / "capture.enabled").is_file()):
+            raise ValueError("Cross-room opcode trace requires dual markers and room identity")
     ticks = read_ticks((capture / "ticks.tsv").read_text(encoding="utf-8").splitlines())
     changes = []
     previous_room = None
@@ -151,6 +157,7 @@ def analyze(capture, report):
             "script_source_alignment": "not_yet_independently_disassembled",
         },
         "capture": str(capture),
+        "capture_mode": mode,
         "engine_exe_sha256": run["exe_sha256"],
         "tick_count": len(ticks),
         "room_changes": changes,

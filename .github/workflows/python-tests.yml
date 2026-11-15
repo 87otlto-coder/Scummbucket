@@ -31,3 +31,6 @@ jobs:
       - name: Validate P4 Python/Pillow with PowerShell 7 (without private fixtures)
         shell: pwsh
         run: ./tools/p4_private_acceptance.ps1 -CheckPythonRuntime
+      - name: Validate cross-room operator syntax with Windows PowerShell 5.1
+        shell: powershell
+        run: ./tools/p4_cross_room_acceptance.ps1 -CheckSyntax

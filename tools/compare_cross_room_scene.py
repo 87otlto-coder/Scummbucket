@@ -6,7 +6,6 @@ Comparison failures remain visible in a new private report. This tool is NOT
 a general SCUMM room interpreter or a proof for other routes.
 """
 from collections import Counter
-from copy import deepcopy
 from hashlib import sha256
 import argparse
 import json
@@ -111,7 +110,8 @@ def compare(game,capture,destination):
                 im.putpalette(palettes[3])
                 with (destination/filename).open("xb") as handle:
                     im.save(handle,format="PNG")
-            mask=bytes(255 if x in set(indices) else 0 for x in range(46080))
+            difference_positions=set(indices)
+            mask=bytes(255 if x in difference_positions else 0 for x in range(46080))
             with (destination/"indexed-differences.png").open("xb") as output:
                 Image.frombytes("L",(320,144),mask).save(output,format="PNG")
     all_exact=totals["indexed_mismatches"]==0 and len(findings)>0

@@ -99,3 +99,9 @@ Working tree SOURCE/ScummBucket-P4-Continuation has a local synthetic snapshot
 history, not upstream ancestry. Use the real GitHub branch commits as parents
 for connected writes. Review branch: research/p4-observed-event-replay.
 Draft PR #18 targets research/p5-cross-room-reconstruction; main is untouched.
+
+## Final validation
+
+Actual Windows full suite after all code changes: **468 tests run, 16 skipped, no failures**.
+Hosted Windows regression run [293](https://github.com/87otlto-coder/Scummbucket/actions/runs/43757647473) passed for code commit `10cb5739f5f859669dca7546819ed12ab6311b48`.
+Offline package verification was rerun in a fresh process and reproduced all 228 candidates, retaining PARTIAL historical scene acceptance.

@@ -139,6 +139,11 @@ class MissingActorForensicsTests(unittest.TestCase):
         self.comparison["frames"][0]["predicted_indexed_sha256"]=digest(self.predicted)
         self.rows[1]["front_sha256"]="0"*64
         self._write()
+        with self.assertRaisesRegex(ValueError,"linkage differs"):
+            self.run_diagnostic()
+        self.rows[1]["front_sha256"]=digest(self.observed)
+        self.original_fronts[151]=bytes([77])+self.observed[1:]
+        self._write()
         with self.assertRaisesRegex(ValueError,"front digest"):
             self.run_diagnostic()
 

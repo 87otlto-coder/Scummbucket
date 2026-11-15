@@ -80,6 +80,39 @@ class Room7ScriptTraceTests(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 analyze(capture, report)
 
+    def test_cross_room_trace_uses_same_opcode_evidence_with_dual_markers(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            capture, report = self._make_capture(Path(tmp))
+            config = json.loads((capture / "run.json").read_text())
+            config["capture_mode"] = "cross_room"
+            config["indexed_rooms"] = [7,12]
+            (capture / "run.json").write_text(json.dumps(config))
+            (capture / "doorway.enabled").touch()
+            (capture / "capture.enabled").touch()
+            result = analyze(capture,report)
+            self.assertEqual(result["status"],"opcode_trace_observed")
+            self.assertEqual(result["capture_mode"],"cross_room")
+            self.assertEqual(result["tick_count"],3)
+            self.assertEqual([(x["room_before"],x["room_after"]) for x in result["room_changes"]],
+                             [(7,12),(12,7)])
+            self.assertEqual(result["evidence"]["direct_opcode_to_tick_synchronization"],False)
+
+    def test_cross_room_script_trace_rejects_missing_marker_or_wrong_room_set(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            capture,report = self._make_capture(Path(tmp))
+            config = json.loads((capture / "run.json").read_text())
+            config["capture_mode"] = "cross_room"
+            config["indexed_rooms"] = [7,12]
+            (capture / "run.json").write_text(json.dumps(config))
+            (capture / "doorway.enabled").touch()
+            with self.assertRaisesRegex(ValueError,"dual markers"):
+                analyze(capture,report)
+            (capture / "capture.enabled").touch()
+            config["indexed_rooms"] = [7]
+            (capture / "run.json").write_text(json.dumps(config))
+            with self.assertRaisesRegex(ValueError,"dual markers"):
+                analyze(capture,report)
+
     def test_missing_debug_channel_remains_explicit(self):
         with tempfile.TemporaryDirectory() as tmp:
             capture, report = self._make_capture(Path(tmp), valid=False)

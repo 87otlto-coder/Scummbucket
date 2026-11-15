@@ -4,6 +4,22 @@
 Primary validated edition: Monkey Island 2, original DOS VGA. This checkpoint
 does not extend compatibility to MI1, other platforms, or Curse of Monkey Island.
 
+## Expanded research checkpoint
+
+Original archive corpus audit passed **1,047/1,047 stored states** across
+**595 objects / 110 rooms**, covering 3,356,800 pixels, with zero RGBA/mask
+assembly disagreements. Both paths share low-level decoders; runtime fidelity
+and state selection remain unverified. Six new targeted synthetic tests passed.
+
+Pinned ScummVM source confirms that the existing draw hook follows a redraw
+early return. A new pre-gate actor-state overlay passed native syntax and
+object compilation, but **linking/runtime capture are not validated**.
+The Windows execution environment became unavailable before the next step.
+Private outputs were not subsequently re-readable; observed aggregates and
+source/tests were recovered into GitHub. See
+[corpus and redraw research](docs/research/P4_CORPUS_AND_REDRAW_RESEARCH_20261115.md).
+Earlier validation totals below are retained as historical checkpoints.
+
 ## Current review checkpoint
 
 - Branch: `research/p4-observed-event-replay`.

@@ -3,7 +3,7 @@
 # Run only from the canonical F:\Dev\SCUMMBUCKET workspace.
 [CmdletBinding()]
 param(
-    [ValidateSet('Room23','Preflight','Build','Capture','Compare')]
+    [ValidateSet('Room23','Preflight','Build','Capture','Recover','Compare')]
     [string]$Stage = 'Preflight',
     [string]$BuildName,
     [string]$CaptureDirectory,
@@ -95,6 +95,19 @@ if ($Stage -eq 'Capture') {
         throw 'Cross-room capture incomplete. Preserve raw CAPTURES and REPORTS for review'
     }
     Write-Host 'CROSS-ROOM INDEXED CAPTURE ACCEPTED; ROOM 12 SCENE FIDELITY NOT YET VERIFIED'
+    return
+}
+
+if ($Stage -eq 'Recover') {
+    if ([string]::IsNullOrWhiteSpace($CaptureDirectory)) {
+        throw 'Recover requires -CaptureDirectory with the existing cross-room raw capture'
+    }
+    $capture = (Resolve-Path -LiteralPath $CaptureDirectory -ErrorAction Stop).Path
+    & python -B -m tools.recover_cross_room_capture --root $root --capture $capture
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Existing cross-room capture post-processing incomplete. Preserve old files and review both verifier results.'
+    }
+    Write-Host 'EXISTING CROSS-ROOM CAPTURE EVIDENCE RECOVERED; SCENE FIDELITY NOT YET VERIFIED'
     return
 }
 

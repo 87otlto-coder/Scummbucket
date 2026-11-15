@@ -73,3 +73,25 @@ class SceneSourceTests(unittest.TestCase):
         record["palette_override"]=[999]*32
         with self.assertRaisesRegex(ValueError,"palette override"):
             compose_actor_layers(scene,{20:costume},[record],(0,0,8,8))
+
+
+    def test_actor_palette_255_falls_back_to_original_cost_slots(self):
+        cel=SimpleNamespace(rel_x=0,rel_y=0,width=1,height=1,slots=b'\1',
+                            move_x=0,move_y=0)
+        costume=SimpleNamespace(force_right=False,colors=16,
+                                palette=b'\0\7'+bytes(14),
+                                limb=lambda n,p:None if p==65535 else (0,cel))
+        scene=dict(manifest=dict(dimensions=[8,8]),background=bytes([3])*64,
+                   masks={})
+        actor=dict(id=7,screen_x=0,draw_y=0,plane=0,scales=[255,255],
+                   facing=180,costume=20,logical_frame=12,stopped=0,
+                   cursors=[0]+[65535]*15,palette_override=[255]*32)
+        self.assertEqual(
+            compose_actor_layers(scene,{20:costume},[actor],(0,0,8,8))[0],7)
+        actor["palette_override"][1]=12
+        self.assertEqual(
+            compose_actor_layers(scene,{20:costume},[actor],(0,0,8,8))[0],12)
+        actor["palette_override"][1]=255
+        actor["stopped"]=1
+        self.assertEqual(
+            compose_actor_layers(scene,{20:costume},[actor],(0,0,8,8))[0],3)

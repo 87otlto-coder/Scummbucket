@@ -197,7 +197,6 @@ def diagnose(game,capture,comparison_path,indexed_path):
         capture=str(capture),
         original_room_sha256=scene["manifest"]["room_sha256"],
         problem_frames=len(details),
-        previous_exact_frames=204 if False else None,
         original_residual_pixels=sum(totals.values()),
         residual_categories=dict(totals),
         hypothetical_aggregate_errors=dict(hypothetical),

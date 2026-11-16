@@ -40,11 +40,19 @@ compatibility or automatic SCUMM script interpretation is claimed.
    without drawing pixels. A structured, source-hashed metadata summary is
    retained at docs/validation/P4_COSTUME_CORPUS_INDEPENDENT_20261116.json.
    The committed CLI has not yet been run on the private original archive.
+7. Source-only P4 selector initialization: **3,474/3,474 defined source
+   selectors** parsed and applied individually to empty states with zero
+   parser failures. 1,702 clear entries, 469 stops, 314 resumes, 1,535
+   one-shot flags, and 83 sound command references occur in stored selector
+   ranges. These counts are not observed gameplay execution. Atomic selector
+   updates and limb frame IDs now have synthetic tests, and control
+   occurrence fields are exposed in the reusable corpus audit.
 
-Actual earlier full local Windows suite after animation-step changes: **500 tests,
-16 skipped, no failures**. Latest hosted Windows CI after repeated-fault grouping:
-**507 tests run, 15 skipped, no failures**, no CI artifacts.
-No workflow changes. Optional private/environment skips remain.
+Actual earlier full local Windows suite after animation-step changes:
+**500 tests, 16 skipped, no failures**. Latest hosted Windows CI after
+selector control inventory: **515 tests run, 15 skipped, no failures**,
+no uploaded artifacts. No workflow changes. Optional private/environment
+skips remain.
 
 ## Evidence
 
@@ -55,6 +63,9 @@ No workflow changes. Optional private/environment skips remain.
 - [COST archive selector corpus and remaining failures](docs/research/P4_COSTUME_CORPUS_20261116.md)
 - [Independent COST corpus metadata summary](docs/validation/P4_COSTUME_CORPUS_INDEPENDENT_20261116.json)
 - [Zero-area-cel source correction](docs/research/P4_COSTUME_ZERO_AREA_CEL_20261116.md)
+- [Selector initialization and original source counts](docs/research/P4_COSTUME_SELECTOR_INITIALIZATION_20261116.md)
+- [Control opcode inventory](docs/research/P4_COSTUME_CONTROL_CATALOG_20261116.md)
+- [Source-ranked candidates for native capture](docs/research/P4_COSTUME_NATIVE_TARGETS_20261116.md)
 
 The old Room 7 capture remains 170/228 exact; old Room 12 remains 232/244.
 Their missing channels cannot be retroactively supplied from new captures.
@@ -67,16 +78,21 @@ Room 34 has source decoding but no live state/order/timing acceptance.
 | P0 research | Substantial edition-specific archive/source/runtime evidence. |
 | P1 archives | Read-only detection, inventory, extraction and provenance implemented; visible unsupported/errors retained. |
 | P2 images | Representative rendering and broad object source decoding validated; all-edition accuracy unclaimed. |
-| P3 costumes | Native composition, zero-area movement and bounded speed-zero advancement tested; source-only selector corpus has 12 explicit COST 129 failures. General init/timing/events incomplete. |
+| P3 costumes | Native composition, zero-area movement and bounded speed-zero advancement verified on prior captures. Source-only selector initialization passes all 3,474 defined slots; native initialization/event/timing behavior unverified. COST 129 retains 12 cel decode failures. |
 | P4 scenery | Room 7 observed-state palette/scenery/actor/mask composition verified. Live object-state transitions and general scene-state acquisition incomplete. |
 | P5 audio | Not advanced in this work. |
 | P6 explorer | Deferred until engine acceptance supports it. |
 | P7 enhancement | Deferred; native fidelity first; BigR stays separate. |
 | P8 extensions | Deferred; no new game/platform acceptance. |
 
-Next run committed source COST corpus tool privately, investigate COST 129's
-remaining 12 bounded-RLE failures, then close live object-state/order/timing gaps. Nonzero-speed/event/stop-resume
-native checks are separate gates. Do not build a general interpreter.
+Next run the committed COST corpus CLI against the private original archive,
+then differentiate stored selector control counts from real source-backed
+native selection/usemask behavior. Prioritize COST 1 for existing actor
+continuity and COST 8/24 for control-rich native follow-ups only after
+script/room usage is independently identified. COST 129's 12 cel failures
+remain visible and must not be padded. Live object-state/order/timing and
+nonzero-speed/event stop/resume are separate runtime gates. Do not build
+a general interpreter.
 
 ## Workspace
 

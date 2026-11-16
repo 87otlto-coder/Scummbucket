@@ -1,0 +1,181 @@
+{
+  "schema": "scummbucket-p4-static-spelunk-room44/1",
+  "date": "2026-11-16",
+  "status": "ARCHIVE_AND_SOURCE_RESEARCH_ONLY",
+  "edition": "Monkey Island 2 DOS VGA original",
+  "source_sha256": {
+    "MONKEY2.000": "cde7aa8980317e3a750fbb3b49884cdddaf1ff3d4231a0c840b22cceed9033f1",
+    "MONKEY2.001": "ad045372e0d49626503bb50fca29a687ec8e01ef75d9b8bca702a366d143819e"
+  },
+  "room": {
+    "id": 44,
+    "room_offset": 3513409,
+    "room_length": 110035,
+    "object_codes": 20,
+    "object_images": 20,
+    "local_scripts": 6,
+    "verb_tables_without_handlers": 20,
+    "initial_palette_cycle_records": 0
+  },
+  "same_rectangle": {
+    "xywh": [
+      88,
+      48,
+      112,
+      96
+    ],
+    "objects": [
+      {
+        "object_id": 451,
+        "cdhd_object_ordinal": 5,
+        "obcd_offset": 3621357,
+        "obim_offset": 3564983,
+        "stored_images": 1
+      },
+      {
+        "object_id": 461,
+        "cdhd_object_ordinal": 17,
+        "obcd_offset": 3621921,
+        "obim_offset": 3595741,
+        "stored_images": 3
+      }
+    ]
+  },
+  "entry_script": {
+    "chunk_offset": 3622152,
+    "length": 190,
+    "sha256": "cf47653b3c0ed222e564261272ea6007d2b6bc0b11c517a945569db1a297d0a1",
+    "source_start_candidates": [
+      {
+        "offset": 3622326,
+        "script_id": 202
+      },
+      {
+        "offset": 3622329,
+        "script_id": 203
+      },
+      {
+        "offset": 3622332,
+        "script_id": 205
+      },
+      {
+        "offset": 3622335,
+        "script_id": 201
+      },
+      {
+        "offset": 3622338,
+        "script_id": 206
+      }
+    ],
+    "alignment_independently_verified": false
+  },
+  "loop_tails": [
+    {
+      "script_id": 200,
+      "body_start": 3622361,
+      "source_jump_offset": 3622709,
+      "target": 3622405,
+      "internal_loop": true
+    },
+    {
+      "script_id": 201,
+      "body_start": 3622722,
+      "source_jump_offset": 3623120,
+      "target": 3622722,
+      "preceding_break_here_offset": 3623119
+    },
+    {
+      "script_id": 202,
+      "body_start": 3623133,
+      "source_jump_offset": 3623158,
+      "target": 3623133
+    },
+    {
+      "script_id": 203,
+      "body_start": 3623171,
+      "source_jump_offset": 3623251,
+      "target": 3623171
+    },
+    {
+      "script_id": 205,
+      "body_start": 3623264,
+      "source_jump_offset": 3623309,
+      "target": 3623264,
+      "preceding_break_here_offset": 3623308
+    }
+  ],
+  "main_sequence": {
+    "script_id": 201,
+    "source_chunk_offset": 3622713,
+    "sha256": "db68dae76da0fb3ec2c70f31c0b06405a8a4a4a456d14f286a526c026d00cefe",
+    "nonzero_condition": {
+      "opcode_offset": 3622849,
+      "opcode": "o5_notEqualZero",
+      "variable": 164,
+      "if_zero_branch_target": 3623008
+    },
+    "counter_increment": {
+      "opcode_offset": 3622854,
+      "opcode": "o5_add",
+      "variable": 164,
+      "amount": 1
+    },
+    "branches": [
+      {
+        "check_offset": 3622859,
+        "variable_value": 2,
+        "else_target": 3622875,
+        "draw_opcode_offset": 3622866,
+        "object_id": 461,
+        "state": 1,
+        "post_draw_jump_target": 3622988
+      },
+      {
+        "check_offset": 3622875,
+        "variable_value": 3,
+        "else_target": 3622891,
+        "draw_opcode_offset": 3622882,
+        "object_id": 461,
+        "state": 2,
+        "post_draw_jump_target": 3622988
+      },
+      {
+        "check_offset": 3622891,
+        "variable_value": 4,
+        "else_target": 3622962,
+        "draw_opcode_offset": 3622916,
+        "object_id": 461,
+        "state": 3,
+        "post_draw_jump_target": 3622953
+      },
+      {
+        "check_offset": 3622962,
+        "variable_value": 5,
+        "else_target": 3622983,
+        "draw_opcode_offset": 3622969,
+        "object_id": 461,
+        "state": 1,
+        "reset_variable_offset": 3622975
+      }
+    ],
+    "other_reset_offsets": [
+      3622948,
+      3622983
+    ],
+    "script_205_conditional_set_164_to_1": 3623303
+  },
+  "classification": "script_controlled_repeating_animation_candidate",
+  "evidence_gates": {
+    "external_descumm_instruction_alignment": false,
+    "script_execution_recorded": false,
+    "script_loop_scheduling_recorded": false,
+    "actual_object_peer_state_recorded": false,
+    "original_frame_fidelity": false
+  },
+  "important_limitations": [
+    "The source loop tails and opcode-looking basic block support a repeating control mechanism but not measured rendering frequency.",
+    "The independent descumm alignment/caller check is still pending.",
+    "The actual state transition sequence depends on branch gates and script scheduling.",
+    "No original visual frames, raw game script bytes, copyrighted images or binary tools committed."
+  ]
+}

@@ -62,7 +62,7 @@ class AnimationTests(unittest.TestCase):
 
     def test_late_invalid_limb_does_not_partially_initialize(self):
         from copy import deepcopy
-        c = costume([4], {1: {0: (0, 0), 1: (200, 127)}})
+        c = costume([4], {1: {0: (0, 0), 1: (25, 127)}})
         state = AnimationState()
         initial = deepcopy(state)
         with self.assertRaisesRegex(ValueError, 'range outside COST'):

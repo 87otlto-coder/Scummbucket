@@ -57,6 +57,12 @@ class CostumeCorpusTests(unittest.TestCase):
         from test_classic_animation import costume as animation_fixture
         sample = animation_fixture([4, 0x79, 0x7a],
                                    {1: {0: (1, 127)}, 2: {0: (2, 127)}})
+        # The general animation fixture reserves 32 selectors but stores
+        # synthetic records within that unused table tail. Limit the table
+        # to the 0..8 selectors actually present in this audit fixture.
+        data = bytearray(sample.data)
+        data[8] = 8
+        sample.data = bytes(data)
         report = audit_costume_selectors(sample)
         self.assertEqual(report["failed_selector_slots"], 0)
         self.assertEqual(report["selector_slots_with_ranges"], 0)

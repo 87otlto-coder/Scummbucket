@@ -34,16 +34,16 @@ compatibility or automatic SCUMM script interpretation is claimed.
 5. A private offline source/event/COST package independently re-decodes room
    images/masks and reproduces all 968 candidates without game/capture access.
    Original engine reference buffers are not revalidated offline.
-6. Archive-only linked COST audit: 162 costumes, 3,462 consistent defined
-   selectors and 12 unresolved COST 129 selector/cel failures. Five zero-area
-   references are now accepted with original movement metadata and synthetic
-   coverage. The committed audit CLI has not yet been executed against the
-   private original archive; the aggregate came from a read-only independent
-   temporary harness of the uploaded MI2 archive.
+6. Archive-only linked COST audit independently reproduced: 162 costumes,
+   3,462 consistent defined selectors, 12 failed selectors resolving to one
+   COST 129 limb/command reference. Five zero-area references accept movement
+   without drawing pixels. A structured, source-hashed metadata summary is
+   retained at docs/validation/P4_COSTUME_CORPUS_INDEPENDENT_20261116.json.
+   The committed CLI has not yet been run on the private original archive.
 
 Actual earlier full local Windows suite after animation-step changes: **500 tests,
-16 skipped, no failures**. Latest hosted Windows CI after costume-corpus
-implementation: **506 tests run, 15 skipped, no failures**, no CI artifacts.
+16 skipped, no failures**. Latest hosted Windows CI after repeated-fault grouping:
+**507 tests run, 15 skipped, no failures**, no CI artifacts.
 No workflow changes. Optional private/environment skips remain.
 
 ## Evidence
@@ -53,6 +53,7 @@ No workflow changes. Optional private/environment skips remain.
 - [Object corpus and redraw source research](docs/research/P4_CORPUS_AND_REDRAW_RESEARCH_20261115.md)
 - [Earlier event/offline-package foundation](docs/research/P4_OBSERVED_EVENT_REPLAY_20261115.md)
 - [COST archive selector corpus and remaining failures](docs/research/P4_COSTUME_CORPUS_20261116.md)
+- [Independent COST corpus metadata summary](docs/validation/P4_COSTUME_CORPUS_INDEPENDENT_20261116.json)
 - [Zero-area-cel source correction](docs/research/P4_COSTUME_ZERO_AREA_CEL_20261116.md)
 
 The old Room 7 capture remains 170/228 exact; old Room 12 remains 232/244.

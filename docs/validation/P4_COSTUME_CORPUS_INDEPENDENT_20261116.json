@@ -1,0 +1,95 @@
+{
+  "schema": "scummbucket-costume-corpus-independent-check/1",
+  "date": "2026-11-16",
+  "edition": "Monkey Island 2 original DOS VGA",
+  "input_kind": "read_only_uploaded_zip",
+  "evidence": "Independent temporary Python reproduction of bounded COST selector/cel parser; not execution of committed tools.audit_costume_corpus",
+  "status": "source_decode_partial",
+  "original_sources": [
+    {
+      "name": "MONKEY2.000",
+      "sha256": "cde7aa8980317e3a750fbb3b49884cdddaf1ff3d4231a0c840b22cceed9033f1"
+    },
+    {
+      "name": "MONKEY2.001",
+      "sha256": "ad045372e0d49626503bb50fca29a687ec8e01ef75d9b8bca702a366d143819e"
+    }
+  ],
+  "totals": {
+    "linked_costumes": 162,
+    "costumes_16_color": 122,
+    "costumes_32_color": 40,
+    "declared_selector_slots": 7193,
+    "unused_selector_slots": 3719,
+    "defined_pointer_slots": 3474,
+    "consistent_defined_selectors": 3462,
+    "failed_defined_selectors": 12,
+    "selector_slots_with_ranges": 3235,
+    "cel_references_examined": 24930,
+    "zero_area_references": 5,
+    "distinct_failed_limb_command_references": 1
+  },
+  "zero_area_locations": [
+    {
+      "costume_id": 50,
+      "selectors": [
+        6,
+        7
+      ],
+      "references": 2
+    },
+    {
+      "costume_id": 61,
+      "selectors": [
+        33
+      ],
+      "references": 3
+    }
+  ],
+  "unresolved": [
+    {
+      "costume_id": 129,
+      "room_id": 91,
+      "source_offset": 7662434,
+      "source_length": 169,
+      "source_sha256": "6ba5fb15dd825567e521fb55c079dcb27ea88c3930fed3fd23cc13404d6f452b",
+      "failed_selectors": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "limb": 0,
+      "command_position": 0,
+      "cel_offset_relative": 155,
+      "declared_dimensions": [
+        2,
+        2
+      ],
+      "declared_pixels": 4,
+      "bounded_rle_encoded_pixels": 3,
+      "remaining_encoded_bytes": 2,
+      "next_archive_chunk_tag": "CHAR",
+      "diagnostic": "truncated cel",
+      "classification": "bounded_decoder_rejected_unverified_runtime_behavior",
+      "synthetic_fill_used": false,
+      "resource_boundary_overread_allowed": false
+    }
+  ],
+  "boundaries": {
+    "committed_cli_original_archive_acceptance": false,
+    "original_engine_render_verified_for_costume129": false,
+    "script_selection_observed": false,
+    "native_runtime_animation_timing_verified": false,
+    "synthetic_only_ci_tests_verified": true,
+    "next": "Run committed CLI privately against original archive; investigate runtime-selected COST 129 behavior only if required"
+  }
+}

@@ -54,6 +54,32 @@ selector control inventory: **515 tests run, 15 skipped, no failures**,
 no uploaded artifacts. No workflow changes. Optional private/environment
 skips remain.
 
+## New source-only research (no new native verification)
+
+A pinned ScummVM v5 call-chain map identifies distinct `o5_drawObject`
+peer resets, `o5_setState` dirty-strip invalidation, full room draw
+versus queued draw ordering, parent-state visibility, actor draw-before-
+animate and effect/presentation phase boundaries.
+
+Read-only original MI2 CDHD/IMHD archive study found **19 meaningful
+exact-rectangle object groups across 15 rooms**, involving 192 object
+records (136 in one Room 94 group), six groups with multi-image-state
+objects, and six objects with nonzero parent slots. This is not
+observed animation or live object placement.
+
+An unaligned *local direct-object opcode byte-pattern* survey found
+42 candidate patterns across five groups: Room 88 (21), 72 (8),
+48 (6), 44 (4) and 29 (3). Room 44's four candidate `drawObject(461)`
+states are 1/2/3/1 in LSCR 201. **No instruction boundaries or
+runtime execution were verified.** Room 34's state-16 low-nibble
+visibility distinction remains a source-level future experiment.
+
+No new runtime recorder, decoder implementation, test suite or
+original native comparison is claimed for this source-only research.
+The priority is to authenticate candidate script instructions and
+observe actual object-state/queue effects before expanding the
+scene compositor.
+
 ## Evidence
 
 - [Complete actor-state capture and pixels](docs/research/P4_COMPLETE_ACTOR_STATE_20261116.md)
@@ -66,6 +92,10 @@ skips remain.
 - [Selector initialization and original source counts](docs/research/P4_COSTUME_SELECTOR_INITIALIZATION_20261116.md)
 - [Control opcode inventory](docs/research/P4_COSTUME_CONTROL_CATALOG_20261116.md)
 - [Source-ranked candidates for native capture](docs/research/P4_COSTUME_NATIVE_TARGETS_20261116.md)
+- [Source call-chain and rendering phase map](docs/research/P4_SCENE_STATE_ENGINE_PHASE_MAP_20261116.md)
+- [Original MI2 exact-rectangle object inventory](docs/research/P4_MI2_EXACT_RECTANGLE_CANDIDATES_20261116.md)
+- [Unaligned local-script candidate register](docs/research/P4_MI2_EXACT_RECT_SCRIPT_LEADS_20261116.md)
+- [Prepared future native verification packet](docs/research/P4_OBJECT_NATIVE_INVESTIGATION_PACKET_20261116.md)
 
 The old Room 7 capture remains 170/228 exact; old Room 12 remains 232/244.
 Their missing channels cannot be retroactively supplied from new captures.

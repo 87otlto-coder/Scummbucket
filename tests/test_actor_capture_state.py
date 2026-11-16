@@ -5,7 +5,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
-from scummbucket.actor_capture_state import STATE_FIELDS, parse_actor_state_record, compare_state_to_draw
+from scummbucket.actor_capture_state import (STATE_FIELDS, parse_actor_state_record,
+    compare_state_to_draw, state_as_composition_candidate)
 from tools.prepare_actor_state_capture import STATE_FIELDS as OVERLAY_FIELDS
 from tools.audit_actor_state_capture import audit
 from tools.verify_cross_room_capture import parse_draw_actor
@@ -23,6 +24,20 @@ DRAW = 'draw_actor '+' '.join(map(str, [1, 0, 0, 0, 255, 255, 180, 1, 1, 0]+[0]+
 
 
 class ActorStateParserTests(unittest.TestCase):
+    def test_candidate_uses_current_state_and_copies_mutable_fields(self):
+        state = parse_actor_state_record(snapshot(need_redraw=0))
+        candidate = state_as_composition_candidate(state)
+        self.assertEqual(candidate['cursors'],state['cursors'])
+        candidate['cursors'][0] = 99
+        self.assertEqual(state['cursors'][0],0)
+        self.assertEqual(candidate['screen_x'],state['screen_x'])
+
+    def test_candidate_rejects_unmodeled_actor_modes(self):
+        for fields in (dict(visible=0),dict(draw_to_back=1),dict(shadow_mode=1),dict(scale_x=128)):
+            with self.subTest(fields=fields):
+                with self.assertRaises(ValueError):
+                    state_as_composition_candidate(parse_actor_state_record(snapshot(**fields)))
+
     def test_exact_field_layout_and_distinct_state_semantics(self):
         self.assertEqual(STATE_FIELDS, OVERLAY_FIELDS)
         state = parse_actor_state_record(snapshot())

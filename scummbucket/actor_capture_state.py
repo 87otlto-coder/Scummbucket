@@ -54,3 +54,21 @@ def compare_state_to_draw(state, draw):
                     cursors=state['cursors'], palette_override=state['palette_override'])
     return {name: dict(before_prepare=value, actual_draw=draw[name])
             for name, value in expected.items() if value != draw[name]}
+
+
+def state_as_composition_candidate(state):
+    """Use a directly observed pre-redraw state; never insert an older pose.
+
+    This is a hypothesis about the displayed scene until independently compared
+    with the indexed frontbuffer. It is not an assertion that this actor drew.
+    Back-buffer/shadow/invisible cases require additional rendering semantics.
+    """
+    if not state['visible'] or state['draw_to_back'] or state['shadow_mode']:
+        raise ValueError('Unsupported actor visibility/back-buffer/shadow state')
+    if state['scale_x'] != state['scale_y']:
+        raise ValueError('Unsupported nonuniform actor scale')
+    return dict(id=state['id'],screen_x=state['screen_x'],draw_y=state['draw_y'],
+                plane=state['plane'],scales=[state['scale_x'],state['scale_y']],
+                facing=state['facing'],costume=state['costume'],
+                logical_frame=state['logical_frame'],stopped=state['stopped'],
+                cursors=list(state['cursors']),palette_override=list(state['palette_override']))

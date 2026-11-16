@@ -1,0 +1,37 @@
+{
+  "schema": "scummbucket-costume-selector-initialization-source-audit/1",
+  "date": "2026-11-16",
+  "edition": "Monkey Island 2 original DOS VGA",
+  "evidence": "source_only_archive_study_with_locally_tested_bounded_initialization_model",
+  "original_sources": {
+    "MONKEY2.000": "cde7aa8980317e3a750fbb3b49884cdddaf1ff3d4231a0c840b22cceed9033f1",
+    "MONKEY2.001": "ad045372e0d49626503bb50fca29a687ec8e01ef75d9b8bca702a366d143819e"
+  },
+  "summary": {
+    "linked_costumes": 162,
+    "declared_selector_slots": 7193,
+    "defined_selector_slots": 3474,
+    "empty_selector_slots": 3719,
+    "initialized_defined_selector_slots": 3474,
+    "initialization_parse_failures": 0,
+    "limb_clear_entries": 1702,
+    "stop_control_entries": 469,
+    "resume_control_entries": 314,
+    "one_shot_flag_entries": 1535,
+    "initialized_limb_frame_assignments": 6174,
+    "initialization_stopped_bits_set_from_empty_state": 469,
+    "sound_control_references_in_selector_ranges": 83
+  },
+  "method": "Original DCOS/LOFF source indexes traversed read-only; initialized independent empty AnimationState for each declared selector using explicit frame=selector//4, facing=(270,90,180,0)[selector%4]. Source-bound model checks records; no script execution.",
+  "limitations": [
+    "Initialized one selector at a time from empty state; preserved mixed control history is covered only by synthetic tests.",
+    "Stop/resume counts are occurrences within declared selector records, not playback events or unique commands.",
+    "Sound command references are repeated across overlapping ranges; no runtime sound or counter side effects observed.",
+    "Zero native-engine runtime selector-init comparisons have been executed.",
+    "The source-only local audit is not a run of the committed full costume CLI.",
+    "Source cels in COST 129 remain bounded-RLE incomplete and cannot be called runtime-verified."
+  ],
+  "source_reference": "ScummVM v2026.4.0 engines/scumm/costume.cpp ClassicCostumeLoader::costumeDecodeData, engines/scumm/actor.cpp Actor::animateCostume",
+  "runtime_fidelity_verified": false,
+  "original_resources_committed": false
+}

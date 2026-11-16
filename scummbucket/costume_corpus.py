@@ -1,0 +1,147 @@
+"""Bounded source-only audit of SCUMM v5 COST selector/cel references.
+
+No engine run or pose timing inference. Referenced frames are not proof of
+script selection at runtime. Errors remain per-selector diagnostics.
+"""
+
+
+CONTROL_REFERENCE_KEYS = (
+    "limb_clear_entries", "initial_stop_entries", "initial_resume_entries",
+    "initialized_limb_ranges", "one_shot_flags",
+    "sound_command_references", "counter_command_references",
+)
+
+
+def audit_costume_selectors(costume):
+    """Validate declared selectors and referenced cel data without drawing.
+
+    Parses original selector masks, limbs and ranges using the same pointer
+    convention as the classic costume decoder. Inspects all non-control
+    command positions in each range. Does not try to execute SCUMM scripts.
+    """
+    data = costume.data
+    selectors = []
+    unique = set()
+    zero_refs = []
+    failures = []
+    with_ranges = 0
+    defined = 0
+    for selector in range(data[8] + 1):
+        row = {"selector": selector, "status": "unused", "limb_ranges": 0,
+               "cel_references": 0, "zero_area_references": 0,
+               "control_references": {key: 0 for key in CONTROL_REFERENCE_KEYS}}
+        selectors.append(row)
+        limb = None
+        position = None
+        try:
+            table = costume.table_start + 34 + 2 * selector
+            if table + 2 > len(data):
+                raise ValueError("truncated selector pointer table")
+            if data[table:table + 2] == b"\0\0":
+                continue
+            defined += 1
+            p = costume.pointer(table)
+            if p + 2 > len(data):
+                raise ValueError("truncated selector limb mask")
+            mask = int.from_bytes(data[p:p + 2], "little")
+            p += 2
+            ranges = []
+            for limb in range(16):
+                if not mask & (0x8000 >> limb):
+                    continue
+                if p + 2 > len(data):
+                    raise ValueError("truncated selector limb position")
+                start = int.from_bytes(data[p:p + 2], "little")
+                p += 2
+                if start == 0xFFFF:
+                    row["control_references"]["limb_clear_entries"] += 1
+                    continue
+                if p >= len(data):
+                    raise ValueError("truncated selector limb extent")
+                extra = data[p]
+                p += 1
+                if costume.commands + start >= len(data):
+                    raise ValueError("selector initial command outside COST")
+                initial = data[costume.commands + start]
+                if initial == 0x79:
+                    row["control_references"]["initial_stop_entries"] += 1
+                    continue
+                if initial == 0x7a:
+                    row["control_references"]["initial_resume_entries"] += 1
+                    continue
+                # The high extent bit marks a non-looping selection.
+                row["control_references"]["initialized_limb_ranges"] += 1
+                if extra & 0x80:
+                    row["control_references"]["one_shot_flags"] += 1
+                end = start + (extra & 0x7f)
+                if costume.commands + end >= len(data):
+                    raise ValueError("selector command range outside COST")
+                ranges.append((limb, start, end))
+            row["limb_ranges"] = len(ranges)
+            if ranges:
+                with_ranges += 1
+            for limb, start, end in ranges:
+                for position in range(start, end + 1):
+                    command_byte = data[costume.commands + position]
+                    if command_byte == 0x78:
+                        row["control_references"]["sound_command_references"] += 1
+                    elif command_byte == 0x7c:
+                        row["control_references"]["counter_command_references"] += 1
+                    code = command_byte & 0x7f
+                    if code in (0x78, 0x79, 0x7a, 0x7b, 0x7c):
+                        continue
+                    result = costume.limb(limb, position)
+                    if result is None:
+                        continue
+                    _, cel = result
+                    row["cel_references"] += 1
+                    unique.add((limb, position))
+                    if cel.width == 0 or cel.height == 0:
+                        row["zero_area_references"] += 1
+                        zero_refs.append({"selector": selector, "limb": limb,
+                                          "position": position,
+                                          "width": cel.width, "height": cel.height})
+            row["status"] = "consistent"
+        except (ValueError, IndexError) as exc:
+            row["status"] = "failed"
+            row["error"] = {"type": type(exc).__name__, "message": str(exc),
+                            "limb": limb, "position": position}
+            failures.append({"selector": selector, **row["error"]})
+    # Several selectors can reuse one failing limb/command. Preserve every
+    # selector failure, but group only those with a known source reference.
+    # A failure before limb/position resolution is unique to its selector;
+    # grouping such errors would incorrectly imply a shared source cel.
+    grouped = {}
+    for failure in failures:
+        known = failure["limb"] is not None and failure["position"] is not None
+        key = (failure["limb"], failure["position"], failure["type"],
+               failure["message"]) if known else (None, failure["selector"],
+                                              failure["type"], failure["message"])
+        if key not in grouped:
+            grouped[key] = {
+                "limb": failure["limb"], "position": failure["position"],
+                "type": failure["type"], "message": failure["message"],
+                "selectors": [], "source_reference_known": known,
+            }
+        grouped[key]["selectors"].append(failure["selector"])
+    failure_groups = list(grouped.values())
+    return {
+        # These counts describe references encountered, including those in a
+        # selector whose later pixel decode failed. Never call them events.
+        "control_references": {
+            key: sum(row["control_references"][key] for row in selectors)
+            for key in CONTROL_REFERENCE_KEYS
+        },
+        "failure_groups": failure_groups,
+        "distinct_failed_reference_groups": len(failure_groups),
+        "declared_selector_slots": len(selectors),
+        "defined_pointer_slots": defined,
+        "selector_slots_with_ranges": with_ranges,
+        "consistent_selector_slots": sum(x["status"] == "consistent" for x in selectors),
+        "unused_selector_slots": sum(x["status"] == "unused" for x in selectors),
+        "failed_selector_slots": len(failures),
+        "cel_references_examined": sum(x["cel_references"] for x in selectors),
+        "distinct_limb_position_references": len(unique),
+        "zero_area_references": zero_refs,
+        "failures": failures,
+    }

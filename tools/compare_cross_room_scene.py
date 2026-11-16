@@ -23,12 +23,17 @@ def digest(value):
     return sha256(value).hexdigest()
 
 
-def costumes_from_archive(game, needed):
+def costumes_from_archive(game, needed, *, expected_sources=None):
     inv=inspect(game)
     if inv.get("status")!="success":
         raise ValueError("Original DOS VGA archive inspection failed")
+    fingerprints=[r["sha256"] for r in inv["sources"]]
+    if expected_sources is not None and fingerprints != [r["sha256"] for r in expected_sources]:
+        raise ValueError("Original costume archive differs from source scene")
     links=inv["directory_links"]["entries"]
-    _,resources,_,_=_read_pair(game)
+    index,resources,_,_=_read_pair(game)
+    if [digest(index),digest(resources)] != fingerprints:
+        raise ValueError("Original costume archive changed after inspection")
     result={}
     for number in sorted(needed):
         matches=[row for row in links if row["directory"]=="DCOS" and row["id"]==number]

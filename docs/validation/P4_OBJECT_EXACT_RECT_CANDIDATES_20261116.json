@@ -1,0 +1,567 @@
+{
+  "schema": "scummbucket-mi2-exact-cdhd-rectangle-candidates/1",
+  "date": "2026-11-16",
+  "scope": "Monkey Island 2 original DOS VGA, source archive only",
+  "evidence": "read_only_archive_metadata_not_runtime",
+  "source_fingerprints": {
+    "MONKEY2.000": "cde7aa8980317e3a750fbb3b49884cdddaf1ff3d4231a0c840b22cceed9033f1",
+    "MONKEY2.001": "ad045372e0d49626503bb50fca29a687ec8e01ef75d9b8bca702a366d143819e"
+  },
+  "source_method": "Temporary bounded LECF/LOFF/LFLF/ROOM/OBIM/OBCD/CDHD/IMHD chunk traversal; CDHD v5 x/y/w/h bytes multiplied by 8; same room + exact stored rectangle grouping; no script interpretation or native execution",
+  "counts": {
+    "rooms_examined": 110,
+    "cdhd_object_records": 1145,
+    "imhd_pairs_resolved": 1145,
+    "raw_exact_rectangle_groups": 34,
+    "raw_zero_extent_groups_excluded": 14,
+    "raw_nonzero_groups_without_stored_images_excluded": 1,
+    "qualified_nonzero_groups": 19,
+    "qualified_rooms": 15,
+    "qualified_group_member_objects": 192,
+    "groups_with_multistate_object": 6,
+    "nonzero_parent_local_slot_records": 6,
+    "parent_reference_rooms": 6,
+    "room_94_largest_group_objects": 136
+  },
+  "groups": [
+    {
+      "room_id": 9,
+      "rect_xywh": [
+        160,
+        80,
+        16,
+        24
+      ],
+      "object_count": 2,
+      "object_ids_sample": [
+        84,
+        77
+      ],
+      "declared_states_sample": [
+        1,
+        1
+      ],
+      "samples_complete": true,
+      "relationship": "same_archived_CDHD_xywh_not_verified_simultaneous_visibility"
+    },
+    {
+      "room_id": 29,
+      "rect_xywh": [
+        120,
+        40,
+        40,
+        72
+      ],
+      "object_count": 2,
+      "object_ids_sample": [
+        290,
+        276
+      ],
+      "declared_states_sample": [
+        0,
+        1
+      ],
+      "samples_complete": true,
+      "relationship": "same_archived_CDHD_xywh_not_verified_simultaneous_visibility"
+    },
+    {
+      "room_id": 32,
+      "rect_xywh": [
+        0,
+        0,
+        72,
+        32
+      ],
+      "object_count": 12,
+      "object_ids_sample": [
+        333,
+        334,
+        335,
+        336,
+        337,
+        338,
+        339,
+        340,
+        341,
+        342,
+        343,
+        344
+      ],
+      "declared_states_sample": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "samples_complete": true,
+      "relationship": "same_archived_CDHD_xywh_not_verified_simultaneous_visibility"
+    },
+    {
+      "room_id": 39,
+      "rect_xywh": [
+        80,
+        80,
+        8,
+        16
+      ],
+      "object_count": 2,
+      "object_ids_sample": [
+        412,
+        393
+      ],
+      "declared_states_sample": [
+        1,
+        0
+      ],
+      "samples_complete": true,
+      "relationship": "same_archived_CDHD_xywh_not_verified_simultaneous_visibility"
+    },
+    {
+      "room_id": 39,
+      "rect_xywh": [
+        56,
+        64,
+        16,
+        16
+      ],
+      "object_count": 2,
+      "object_ids_sample": [
+        415,
+        396
+      ],
+      "declared_states_sample": [
+        1,
+        0
+      ],
+      "samples_complete": true,
+      "relationship": "same_archived_CDHD_xywh_not_verified_simultaneous_visibility"
+    },
+    {
+      "room_id": 44,
+      "rect_xywh": [
+        88,
+        48,
+        112,
+        96
+      ],
+      "object_count": 2,
+      "object_ids_sample": [
+        451,
+        461
+      ],
+      "declared_states_sample": [
+        1,
+        3
+      ],
+      "samples_complete": true,
+      "relationship": "same_archived_CDHD_xywh_not_verified_simultaneous_visibility"
+    },
+    {
+      "room_id": 48,
+      "rect_xywh": [
+        240,
+        32,
+        24,
+        32
+      ],
+      "object_count": 2,
+      "object_ids_sample": [
+        517,
+        515
+      ],
+      "declared_states_sample": [
+        1,
+        1
+      ],
+      "samples_complete": true,
+      "relationship": "same_archived_CDHD_xywh_not_verified_simultaneous_visibility"
+    },
+    {
+      "room_id": 69,
+      "rect_xywh": [
+        0,
+        8,
+        296,
+        152
+      ],
+      "object_count": 2,
+      "object_ids_sample": [
+        713,
+        714
+      ],
+      "declared_states_sample": [
+        1,
+        1
+      ],
+      "samples_complete": true,
+      "relationship": "same_archived_CDHD_xywh_not_verified_simultaneous_visibility"
+    },
+    {
+      "room_id": 72,
+      "rect_xywh": [
+        40,
+        32,
+        40,
+        64
+      ],
+      "object_count": 8,
+      "object_ids_sample": [
+        741,
+        742,
+        743,
+        744,
+        745,
+        746,
+        747,
+        748
+      ],
+      "declared_states_sample": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "samples_complete": true,
+      "relationship": "same_archived_CDHD_xywh_not_verified_simultaneous_visibility"
+    },
+    {
+      "room_id": 88,
+      "rect_xywh": [
+        104,
+        48,
+        96,
+        72
+      ],
+      "object_count": 3,
+      "object_ids_sample": [
+        813,
+        818,
+        819
+      ],
+      "declared_states_sample": [
+        4,
+        1,
+        1
+      ],
+      "samples_complete": true,
+      "relationship": "same_archived_CDHD_xywh_not_verified_simultaneous_visibility"
+    },
+    {
+      "room_id": 92,
+      "rect_xywh": [
+        224,
+        104,
+        16,
+        16
+      ],
+      "object_count": 2,
+      "object_ids_sample": [
+        868,
+        867
+      ],
+      "declared_states_sample": [
+        0,
+        1
+      ],
+      "samples_complete": true,
+      "relationship": "same_archived_CDHD_xywh_not_verified_simultaneous_visibility"
+    },
+    {
+      "room_id": 92,
+      "rect_xywh": [
+        240,
+        96,
+        16,
+        32
+      ],
+      "object_count": 3,
+      "object_ids_sample": [
+        870,
+        871,
+        869
+      ],
+      "declared_states_sample": [
+        0,
+        0,
+        1
+      ],
+      "samples_complete": true,
+      "relationship": "same_archived_CDHD_xywh_not_verified_simultaneous_visibility"
+    },
+    {
+      "room_id": 94,
+      "rect_xywh": [
+        0,
+        0,
+        40,
+        24
+      ],
+      "object_count": 136,
+      "object_ids_sample": [
+        897,
+        898,
+        899,
+        900,
+        903,
+        904,
+        905,
+        906,
+        907,
+        908,
+        909,
+        910
+      ],
+      "declared_states_sample": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "samples_complete": false,
+      "relationship": "same_archived_CDHD_xywh_not_verified_simultaneous_visibility"
+    },
+    {
+      "room_id": 94,
+      "rect_xywh": [
+        0,
+        0,
+        16,
+        24
+      ],
+      "object_count": 3,
+      "object_ids_sample": [
+        901,
+        902,
+        957
+      ],
+      "declared_states_sample": [
+        1,
+        1,
+        1
+      ],
+      "samples_complete": true,
+      "relationship": "same_archived_CDHD_xywh_not_verified_simultaneous_visibility"
+    },
+    {
+      "room_id": 99,
+      "rect_xywh": [
+        0,
+        0,
+        80,
+        40
+      ],
+      "object_count": 2,
+      "object_ids_sample": [
+        1081,
+        1084
+      ],
+      "declared_states_sample": [
+        1,
+        1
+      ],
+      "samples_complete": true,
+      "relationship": "same_archived_CDHD_xywh_not_verified_simultaneous_visibility"
+    },
+    {
+      "room_id": 102,
+      "rect_xywh": [
+        0,
+        0,
+        64,
+        32
+      ],
+      "object_count": 2,
+      "object_ids_sample": [
+        1109,
+        1110
+      ],
+      "declared_states_sample": [
+        1,
+        1
+      ],
+      "samples_complete": true,
+      "relationship": "same_archived_CDHD_xywh_not_verified_simultaneous_visibility"
+    },
+    {
+      "room_id": 105,
+      "rect_xywh": [
+        0,
+        0,
+        56,
+        48
+      ],
+      "object_count": 3,
+      "object_ids_sample": [
+        1137,
+        1139,
+        1142
+      ],
+      "declared_states_sample": [
+        5,
+        15,
+        3
+      ],
+      "samples_complete": true,
+      "relationship": "same_archived_CDHD_xywh_not_verified_simultaneous_visibility"
+    },
+    {
+      "room_id": 107,
+      "rect_xywh": [
+        0,
+        0,
+        176,
+        120
+      ],
+      "object_count": 2,
+      "object_ids_sample": [
+        1147,
+        1150
+      ],
+      "declared_states_sample": [
+        3,
+        1
+      ],
+      "samples_complete": true,
+      "relationship": "same_archived_CDHD_xywh_not_verified_simultaneous_visibility"
+    },
+    {
+      "room_id": 107,
+      "rect_xywh": [
+        0,
+        0,
+        152,
+        88
+      ],
+      "object_count": 2,
+      "object_ids_sample": [
+        1148,
+        1152
+      ],
+      "declared_states_sample": [
+        2,
+        2
+      ],
+      "samples_complete": true,
+      "relationship": "same_archived_CDHD_xywh_not_verified_simultaneous_visibility"
+    }
+  ],
+  "parents": [
+    {
+      "room_id": 13,
+      "object_id": 113,
+      "rect_xywh": [
+        80,
+        64,
+        16,
+        24
+      ],
+      "parent_local_slot_raw": 1,
+      "flags_raw": 128,
+      "stored_image_states": 0,
+      "parentstate_from_v5_source": 1
+    },
+    {
+      "room_id": 29,
+      "object_id": 279,
+      "rect_xywh": [
+        128,
+        112,
+        40,
+        24
+      ],
+      "parent_local_slot_raw": 3,
+      "flags_raw": 128,
+      "stored_image_states": 1,
+      "parentstate_from_v5_source": 1
+    },
+    {
+      "room_id": 38,
+      "object_id": 382,
+      "rect_xywh": [
+        136,
+        64,
+        16,
+        16
+      ],
+      "parent_local_slot_raw": 13,
+      "flags_raw": 0,
+      "stored_image_states": 1,
+      "parentstate_from_v5_source": 0
+    },
+    {
+      "room_id": 39,
+      "object_id": 410,
+      "rect_xywh": [
+        232,
+        64,
+        16,
+        8
+      ],
+      "parent_local_slot_raw": 11,
+      "flags_raw": 0,
+      "stored_image_states": 1,
+      "parentstate_from_v5_source": 0
+    },
+    {
+      "room_id": 48,
+      "object_id": 517,
+      "rect_xywh": [
+        240,
+        32,
+        24,
+        32
+      ],
+      "parent_local_slot_raw": 20,
+      "flags_raw": 128,
+      "stored_image_states": 1,
+      "parentstate_from_v5_source": 1
+    },
+    {
+      "room_id": 89,
+      "object_id": 824,
+      "rect_xywh": [
+        232,
+        56,
+        24,
+        8
+      ],
+      "parent_local_slot_raw": 2,
+      "flags_raw": 0,
+      "stored_image_states": 0,
+      "parentstate_from_v5_source": 0
+    }
+  ],
+  "meaning": {
+    "group_criterion": "same original CDHD x/y/w/h; at least one group member has one or more stored IMxx images",
+    "exhaustive_group_count": true,
+    "exhaustive_object_id_listing": false,
+    "warning": "Most groups list all IDs; room 94 136-member group lists 12 samples only. No gameplay selection, automatic animation, visibility, or dynamic position was observed."
+  },
+  "acceptance": {
+    "script_instruction_alignment_verified_for_groups": false,
+    "native_execution_captured": false,
+    "exact_rectangle_grouping_not_geometric_overlap": true,
+    "original_pixels_committed": false,
+    "planned_followup": "capture o5_drawObject peer resets, local slots, actual draw queue and original indexed frame at distinct phases"
+  }
+}

@@ -102,7 +102,9 @@ class ClassicCostume:
         fields = self.header.unpack_from(self.data, offset)
         area = fields[0] * fields[1]
         pos = offset + self.header.size
-        if not area or area > 255 * (len(self.data) - pos):
+        # Zero-area cels can still move the following limb. ScummVM updates
+        # movement before the renderer skips drawing an empty rectangle.
+        if area > 255 * (len(self.data) - pos):
             raise ValueError("invalid cel dimensions")
         slots = bytearray()
         shift = 3 if self.colors == 32 else 4

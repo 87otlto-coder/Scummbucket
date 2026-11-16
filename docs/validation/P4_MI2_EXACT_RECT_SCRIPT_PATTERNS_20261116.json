@@ -1,0 +1,285 @@
+{
+  "schema": "scummbucket-mi2-exact-rectangle-local-script-patterns/1",
+  "date": "2026-11-16",
+  "edition": "Monkey Island 2 original DOS VGA",
+  "fingerprint_monkey2_001": "ad045372e0d49626503bb50fca29a687ec8e01ef75d9b8bca702a366d143819e",
+  "evidence": "raw_unaligned_opcode_byte_patterns_only",
+  "method": "Original decoded ROOM local LSCR (9-byte header), ENCD/EXCD (8-byte header) scanned bytewise using existing scummbucket.script_candidates direct-object patterns 0x05/0x45 drawObject state-subopcode and 0x07/0x47 setState. Cross-matched with 19 qualifying same-CDHD-rectangle groups. No instruction boundary disassembler.",
+  "summary": {
+    "candidate_matches": 42,
+    "qualifying_groups": 19,
+    "groups_with_matches": 5,
+    "distinct_rooms_with_matches": 5,
+    "drawObject_candidate_matches": 4,
+    "setState_candidate_matches": 38
+  },
+  "groups_with_matches": [
+    {
+      "room_id": 29,
+      "rect_xywh": [
+        120,
+        40,
+        40,
+        72
+      ],
+      "object_ids": [
+        290,
+        276
+      ],
+      "candidate_count": 3,
+      "candidates_by_operation": {
+        "setState": 3
+      },
+      "matched_object_ids": [
+        276
+      ],
+      "examples": [
+        {
+          "object_id": 276,
+          "chunk": "ENCD",
+          "script_id": null,
+          "source_offset": 2326106
+        },
+        {
+          "object_id": 276,
+          "chunk": "LSCR",
+          "script_id": 200,
+          "source_offset": 2326197
+        }
+      ]
+    },
+    {
+      "room_id": 44,
+      "rect_xywh": [
+        88,
+        48,
+        112,
+        96
+      ],
+      "object_ids": [
+        451,
+        461
+      ],
+      "candidate_count": 4,
+      "candidates_by_operation": {
+        "drawObject_set_state": 4
+      },
+      "matched_object_ids": [
+        461
+      ],
+      "examples": [
+        {
+          "object_id": 461,
+          "chunk": "LSCR",
+          "script_id": 201,
+          "source_offset": 3622866,
+          "operand_mode": "literal",
+          "state_operand": 1
+        },
+        {
+          "object_id": 461,
+          "chunk": "LSCR",
+          "script_id": 201,
+          "source_offset": 3622882,
+          "operand_mode": "literal",
+          "state_operand": 2
+        },
+        {
+          "object_id": 461,
+          "chunk": "LSCR",
+          "script_id": 201,
+          "source_offset": 3622916,
+          "operand_mode": "literal",
+          "state_operand": 3
+        },
+        {
+          "object_id": 461,
+          "chunk": "LSCR",
+          "script_id": 201,
+          "source_offset": 3622969,
+          "operand_mode": "literal",
+          "state_operand": 1
+        }
+      ]
+    },
+    {
+      "room_id": 48,
+      "rect_xywh": [
+        240,
+        32,
+        24,
+        32
+      ],
+      "object_ids": [
+        517,
+        515
+      ],
+      "candidate_count": 6,
+      "candidates_by_operation": {
+        "setState": 6
+      },
+      "matched_object_ids": [
+        515,
+        517
+      ],
+      "examples": [
+        {
+          "object_id": 517,
+          "chunk": "ENCD",
+          "script_id": null,
+          "source_offset": 4180234,
+          "state_operand": 0
+        },
+        {
+          "object_id": 517,
+          "chunk": "LSCR",
+          "script_id": 201,
+          "source_offset": 4180325,
+          "state_operand": 1
+        },
+        {
+          "object_id": 515,
+          "chunk": "LSCR",
+          "script_id": 201,
+          "source_offset": 4180336,
+          "state_operand": 1
+        },
+        {
+          "object_id": 517,
+          "chunk": "LSCR",
+          "script_id": 202,
+          "source_offset": 4180440,
+          "state_operand": 1
+        },
+        {
+          "object_id": 515,
+          "chunk": "LSCR",
+          "script_id": 202,
+          "source_offset": 4180451,
+          "state_operand": 1
+        }
+      ]
+    },
+    {
+      "room_id": 72,
+      "rect_xywh": [
+        40,
+        32,
+        40,
+        64
+      ],
+      "object_ids": [
+        741,
+        742,
+        743,
+        744,
+        745,
+        746,
+        747,
+        748
+      ],
+      "candidate_count": 8,
+      "candidates_by_operation": {
+        "setState": 8
+      },
+      "matched_object_ids": [
+        741,
+        742,
+        743,
+        744,
+        745,
+        746,
+        747,
+        748
+      ],
+      "state_operand": 0,
+      "script_tag": "LSCR",
+      "script_id": 200,
+      "consecutive_source_offsets": [
+        6208350,
+        6208354,
+        6208358,
+        6208362,
+        6208366,
+        6208370,
+        6208374,
+        6208378
+      ]
+    },
+    {
+      "room_id": 88,
+      "rect_xywh": [
+        104,
+        48,
+        96,
+        72
+      ],
+      "object_ids": [
+        813,
+        818,
+        819
+      ],
+      "candidate_count": 21,
+      "candidates_by_operation": {
+        "setState": 21
+      },
+      "matched_object_ids": [
+        813,
+        818,
+        819
+      ],
+      "examples": [
+        {
+          "object_id": 813,
+          "chunk": "ENCD",
+          "script_id": null,
+          "source_offset": 7336153,
+          "state_operand": 4
+        },
+        {
+          "object_id": 819,
+          "chunk": "ENCD",
+          "script_id": null,
+          "source_offset": 7336185,
+          "state_operand": 1
+        },
+        {
+          "object_id": 818,
+          "chunk": "ENCD",
+          "script_id": null,
+          "source_offset": 7336189,
+          "state_operand": 0
+        },
+        {
+          "object_id": 819,
+          "chunk": "ENCD",
+          "script_id": null,
+          "source_offset": 7336219,
+          "state_operand": 0
+        },
+        {
+          "object_id": 818,
+          "chunk": "ENCD",
+          "script_id": null,
+          "source_offset": 7336223,
+          "state_operand": 1
+        },
+        {
+          "object_id": 813,
+          "chunk": "LSCR",
+          "script_id": 200,
+          "source_offset": 7336405,
+          "state_operand": 3
+        }
+      ]
+    }
+  ],
+  "excluded_proofs": [
+    "unaligned matches may be immediates or unreachable bytes",
+    "no global scripts traversed",
+    "variable-object operand opcode forms not covered",
+    "no native runtime execution or visual frame timing observed",
+    "absence of local match is not evidence of object unused"
+  ],
+  "next": "descumm -5 -o -h comparison of candidates to actual instruction starts, then script caller/runtime evidence capture"
+}

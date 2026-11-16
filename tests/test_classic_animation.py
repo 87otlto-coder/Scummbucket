@@ -42,6 +42,73 @@ class AnimationTests(unittest.TestCase):
         c=costume([0x78,0x7c],{1:{0:(0,1)}});s=AnimationState();initialize(c,s,1,270)
         with self.assertRaisesRegex(ValueError,'Control-only'):advance(c,s)
 
+    def test_selector_frames_and_stop_resume_preserve_previous_frame(self):
+        c = costume([4, 0x79, 0x7a], {
+            1: {0: (0, 0)}, 2: {0: (1, 0)},
+            3: {0: (2, 0)}, 4: {0: (65535, 0)},
+        })
+        state = AnimationState()
+        self.assertTrue(initialize(c, state, 1, 270))
+        self.assertEqual(state.limb_frames[0], 4)
+        initialize(c, state, 2, 270)
+        self.assertTrue(state.stopped & 1)
+        self.assertEqual(state.limb_frames[0], 4)
+        initialize(c, state, 3, 270)
+        self.assertFalse(state.stopped & 1)
+        self.assertEqual(state.limb_frames[0], 4)
+        initialize(c, state, 4, 270)
+        self.assertEqual(state.cursors[0], 65535)
+        self.assertEqual(state.limb_frames[0], 16)
+
+    def test_late_invalid_limb_does_not_partially_initialize(self):
+        from copy import deepcopy
+        c = costume([4], {1: {0: (0, 0), 1: (25, 127)}})
+        state = AnimationState()
+        initial = deepcopy(state)
+        with self.assertRaisesRegex(ValueError, 'range outside COST'):
+            initialize(c, state, 1, 270)
+        self.assertEqual(state, initial)
+
+    def test_usemask_only_initializes_enabled_limb(self):
+        c = costume([4, 5], {1: {0: (0, 0), 1: (1, 0)}})
+        state = AnimationState()
+        initialize(c, state, 1, 270, 32768)
+        self.assertEqual(state.cursors[:2], [0, 65535])
+        self.assertEqual(state.limb_frames[:2], [4, 65535])
+        initialize(c, state, 1, 270, 16384)
+        self.assertEqual(state.cursors[:2], [0, 1])
+        self.assertEqual(state.limb_frames[:2], [4, 4])
+
+    def test_stop_resume_ignore_unused_extent_without_overreading(self):
+        c = costume([4, 0x79, 0x7a],
+                    {1: {0: (1, 127)}, 2: {0: (2, 127)}})
+        state = AnimationState()
+        state.cursors[0] = 7
+        state.limb_frames[0] = 3
+        self.assertTrue(initialize(c, state, 1, 270))
+        self.assertTrue(state.stopped & 1)
+        self.assertEqual((state.cursors[0], state.limb_frames[0]), (7, 3))
+        self.assertTrue(initialize(c, state, 2, 270))
+        self.assertFalse(state.stopped & 1)
+        self.assertEqual((state.cursors[0], state.limb_frames[0]), (7, 3))
+
+    def test_unavailable_selector_preserves_all_state(self):
+        from copy import deepcopy
+        c = costume([4], {})
+        state = AnimationState()
+        initial = deepcopy(state)
+        self.assertFalse(initialize(c, state, 255, 270))
+        self.assertEqual(state, initial)
+
+    def test_rejects_malformed_state_width_and_boolean_usemask(self):
+        c = costume([4], {1: {0: (0, 0)}})
+        state = AnimationState()
+        state.limb_frames.pop()
+        with self.assertRaisesRegex(ValueError, 'limb state width'):
+            initialize(c, state, 1, 270)
+        with self.assertRaisesRegex(ValueError, 'selector'):
+            initialize(c, AnimationState(), 1, 270, True)
+
     def test_invalid_selector_and_range(self):
         c=costume([1],{});s=AnimationState()
         with self.assertRaises(ValueError):initialize(c,s,1,45)

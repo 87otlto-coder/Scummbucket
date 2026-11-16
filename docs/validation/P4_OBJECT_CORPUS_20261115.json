@@ -1,0 +1,63 @@
+{
+  "schema": "scummbucket-object-corpus-execution-summary/1",
+  "date": "2026-11-15",
+  "edition": "Monkey Island 2 original DOS VGA",
+  "evidence": "Actual tools.audit_object_state_corpus stdout captured before Windows environment became unavailable",
+  "status": "source_consistency_passed",
+  "original_archives": [
+    {
+      "name": "MONKEY2.000",
+      "sha256": "cde7aa8980317e3a750fbb3b49884cdddaf1ff3d4231a0c840b22cceed9033f1"
+    },
+    {
+      "name": "MONKEY2.001",
+      "sha256": "ad045372e0d49626503bb50fca29a687ec8e01ef75d9b8bca702a366d143819e"
+    }
+  ],
+  "summary": {
+    "rooms": 110,
+    "objects": 1145,
+    "objects_without_stored_states": 550,
+    "objects_with_stored_states": 595,
+    "states_attempted": 1047,
+    "states_consistent": 1047,
+    "states_failed": 0,
+    "decoded_pixels": 3356800,
+    "rgba_byte_errors": 0,
+    "mask_pixel_errors": 0
+  },
+  "strip_codecs": {
+    "1": 16,
+    "14": 138,
+    "17": 26,
+    "18": 631,
+    "24": 13,
+    "27": 10,
+    "28": 182,
+    "34": 295,
+    "35": 9,
+    "36": 8,
+    "37": 94,
+    "38": 1175,
+    "45": 48,
+    "46": 5,
+    "47": 11,
+    "48": 397,
+    "64": 6,
+    "66": 1,
+    "67": 47,
+    "68": 1982,
+    "84": 80,
+    "85": 2,
+    "86": 2,
+    "87": 98,
+    "88": 2229
+  },
+  "failures": {},
+  "runtime_fidelity_verified": false,
+  "runtime_state_selection_verified": false,
+  "independent_decoder": false,
+  "private_report": "FIXTURE/REPORTS/P5/object-corpus-20261115-a.json",
+  "private_report_sha256": null,
+  "private_report_preservation": "Written before environment loss; not subsequently readable in this session. Aggregates preserved here; no per-state rows reconstructed."
+}

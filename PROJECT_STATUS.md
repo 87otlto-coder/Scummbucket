@@ -1,0 +1,148 @@
+# ScummBucket status — 16 November 2026
+
+**Current milestone: P4 background animation. Overall project incomplete.**
+Primary edition: Monkey Island 2, original DOS VGA. No new edition/platform
+compatibility or automatic SCUMM script interpretation is claimed.
+
+## Review and continuity
+
+- Branch: research/p4-observed-event-replay.
+- Draft PR: https://github.com/87otlto-coder/Scummbucket/pull/18
+- Base: research/p5-cross-room-reconstruction at 8b62784. Its historical P5
+  name does not rename the roadmap's P5 audio milestone.
+- Main and existing PRs #8/#17 remain unchanged and unmerged.
+- Checkpoint using real upstream ancestry; never push the local synthetic
+  snapshot history over upstream.
+
+## Latest native validation
+
+1. Complete pre-redraw actor state plus archive backgrounds/COST cels/masks
+   matches **968/968 original Room 7 indexed samples**. No cached poses,
+   reference-pixel copies, palette fitting or interpolation. There are
+   25 distinct indexed fronts, one camera rectangle, 96 observed palettes
+   and 44,605,440 pixel observations including repeated frames.
+2. An unchanged-compositor holdout matches **566/566 additional indexed
+   fronts**, 26,081,280 pixel observations. Both captures include ordinary
+   right/left movement and actors without draw operations.
+3. Independent before/after animation state matches the bounded v5 model
+   for **1,132/1,132 calls**, 18,112 limb cursor comparisons and 25 cel changes.
+   All sampled speeds were zero; no sound/counter events were observed.
+   Initialization, nonzero cadence, events and stop/resume remain unverified.
+4. Archive object corpus: **1,047/1,047 stored states**, 595 objects, 110 rooms,
+   3,356,800 pixels, 25 codec numbers. Native/legacy RGBA/mask assembly agrees
+   but shares low-level decoders: consistency, not independent runtime fidelity.
+5. A private offline source/event/COST package independently re-decodes room
+   images/masks and reproduces all 968 candidates without game/capture access.
+   Original engine reference buffers are not revalidated offline.
+6. Archive-only linked COST audit independently reproduced: 162 costumes,
+   3,462 consistent defined selectors, 12 failed selectors resolving to one
+   COST 129 limb/command reference. Five zero-area references accept movement
+   without drawing pixels. A structured, source-hashed metadata summary is
+   retained at docs/validation/P4_COSTUME_CORPUS_INDEPENDENT_20261116.json.
+   The committed CLI has not yet been run on the private original archive.
+7. Source-only P4 selector initialization: **3,474/3,474 defined source
+   selectors** parsed and applied individually to empty states with zero
+   parser failures. 1,702 clear entries, 469 stops, 314 resumes, 1,535
+   one-shot flags, and 83 sound command references occur in stored selector
+   ranges. These counts are not observed gameplay execution. Atomic selector
+   updates and limb frame IDs now have synthetic tests, and control
+   occurrence fields are exposed in the reusable corpus audit.
+
+Actual earlier full local Windows suite after animation-step changes:
+**500 tests, 16 skipped, no failures**. Latest hosted Windows CI after
+selector control inventory: **515 tests run, 15 skipped, no failures**,
+no uploaded artifacts. No workflow changes. Optional private/environment
+skips remain.
+
+## New source-only research (no new native verification)
+
+A pinned ScummVM v5 call-chain map identifies distinct `o5_drawObject`
+peer resets, `o5_setState` dirty-strip invalidation, full room draw
+versus queued draw ordering, parent-state visibility, actor draw-before-
+animate and effect/presentation phase boundaries.
+
+Read-only original MI2 CDHD/IMHD archive study found **19 meaningful
+exact-rectangle object groups across 15 rooms**, involving 192 object
+records (136 in one Room 94 group), six groups with multi-image-state
+objects, and six objects with nonzero parent slots. This is not
+observed animation or live object placement.
+
+An unaligned *local direct-object opcode byte-pattern* survey found
+42 candidate patterns across five groups: Room 88 (21), 72 (8),
+48 (6), 44 (4) and 29 (3). Room 44's four candidate `drawObject(461)`
+states are 1/2/3/1 in LSCR 201. **No instruction boundaries or
+runtime execution were verified.** Room 34's state-16 low-nibble
+visibility distinction remains a source-level future experiment.
+
+No new runtime recorder, decoder implementation, test suite or
+original native comparison is claimed for this source-only research.
+The priority is to authenticate candidate script instructions and
+observe actual object-state/queue effects before expanding the
+scene compositor.
+
+## Evidence
+
+- [Complete actor-state capture and pixels](docs/research/P4_COMPLETE_ACTOR_STATE_20261116.md)
+- [Native animation calls and holdout](docs/research/P4_NATIVE_ANIMATION_STEPS_20261116.md)
+- [Object corpus and redraw source research](docs/research/P4_CORPUS_AND_REDRAW_RESEARCH_20261115.md)
+- [Earlier event/offline-package foundation](docs/research/P4_OBSERVED_EVENT_REPLAY_20261115.md)
+- [COST archive selector corpus and remaining failures](docs/research/P4_COSTUME_CORPUS_20261116.md)
+- [Independent COST corpus metadata summary](docs/validation/P4_COSTUME_CORPUS_INDEPENDENT_20261116.json)
+- [Zero-area-cel source correction](docs/research/P4_COSTUME_ZERO_AREA_CEL_20261116.md)
+- [Selector initialization and original source counts](docs/research/P4_COSTUME_SELECTOR_INITIALIZATION_20261116.md)
+- [Control opcode inventory](docs/research/P4_COSTUME_CONTROL_CATALOG_20261116.md)
+- [Source-ranked candidates for native capture](docs/research/P4_COSTUME_NATIVE_TARGETS_20261116.md)
+- [Source call-chain and rendering phase map](docs/research/P4_SCENE_STATE_ENGINE_PHASE_MAP_20261116.md)
+- [Original MI2 exact-rectangle object inventory](docs/research/P4_MI2_EXACT_RECTANGLE_CANDIDATES_20261116.md)
+- [Unaligned local-script candidate register](docs/research/P4_MI2_EXACT_RECT_SCRIPT_LEADS_20261116.md)
+- [Prepared future native verification packet](docs/research/P4_OBJECT_NATIVE_INVESTIGATION_PACKET_20261116.md)
+
+The old Room 7 capture remains 170/228 exact; old Room 12 remains 232/244.
+Their missing channels cannot be retroactively supplied from new captures.
+Room 34 has source decoding but no live state/order/timing acceptance.
+
+
+**Spelunking (Rooms 44/48, static only):** Room 44 source LSCR 205
+contains a conditionally random trigger gated by global Var[3]/Var[164]
+and its **script-local local[0]** (encoded 0x4000), followed by LSCR 201
+multi-object draw state changes, including three stored states of object
+461 and same-rectangle peer 451. Room 48's 517 parrot-chow child names
+parent local slot 20, consistent with sign object 515's 20th original
+OBCD ordinal on clean load; hook 516 verb-script candidates link LSCR
+201→202 with state changes and actor waits. No independent descumm
+alignment, runtime execution, timing, or pixel acceptance for these new
+paths. See P4_SPELUNK_ROOM44_20261116.md and P4_SPELUNK_ROOM48_20261116.md.
+
+## Roadmap boundaries
+
+| Phase | Current boundary |
+| --- | --- |
+| P0 research | Substantial edition-specific archive/source/runtime evidence. |
+| P1 archives | Read-only detection, inventory, extraction and provenance implemented; visible unsupported/errors retained. |
+| P2 images | Representative rendering and broad object source decoding validated; all-edition accuracy unclaimed. |
+| P3 costumes | Native composition, zero-area movement and bounded speed-zero advancement verified on prior captures. Source-only selector initialization passes all 3,474 defined slots; native initialization/event/timing behavior unverified. COST 129 retains 12 cel decode failures. |
+| P4 scenery | Room 7 observed-state palette/scenery/actor/mask composition verified. Live object-state transitions and general scene-state acquisition incomplete. |
+| P5 audio | Not advanced in this work. |
+| P6 explorer | Deferred until engine acceptance supports it. |
+| P7 enhancement | Deferred; native fidelity first; BigR stays separate. |
+| P8 extensions | Deferred; no new game/platform acceptance. |
+
+Next run the committed COST corpus CLI against the private original archive,
+then differentiate stored selector control counts from real source-backed
+native selection/usemask behavior. Prioritize COST 1 for existing actor
+continuity and COST 8/24 for control-rich native follow-ups only after
+script/room usage is independently identified. COST 129's 12 cel failures
+remain visible and must not be padded. Live object-state/order/timing and
+nonzero-speed/event stop/resume are separate runtime gates. Do not build
+a general interpreter.
+
+## Workspace
+
+Writable source:
+C:\Users\87otl\Documents\ChatGPT\ScummBucket\SOURCE\ScummBucket-P4-Continuation.
+Private results/builds: sibling FIXTURE and TOOLS. F: originals were read only.
+The Windows interruption ended: private source/build/corpus hashes were
+recovered, native linking/capture resumed. Corpus report SHA-256:
+6595ddb3034e6401c10868ffc3938bc3d9e8143c348e48203a781cdcbefa1979.
+Keep copyrighted resources, private raw capture rows, third-party overlays,
+objects and executables out of Git. Follow AGENTS and standing CI policy.

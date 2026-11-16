@@ -51,12 +51,15 @@ def audit_costume_selectors(costume):
                     raise ValueError("truncated selector limb extent")
                 extra = data[p]
                 p += 1
+                if costume.commands + start >= len(data):
+                    raise ValueError("selector initial command outside COST")
+                initial = data[costume.commands + start]
+                if initial in (0x79, 0x7a):
+                    # Initial stop/resume controls do not use the extent field.
+                    continue  # SCUMM control state, not a drawable cel.
                 end = start + (extra & 0x7f)
                 if costume.commands + end >= len(data):
                     raise ValueError("selector command range outside COST")
-                initial = data[costume.commands + start]
-                if initial in (0x79, 0x7a):
-                    continue  # SCUMM stop/resume state, not a drawable cel.
                 ranges.append((limb, start, end))
             row["limb_ranges"] = len(ranges)
             if ranges:

@@ -72,15 +72,17 @@ def initialize(costume, state, frame, facing, usemask=65535):
         if start == 65535:
             pending.append((limb, 'clear', None, None))
             continue
-        end = start + (extra & 127)
-        if costume.commands + end >= len(costume.data):
-            raise ValueError('Animation range outside COST')
+        if costume.commands + start >= len(costume.data):
+            raise ValueError('Animation command outside COST')
         command = costume.data[costume.commands + start]
         if command == 0x79:
             pending.append((limb, 'stop', None, None))
         elif command == 0x7a:
             pending.append((limb, 'resume', None, None))
         else:
+            end = start + (extra & 127)
+            if costume.commands + end >= len(costume.data):
+                raise ValueError('Animation range outside COST')
             pending.append((limb, 'select', start, (end, bool(extra & 128))))
 
     for limb, operation, start, extent in pending:

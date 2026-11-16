@@ -53,6 +53,15 @@ class CostumeCorpusTests(unittest.TestCase):
         }])
         self.assertEqual(bytes(data), before)
 
+    def test_stop_resume_control_extents_are_not_drawable_ranges(self):
+        from test_classic_animation import costume as animation_fixture
+        sample = animation_fixture([4, 0x79, 0x7a],
+                                   {1: {0: (1, 127)}, 2: {0: (2, 127)}})
+        report = audit_costume_selectors(sample)
+        self.assertEqual(report["failed_selector_slots"], 0)
+        self.assertEqual(report["selector_slots_with_ranges"], 0)
+        self.assertEqual(report["defined_pointer_slots"], 2)
+
     def test_zero_area_cels_are_counted_not_rejected(self):
         data = bytearray(sample().data)
         ClassicCostume.header.pack_into(data, 112, 0, 0, 0, 0, 2, -1)

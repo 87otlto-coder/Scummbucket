@@ -79,6 +79,19 @@ class AnimationTests(unittest.TestCase):
         self.assertEqual(state.cursors[:2], [0, 1])
         self.assertEqual(state.limb_frames[:2], [4, 4])
 
+    def test_stop_resume_ignore_unused_extent_without_overreading(self):
+        c = costume([4, 0x79, 0x7a],
+                    {1: {0: (1, 127)}, 2: {0: (2, 127)}})
+        state = AnimationState()
+        state.cursors[0] = 7
+        state.limb_frames[0] = 3
+        self.assertTrue(initialize(c, state, 1, 270))
+        self.assertTrue(state.stopped & 1)
+        self.assertEqual((state.cursors[0], state.limb_frames[0]), (7, 3))
+        self.assertTrue(initialize(c, state, 2, 270))
+        self.assertFalse(state.stopped & 1)
+        self.assertEqual((state.cursors[0], state.limb_frames[0]), (7, 3))
+
     def test_unavailable_selector_preserves_all_state(self):
         from copy import deepcopy
         c = costume([4], {})

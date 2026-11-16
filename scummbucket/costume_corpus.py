@@ -5,6 +5,13 @@ script selection at runtime. Errors remain per-selector diagnostics.
 """
 
 
+CONTROL_REFERENCE_KEYS = (
+    "limb_clear_entries", "initial_stop_entries", "initial_resume_entries",
+    "initialized_limb_ranges", "one_shot_flags",
+    "sound_command_references", "counter_command_references",
+)
+
+
 def audit_costume_selectors(costume):
     """Validate declared selectors and referenced cel data without drawing.
 
@@ -21,7 +28,8 @@ def audit_costume_selectors(costume):
     defined = 0
     for selector in range(data[8] + 1):
         row = {"selector": selector, "status": "unused", "limb_ranges": 0,
-               "cel_references": 0, "zero_area_references": 0}
+               "cel_references": 0, "zero_area_references": 0,
+               "control_references": {key: 0 for key in CONTROL_REFERENCE_KEYS}}
         selectors.append(row)
         limb = None
         position = None
@@ -46,6 +54,7 @@ def audit_costume_selectors(costume):
                 start = int.from_bytes(data[p:p + 2], "little")
                 p += 2
                 if start == 0xFFFF:
+                    row["control_references"]["limb_clear_entries"] += 1
                     continue
                 if p >= len(data):
                     raise ValueError("truncated selector limb extent")
@@ -54,9 +63,16 @@ def audit_costume_selectors(costume):
                 if costume.commands + start >= len(data):
                     raise ValueError("selector initial command outside COST")
                 initial = data[costume.commands + start]
-                if initial in (0x79, 0x7a):
-                    # Initial stop/resume controls do not use the extent field.
-                    continue  # SCUMM control state, not a drawable cel.
+                if initial == 0x79:
+                    row["control_references"]["initial_stop_entries"] += 1
+                    continue
+                if initial == 0x7a:
+                    row["control_references"]["initial_resume_entries"] += 1
+                    continue
+                # The high extent bit marks a non-looping selection.
+                row["control_references"]["initialized_limb_ranges"] += 1
+                if extra & 0x80:
+                    row["control_references"]["one_shot_flags"] += 1
                 end = start + (extra & 0x7f)
                 if costume.commands + end >= len(data):
                     raise ValueError("selector command range outside COST")
@@ -66,7 +82,12 @@ def audit_costume_selectors(costume):
                 with_ranges += 1
             for limb, start, end in ranges:
                 for position in range(start, end + 1):
-                    code = data[costume.commands + position] & 0x7f
+                    command_byte = data[costume.commands + position]
+                    if command_byte == 0x78:
+                        row["control_references"]["sound_command_references"] += 1
+                    elif command_byte == 0x7c:
+                        row["control_references"]["counter_command_references"] += 1
+                    code = command_byte & 0x7f
                     if code in (0x78, 0x79, 0x7a, 0x7b, 0x7c):
                         continue
                     result = costume.limb(limb, position)
@@ -105,6 +126,12 @@ def audit_costume_selectors(costume):
         grouped[key]["selectors"].append(failure["selector"])
     failure_groups = list(grouped.values())
     return {
+        # These counts describe references encountered, including those in a
+        # selector whose later pixel decode failed. Never call them events.
+        "control_references": {
+            key: sum(row["control_references"][key] for row in selectors)
+            for key in CONTROL_REFERENCE_KEYS
+        },
         "failure_groups": failure_groups,
         "distinct_failed_reference_groups": len(failure_groups),
         "declared_selector_slots": len(selectors),

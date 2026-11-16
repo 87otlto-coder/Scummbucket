@@ -68,6 +68,32 @@ class CostumeCorpusTests(unittest.TestCase):
         self.assertEqual(report["selector_slots_with_ranges"], 0)
         self.assertEqual(report["defined_pointer_slots"], 2)
 
+    def test_source_initialization_and_range_controls_are_counted(self):
+        from test_classic_animation import costume as animation_fixture
+        source = animation_fixture([4, 0x78, 0x7c, 5, 0x79, 0x7a], {
+            1: {0: (4, 127)}, 2: {0: (5, 127)},
+            3: {0: (65535, 0)}, 4: {0: (0, 131)},
+        })
+        # Only selector slots 0..16 exist in this miniature corpus.
+        data = bytearray(source.data)
+        data[8] = 16
+        source.data = bytes(data)
+        before = source.data
+        report = audit_costume_selectors(source)
+        controls = report["control_references"]
+        self.assertEqual(report["failed_selector_slots"], 0)
+        self.assertEqual(report["defined_pointer_slots"], 4)
+        self.assertEqual(controls, {
+            "limb_clear_entries": 1,
+            "initial_stop_entries": 1,
+            "initial_resume_entries": 1,
+            "initialized_limb_ranges": 1,
+            "one_shot_flags": 1,
+            "sound_command_references": 1,
+            "counter_command_references": 1,
+        })
+        self.assertEqual(source.data, before)
+
     def test_zero_area_cels_are_counted_not_rejected(self):
         data = bytearray(sample().data)
         ClassicCostume.header.pack_into(data, 112, 0, 0, 0, 0, 2, -1)

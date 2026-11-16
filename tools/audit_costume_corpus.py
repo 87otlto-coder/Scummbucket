@@ -24,7 +24,11 @@ COUNTS = ("declared_selector_slots", "defined_pointer_slots",
           "selector_slots_with_ranges", "consistent_selector_slots",
           "unused_selector_slots", "failed_selector_slots",
           "cel_references_examined", "distinct_limb_position_references",
-          "distinct_failed_reference_groups")
+          "distinct_failed_reference_groups") + (
+    "limb_clear_entries", "initial_stop_entries", "initial_resume_entries",
+    "initialized_limb_ranges", "one_shot_flags",
+    "sound_command_references", "counter_command_references",
+)
 
 
 def audit(game):
@@ -101,7 +105,7 @@ def audit(game):
             totals["linked_costumes"] += 1
             totals[f"costumes_{costume.colors}_color"] += 1
             for key in COUNTS:
-                totals[key] += detail[key]
+                totals[key] += detail["control_references"][key] if key in detail["control_references"] else detail[key]
             for failure in detail["failures"]:
                 issue("SELECTOR_CEL_FAILED", failure["message"],
                       costume_id=cost_id, room_id=item["room_id"],

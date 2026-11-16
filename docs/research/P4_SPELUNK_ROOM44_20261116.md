@@ -134,6 +134,16 @@ are committed.
 
 ## Significant follow-up: the trigger is conditional and random
 
+**Script-local scope correction:** The v5 source interprets encoded variable
+`0x4000` as **local variable index 0 of the currently executing script
+slot**, not global variable 16384. See pinned ScummVM
+[`readVar` L660–672](https://github.com/scummvm/scummvm/blob/v2026.4.0/engines/scumm/script.cpp#L660-L672).
+The counter for the candidate trigger is therefore **LSCR 205 local[0]**;
+its lifetime depends on script-slot creation/restart, not on a global
+room counter. `Var[3]`, `Var[100]`, and `Var[164]` remain ordinary global
+variables. Later native instrumentation must distinguish these scopes.
+
+
 Further pinned-source reading of `o5_getRandomNr`, `o5_equalZero`,
 `o5_isGreater`, `o5_add`, `o5_move` and `jumpRelative` resolves an
 additional bounded control block in Room 44 **LSCR 205**, before its
@@ -143,11 +153,11 @@ known break-and-repeat tail.
 |---:|---|---|
 | 3,623,264 | `equalZero Var[164]` | If animation gate is nonzero, branch to yield at 3,623,308 |
 | 3,623,269 | `equalZero Var[3]` | Second eligibility gate; nonzero branches to yield |
-| 3,623,274 | `isGreater Var[0x4000],100` | Condition: `100 > Var[0x4000]` |
-| 3,623,281 | `add Var[0x4000],1` | Increase counter while below 100 |
+| 3,623,274 | `isGreater Local[0],100` (operand encoded `0x4000`) | Condition: `100 > Local[0]` |
+| 3,623,281 | `add Local[0],1` | Increase counter while below 100 |
 | 3,623,289 | `getRandomNr` to Var[100], max 60 | Inclusive original engine random result 0–60 |
 | 3,623,293 | `equalZero Var[100]` | Only the zero-result branch proceeds to reset |
-| 3,623,298 | `move Var[0x4000],0` | Reset counter |
+| 3,623,298 | `move Local[0],0` | Reset counter |
 | 3,623,303 | `move Var[164],1` | Arm script 201's conditional state sequence |
 | 3,623,308–309 | `breakHere` and signed back-jump | Yield then repeat from body start |
 
@@ -182,7 +192,7 @@ branch reachability, exact scheduling, state duration and final
 indexed-frame fidelity remain unverified.
 
 A later capture should record: LSCR 205's Var[3], Var[164],
-Var[0x4000] and RNG results; LSCR 201's Var[161–164] before/after;
+script **205**'s local[0] (encoded `0x4000`) and RNG results; LSCR 201's Var[161–164] before/after;
 executed `drawObject` calls for 452/453/454/459/460/461 and peer
 451; actual queue paints, palettes, masks, tick, and original indexed
 frontbuffer. Instrument without adding script ticks or changing

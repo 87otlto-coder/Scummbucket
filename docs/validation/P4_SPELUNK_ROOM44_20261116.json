@@ -192,12 +192,17 @@
     },
     "counter_comparison": {
       "opcode_offset": 3623274,
-      "semantic": "100 > Var[0x4000]",
-      "on_false_target": 3623289
+      "semantic": "100 > script-local local[0] (encoded source operand 0x4000)",
+      "on_false_target": 3623289,
+      "variable_encoding": 16384,
+      "variable_scope": "script_local",
+      "variable_index": 0
     },
     "counter_increment": {
       "opcode_offset": 3623281,
-      "variable": 16384,
+      "encoded_variable": 16384,
+      "scope": "script_local",
+      "index": 0,
       "amount": 1
     },
     "random_branch": {
@@ -215,7 +220,9 @@
     },
     "counter_reset": {
       "opcode_offset": 3623298,
-      "variable": 16384,
+      "encoded_variable": 16384,
+      "scope": "script_local",
+      "index": 0,
       "value": 0
     },
     "animation_gate_set": {
@@ -226,7 +233,8 @@
     "yield_offset": 3623308,
     "tail_jump_offset": 3623309,
     "target": 3623264,
-    "interpretation": "conditional counter-gated randomly triggered state sequence candidate; no original-run timing or RNG seed verification"
+    "interpretation": "conditional counter-gated randomly triggered state sequence candidate; no original-run timing or RNG seed verification",
+    "variable_scope_provenance": "ScummVM v2026.4.0 engines/scumm/script.cpp readVar: 0x4000 -> vm.localvar[_currentScript][var & 0xFFF]; if script restarted, lifetime may change"
   },
   "room44_direct_object_state_pattern_census": {
     "raw_patterns_not_independently_aligned": 15,

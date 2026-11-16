@@ -101,6 +101,18 @@ The old Room 7 capture remains 170/228 exact; old Room 12 remains 232/244.
 Their missing channels cannot be retroactively supplied from new captures.
 Room 34 has source decoding but no live state/order/timing acceptance.
 
+
+**Spelunking (Rooms 44/48, static only):** Room 44 source LSCR 205
+contains a conditionally random trigger gated by global Var[3]/Var[164]
+and its **script-local local[0]** (encoded 0x4000), followed by LSCR 201
+multi-object draw state changes, including three stored states of object
+461 and same-rectangle peer 451. Room 48's 517 parrot-chow child names
+parent local slot 20, consistent with sign object 515's 20th original
+OBCD ordinal on clean load; hook 516 verb-script candidates link LSCR
+201→202 with state changes and actor waits. No independent descumm
+alignment, runtime execution, timing, or pixel acceptance for these new
+paths. See P4_SPELUNK_ROOM44_20261116.md and P4_SPELUNK_ROOM48_20261116.md.
+
 ## Roadmap boundaries
 
 | Phase | Current boundary |

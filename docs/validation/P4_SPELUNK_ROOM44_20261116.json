@@ -177,5 +177,94 @@
     "The independent descumm alignment/caller check is still pending.",
     "The actual state transition sequence depends on branch gates and script scheduling.",
     "No original visual frames, raw game script bytes, copyrighted images or binary tools committed."
-  ]
+  ],
+  "intermit_trigger_source": {
+    "script_id": 205,
+    "script_chunk_offset": 3623255,
+    "sha256": "c36af58d5ad261367e3fe0ffb4f229ad1d0b12a55c28315d660682a4fbf94ff2",
+    "entry_gate_variable_164_zero": {
+      "opcode_offset": 3623264,
+      "on_false_target": 3623308
+    },
+    "second_gate_variable_3_zero": {
+      "opcode_offset": 3623269,
+      "on_false_target": 3623308
+    },
+    "counter_comparison": {
+      "opcode_offset": 3623274,
+      "semantic": "100 > Var[0x4000]",
+      "on_false_target": 3623289
+    },
+    "counter_increment": {
+      "opcode_offset": 3623281,
+      "variable": 16384,
+      "amount": 1
+    },
+    "random_branch": {
+      "opcode_offset": 3623289,
+      "opcode": "o5_getRandomNr",
+      "result_variable": 100,
+      "inclusive_range": [
+        0,
+        60
+      ]
+    },
+    "random_zero_gate": {
+      "opcode_offset": 3623293,
+      "on_nonzero_target": 3623308
+    },
+    "counter_reset": {
+      "opcode_offset": 3623298,
+      "variable": 16384,
+      "value": 0
+    },
+    "animation_gate_set": {
+      "opcode_offset": 3623303,
+      "variable": 164,
+      "value": 1
+    },
+    "yield_offset": 3623308,
+    "tail_jump_offset": 3623309,
+    "target": 3623264,
+    "interpretation": "conditional counter-gated randomly triggered state sequence candidate; no original-run timing or RNG seed verification"
+  },
+  "room44_direct_object_state_pattern_census": {
+    "raw_patterns_not_independently_aligned": 15,
+    "ENCD": 4,
+    "LSCR_201": 11,
+    "by_object": [
+      {
+        "id": 452,
+        "ENCD_literal1": 2,
+        "LSCR201_variable161": 1
+      },
+      {
+        "id": 453,
+        "ENCD_literal1": 2,
+        "LSCR201_variable162": 2
+      },
+      {
+        "id": 454,
+        "LSCR201_variable163": 2
+      },
+      {
+        "id": 459,
+        "LSCR201_literal2": 1
+      },
+      {
+        "id": 460,
+        "LSCR201_literal2": 1
+      },
+      {
+        "id": 461,
+        "LSCR201_literal_states": [
+          1,
+          2,
+          3,
+          1
+        ]
+      }
+    ],
+    "caveat": "This counts source-local direct-object patterns and excludes indirect/variable object IDs; no descumm confirmation."
+  }
 }

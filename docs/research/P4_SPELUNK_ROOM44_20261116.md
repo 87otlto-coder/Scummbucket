@@ -131,3 +131,60 @@ alignment, native branch reachability, selected state timings, true
 scene visibility, complete indexed rendering. No game source bytes,
 disassembly transcripts, original image data, binaries or captures
 are committed.
+
+## Significant follow-up: the trigger is conditional and random
+
+Further pinned-source reading of `o5_getRandomNr`, `o5_equalZero`,
+`o5_isGreater`, `o5_add`, `o5_move` and `jumpRelative` resolves an
+additional bounded control block in Room 44 **LSCR 205**, before its
+known break-and-repeat tail.
+
+| Source offset | C++ opcode semantics applied to source bytes | Control effect |
+|---:|---|---|
+| 3,623,264 | `equalZero Var[164]` | If animation gate is nonzero, branch to yield at 3,623,308 |
+| 3,623,269 | `equalZero Var[3]` | Second eligibility gate; nonzero branches to yield |
+| 3,623,274 | `isGreater Var[0x4000],100` | Condition: `100 > Var[0x4000]` |
+| 3,623,281 | `add Var[0x4000],1` | Increase counter while below 100 |
+| 3,623,289 | `getRandomNr` to Var[100], max 60 | Inclusive original engine random result 0–60 |
+| 3,623,293 | `equalZero Var[100]` | Only the zero-result branch proceeds to reset |
+| 3,623,298 | `move Var[0x4000],0` | Reset counter |
+| 3,623,303 | `move Var[164],1` | Arm script 201's conditional state sequence |
+| 3,623,308–309 | `breakHere` and signed back-jump | Yield then repeat from body start |
+
+The source thus supports an **idle counter followed by random activation**
+of a state-machine candidate, with condition gates and explicit reset,
+not a fixed-FPS autoplay animation. If the RNG is implemented as the
+pinned ScummVM `getRandomNumber(max)`, **0 is one of 61 possible
+values** when max=60, but this is *not* a measured runtime event rate:
+the eligibility checks, tick cadence, other RNG calls and program
+state control when draws occur. See
+[`o5_getRandomNr`](https://github.com/scummvm/scummvm/blob/v2026.4.0/engines/scumm/script_v5.cpp#L1438-L1445)
+and
+[`o5_isGreater`](https://github.com/scummvm/scummvm/blob/v2026.4.0/engines/scumm/script_v5.cpp#L1624-L1628).
+
+### Other Room 44 visual channels
+
+The bounded direct-object state pattern scan found **15 source-local
+patterns**: four in ENCD and eleven in LSCR 201. LSCR 201 also contains
+candidate `drawObject` calls for **452** using Var[161], **453**
+using Var[162], **454** using Var[163], and explicit state-2
+selection of objects **459** and **460**. Therefore a complete Room
+44 capture needs the *whole draw queue*, not just object 461.
+These patterns remain unaligned-source findings until independent
+disassembly confirms instruction starts.
+
+## Refined hypothesis and necessary proof
+
+**Source-backed hypothesis:** multiple loops use variable delays,
+counter gating, randomness, object-state selection and drawing queues
+to make an intermittent animated room. Native runtime execution,
+branch reachability, exact scheduling, state duration and final
+indexed-frame fidelity remain unverified.
+
+A later capture should record: LSCR 205's Var[3], Var[164],
+Var[0x4000] and RNG results; LSCR 201's Var[161–164] before/after;
+executed `drawObject` calls for 452/453/454/459/460/461 and peer
+451; actual queue paints, palettes, masks, tick, and original indexed
+frontbuffer. Instrument without adding script ticks or changing
+random-number consumption. Export cannot use invented per-state
+durations to claim authentic animation.

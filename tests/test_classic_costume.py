@@ -102,6 +102,37 @@ class CostumeTests(unittest.TestCase):
             with self.subTest(encoded=encoded), self.assertRaises(ValueError):
                 sample_32(encoded).limb(0, 0)
 
+    def test_zero_area_cel_moves_next_limb_without_drawing_pixels(self):
+        # Synthetic first limb has no pixels but moves the origin of limb 1.
+        # Keep the second limb at an independently addressed cel.
+        from struct import pack_into
+        data = bytearray(sample().data)
+        offset = len(data)
+        data.extend(bytes(15))
+        data[30:32] = (offset - 2).to_bytes(2, "little")
+        data[offset:offset + 2] = offset.to_bytes(2, "little")
+        ClassicCostume.header.pack_into(data, 112, 0, 0, 0, 0, 2, -1)
+        ClassicCostume.header.pack_into(data, offset + 2, 1, 3, 0, 0, 0, 0)
+        data[offset + 14] = 0x13  # Slot 1, length 3.
+        data[4:8] = len(data).to_bytes(4, "big")
+        source = bytes(data)
+        costume = ClassicCostume(source)
+
+        zero_cel = costume.limb(0, 0)[1]
+        self.assertEqual((zero_cel.width, zero_cel.height), (0, 0))
+        self.assertEqual((zero_cel.move_x, zero_cel.move_y), (2, -1))
+        self.assertEqual(zero_cel.slots, b"")
+        pixels, placed = compose(
+            costume, bytes([9]) * 36, 6, 1, 1, 90,
+            [0, 0] + [65535] * 14)
+        self.assertEqual([p["origin"] for p in placed], [[1, 1], [3, 2]])
+        self.assertEqual([p["size"] for p in placed], [[0, 0], [1, 3]])
+        for y in range(6):
+            for x in range(6):
+                expected = 42 if x == 3 and y in (2, 3, 4) else 9
+                self.assertEqual(pixels[y * 6 + x], expected)
+        self.assertEqual(costume.data, source)
+
     def test_unknown_costume_format_remains_unsupported(self):
         cost = bytearray(sample_32().data)
         cost[9] = 0x60

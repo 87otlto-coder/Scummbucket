@@ -9,7 +9,10 @@ native Windows game run, test acceptance, or indexed frame comparison.**
 The original DOS VGA MI2 archive identifies Room 48 as the **antique
 dealer's shop** through original `OBNA` short names. Its `ROOM`
 chunk starts at **4,134,176** (58,391 bytes); it has **41 paired OBCD
-and OBIM records**, **18 local LSCRs**, one ENCD and one EXCD.
+and OBIM records** but only **seven image-bearing objects** (nine stored
+IMxx states total). The other **34** objects have zero stored IMxx
+states: they should not be fed to the image-state decoder as though
+frames were missing. The room has **18 local LSCRs**, one ENCD and one EXCD.
 All 41 objects have nonempty `VERB` chunks, unlike Room 44's 20
 noninteractive object headers. The original `CYCL` chunk has **zero**
 active records (only its terminator).

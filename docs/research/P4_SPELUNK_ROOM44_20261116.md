@@ -7,7 +7,8 @@ fresh runtime validation.** Primary edition is original DOS VGA MI2.
 ## What changed from the earlier candidate list
 
 Room 44 is more promising than an ordinary pair of objects with the same
-position. The original source contains **20 OBCD/OBIM object pairs, 6 LSCRs,
+position. The original source contains **20 OBCD/OBIM object pairs totaling 40
+stored IMxx images, 6 LSCRs,
 one ENCD, one EXCD and no active room palette-cycle records**. Each of
 the 20 OBCD `VERB` tables has only the empty terminator and no handler,
 and the OBNA names are empty. This is a room with many graphics controlled

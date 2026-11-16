@@ -15,7 +15,19 @@
     "object_images": 41,
     "local_scripts": 18,
     "objects_with_nonempty_VERB_tables": 41,
-    "initial_palette_cycle_records": 0
+    "initial_palette_cycle_records": 0,
+    "image_bearing_objects": 7,
+    "total_stored_image_states": 9,
+    "zero_image_state_objects": 34,
+    "image_state_counts_by_object": {
+      "512": 1,
+      "514": 3,
+      "515": 1,
+      "517": 1,
+      "519": 1,
+      "540": 1,
+      "546": 1
+    }
   },
   "parent_child": {
     "child": {

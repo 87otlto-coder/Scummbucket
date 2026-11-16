@@ -15,7 +15,10 @@
     "object_images": 20,
     "local_scripts": 6,
     "verb_tables_without_handlers": 20,
-    "initial_palette_cycle_records": 0
+    "initial_palette_cycle_records": 0,
+    "image_bearing_objects": 20,
+    "total_stored_image_states": 40,
+    "zero_image_state_objects": 0
   },
   "same_rectangle": {
     "xywh": [

@@ -26,8 +26,9 @@ Detailed evidence:
 
 ## Highest-value finding — Room 44 intermittent animation candidate
 
-**Archive facts:** 20 matched object graphics/code resources, six local
-scripts, 20 empty object VERB tables, zero active CYCL room records.
+**Archive facts:** 20 matched graphics/code objects, **40 stored IMxx
+states** in total, six local scripts, 20 empty object VERB tables,
+zero active CYCL room records.
 Object 451 and three-image object 461 have identical original bounds
 at (88,48), 112×96. Direct `drawObject(461)` can clear a same-rect
 peer before queueing the selected object, *if their live geometry
@@ -57,9 +58,10 @@ actor/palette state, not only object 461.
 
 ## Second finding — Room 48 conditional layered scene
 
-**Archive facts:** Antique dealer's shop; 41 object/code pairs, 18
-local LSCR resources, numerous nonempty object VERB tables,
-zero active CYCL entries.
+**Archive facts:** Antique dealer's shop; 41 object/code pairs but
+**only seven image-bearing objects with nine stored IMxx states**;
+34 objects have no stored images. There are 18 local LSCR resources,
+numerous nonempty object VERB tables, and zero active CYCL entries.
 
 - Source object 515 is the **sign**, original OBCD ordinal 20.
 - Object 517 is **parrot chow**, OBCD ordinal 19, with parent *local

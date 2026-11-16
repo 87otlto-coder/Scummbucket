@@ -198,3 +198,26 @@ executed `drawObject` calls for 452/453/454/459/460/461 and peer
 frontbuffer. Instrument without adding script ticks or changing
 random-number consumption. Export cannot use invented per-state
 durations to claim authentic animation.
+
+## Script restart semantics: why this counter must stay script-local
+
+Pinned ScummVM v2026.4.0
+[`script.cpp` L65–108](https://github.com/scummvm/scummvm/blob/v2026.4.0/engines/scumm/script.cpp#L65-L108)
+stops a previous non-recursive invocation, obtains a script slot and calls
+`initializeLocals(slot,lvarptr)` before executing the new script.
+[`initializeLocals` L158–167](https://github.com/scummvm/scummvm/blob/v2026.4.0/engines/scumm/script.cpp#L158-L167)
+resets all local variables to zero when no argument array is supplied,
+or copies the provided argument values. Thus **a fresh LSCR 205 start
+may restart its local[0] counter**, whereas yielding through
+`breakHere` and looping in the *same script slot* preserves that local.
+The source ENCD includes a script-205 start candidate, but we have
+**not established** whether later scripts restart it in gameplay.
+A source-only 100-count threshold is therefore not a reliable
+100-screen-frame interval.
+
+Future evidence should include `runScript`/slot number for LSCR 205,
+script start versus yield/resume, local[0] at each entry and
+counter update, global Var[3]/Var[164], RNG outcome, and whether
+LSCR 201 starts/resets state. Do not combine independent local[0]
+values from different script slots or treat source loop iterations
+as a fixed wall-clock cadence.

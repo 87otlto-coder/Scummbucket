@@ -83,7 +83,27 @@ def audit_costume_selectors(costume):
             row["error"] = {"type": type(exc).__name__, "message": str(exc),
                             "limb": limb, "position": position}
             failures.append({"selector": selector, **row["error"]})
+    # Several selectors can reuse one failing limb/command. Preserve every
+    # selector failure, but group only those with a known source reference.
+    # A failure before limb/position resolution is unique to its selector;
+    # grouping such errors would incorrectly imply a shared source cel.
+    grouped = {}
+    for failure in failures:
+        known = failure["limb"] is not None and failure["position"] is not None
+        key = (failure["limb"], failure["position"], failure["type"],
+               failure["message"]) if known else (None, failure["selector"],
+                                              failure["type"], failure["message"])
+        if key not in grouped:
+            grouped[key] = {
+                "limb": failure["limb"], "position": failure["position"],
+                "type": failure["type"], "message": failure["message"],
+                "selectors": [], "source_reference_known": known,
+            }
+        grouped[key]["selectors"].append(failure["selector"])
+    failure_groups = list(grouped.values())
     return {
+        "failure_groups": failure_groups,
+        "distinct_failed_reference_groups": len(failure_groups),
         "declared_selector_slots": len(selectors),
         "defined_pointer_slots": defined,
         "selector_slots_with_ranges": with_ranges,

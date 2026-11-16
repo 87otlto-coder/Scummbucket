@@ -81,3 +81,30 @@ outside Git. Windows-only GitHub CI uploads no artifacts.
 3. Classify script-selected/actual runtime animation coverage separately
    from stored selector catalog; nonzero cadence and event control remain open.
 4. Do not reopen Room 12 or Room 34 native runtime investigations here.
+
+## Follow-up: independent replay and root-cause grouping
+
+The uploaded original MI2 resource pair was independently scanned again
+read-only. The original source SHA-256 values remained unchanged. The same
+7,193-slot classification reproduced: 3,719 unused, 3,462 consistent defined,
+12 failed defined, all 12 in COST 129.
+
+The 12 failing selectors (4 through 15) resolve to the same costume command
+index 0, limb 0, and cel offset 155 within COST 129. The cel header declares
+width 2, height 2, but its only two remaining encoded bytes are `12 21`,
+which encode 2 + 1 = 3 local-palette slots under the existing v5 RLE rules.
+The next byte in the resource file belongs to the next `CHAR` chunk. The
+original COST chunk boundary must not be crossed to fill the fourth pixel.
+
+The corpus audit now includes `failure_groups` and
+`distinct_failed_reference_groups` to distinguish selector failures
+from distinct failing limb/command references. This is still *not* a count of
+unique physical cel resources for arbitrary malformed pointer tables.
+Pre-reference parse failures stay as ungrouped singleton records; source
+reference aggregation never suppresses per-selector diagnostics.
+
+The independent local replay was a small source-only harness matching the
+repository's selector/cel rules. The committed CLI remains to be run directly
+on the operator's original archive; until then, do not claim CLI-original
+acceptance. No native engine capture was added, and no automatic correction
+to COST 129 was made.

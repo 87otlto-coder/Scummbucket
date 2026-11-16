@@ -34,6 +34,25 @@ class CostumeCorpusTests(unittest.TestCase):
         self.assertIn("cel run length", report["failures"][0]["message"])
         self.assertEqual(report["unused_selector_slots"], 11)
 
+    def test_multiple_selectors_share_one_failed_source_reference(self):
+        data = bytearray(sample(runs=b"\\x17").data)
+        # Selector 9 points at the same v5 limb record as selector 8.
+        table = 10 + 16
+        first = table + 34 + 2 * 8
+        second = table + 34 + 2 * 9
+        data[second:second + 2] = data[first:first + 2]
+        before = bytes(data)
+        result = audit_costume_selectors(ClassicCostume(before))
+        self.assertEqual(result["failed_selector_slots"], 2)
+        self.assertEqual([x["selector"] for x in result["failures"]], [8, 9])
+        self.assertEqual(result["distinct_failed_reference_groups"], 1)
+        self.assertEqual(result["failure_groups"], [{
+            "limb": 0, "position": 0, "type": "ValueError",
+            "message": "invalid cel run length", "selectors": [8, 9],
+            "source_reference_known": True,
+        }])
+        self.assertEqual(bytes(data), before)
+
     def test_zero_area_cels_are_counted_not_rejected(self):
         data = bytearray(sample().data)
         ClassicCostume.header.pack_into(data, 112, 0, 0, 0, 0, 2, -1)

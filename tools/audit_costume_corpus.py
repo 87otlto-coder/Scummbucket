@@ -23,7 +23,8 @@ from scummbucket.inspector import XOR_KEY, _read_pair, inspect
 COUNTS = ("declared_selector_slots", "defined_pointer_slots",
           "selector_slots_with_ranges", "consistent_selector_slots",
           "unused_selector_slots", "failed_selector_slots",
-          "cel_references_examined", "distinct_limb_position_references")
+          "cel_references_examined", "distinct_limb_position_references",
+          "distinct_failed_reference_groups")
 
 
 def audit(game):

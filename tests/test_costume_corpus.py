@@ -35,7 +35,7 @@ class CostumeCorpusTests(unittest.TestCase):
         self.assertEqual(report["unused_selector_slots"], 11)
 
     def test_multiple_selectors_share_one_failed_source_reference(self):
-        data = bytearray(sample(runs=b"\\x17").data)
+        data = bytearray(sample(runs=b"\x17").data)
         # Selector 9 points at the same v5 limb record as selector 8.
         table = 10 + 16
         first = table + 34 + 2 * 8

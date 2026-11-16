@@ -13,47 +13,93 @@ class AnimationState:
     stopped: int = 0
     animation_counter: int = 0
     sound_counter: int = 0
+    # v5 CostumeData.frame is the selected direction-specific animation index.
+    # It is changed on new cel/clear, but not by stop/resume controls.
+    limb_frames: list[int] = field(default_factory=lambda: [65535]*16)
 
     def visible_positions(self):
         return [65535 if self.stopped & (1 << i) else p for i,p in enumerate(self.cursors)]
 
+
 def initialize(costume, state, frame, facing, usemask=65535):
-    directions={270:0,90:1,180:2,0:3}
-    if facing not in directions or type(frame) is not int or frame<0 or not 0<=usemask<=65535:
+    """Apply an explicitly selected v5 animation record; no scripts/timing.
+
+    Parse the record before applying any limb update. Malformed later limbs
+    must not leave an apparently valid, partially changed animation state.
+    """
+    directions = {270: 0, 90: 1, 180: 2, 0: 3}
+    if (facing not in directions or type(frame) is not int or frame < 0 or
+            type(usemask) is not int or not 0 <= usemask <= 65535):
         raise ValueError('Invalid animation selector')
-    animation=frame*4+directions[facing]
-    if animation>costume.data[8]: return False
-    table=costume.table_start+34+2*animation
-    if table+2>len(costume.data): raise ValueError('Truncated animation table')
-    if costume.data[table:table+2]==b'\0\0': return False
-    offset=costume.pointer(table)
+    if any(len(field) != 16 for field in
+           (state.cursors, state.starts, state.ends, state.limb_frames)):
+        raise ValueError('Invalid animation limb state width')
+    animation = frame * 4 + directions[facing]
+    if animation > costume.data[8]:
+        return False
+    table = costume.table_start + 34 + 2 * animation
+    if table + 2 > len(costume.data):
+        raise ValueError('Truncated animation table')
+    if costume.data[table:table + 2] == b'\0\0':
+        return False
+    offset = costume.pointer(table)
+
     def word():
         nonlocal offset
-        if offset+2>len(costume.data): raise ValueError('Truncated animation record')
-        n=int.from_bytes(costume.data[offset:offset+2],'little'); offset+=2
-        return n
-    mask=word()
+        if offset + 2 > len(costume.data):
+            raise ValueError('Truncated animation record')
+        value = int.from_bytes(costume.data[offset:offset + 2], 'little')
+        offset += 2
+        return value
+
+    mask = word()
+    pending = []
     for limb in range(16):
-        bit=32768>>limb
-        if not mask & bit: continue
-        start=word()
-        extra=None
-        if start!=65535:
-            if offset>=len(costume.data): raise ValueError('Missing animation extent')
-            extra=costume.data[offset]; offset+=1
-        if not usemask & bit: continue
-        if start==65535:
-            state.cursors[limb]=65535; state.starts[limb]=0
+        bit = 32768 >> limb
+        if not mask & bit:
             continue
-        end=start+(extra&127)
-        if costume.commands+end>=len(costume.data): raise ValueError('Animation range outside COST')
-        command=costume.data[costume.commands+start]
-        if command==0x79: state.stopped |= 1<<limb
-        elif command==0x7a: state.stopped &= ~(1<<limb)
+        start = word()
+        extra = None
+        if start != 65535:
+            if offset >= len(costume.data):
+                raise ValueError('Missing animation extent')
+            extra = costume.data[offset]
+            offset += 1
+        # ScummVM consumes the record even if the usemask excludes this limb.
+        # No command/range evaluation should be inferred for excluded limbs.
+        if not usemask & bit:
+            continue
+        if start == 65535:
+            pending.append((limb, 'clear', None, None))
+            continue
+        end = start + (extra & 127)
+        if costume.commands + end >= len(costume.data):
+            raise ValueError('Animation range outside COST')
+        command = costume.data[costume.commands + start]
+        if command == 0x79:
+            pending.append((limb, 'stop', None, None))
+        elif command == 0x7a:
+            pending.append((limb, 'resume', None, None))
         else:
-            state.starts[limb]=start; state.ends[limb]=end
-            state.cursors[limb]=start | (32768 if extra&128 else 0)
+            pending.append((limb, 'select', start, (end, bool(extra & 128))))
+
+    for limb, operation, start, extent in pending:
+        if operation == 'clear':
+            state.cursors[limb] = 65535
+            state.starts[limb] = 0
+            state.limb_frames[limb] = animation
+        elif operation == 'stop':
+            state.stopped |= 1 << limb
+        elif operation == 'resume':
+            state.stopped &= ~(1 << limb)
+        else:
+            end, one_shot = extent
+            state.starts[limb] = start
+            state.ends[limb] = end
+            state.cursors[limb] = start | (32768 if one_shot else 0)
+            state.limb_frames[limb] = animation
     return True
+
 
 def advance(costume, state):
     """Advance once; return changed-cel flag and preserve control side effects."""

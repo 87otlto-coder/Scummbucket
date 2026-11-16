@@ -78,6 +78,11 @@ class CostumeCorpusTests(unittest.TestCase):
         data = bytearray(source.data)
         data[8] = 16
         source.data = bytes(data)
+        # The generic animation-record fixture has no cel decoder; supply
+        # a synthetic opaque cel so this test isolates command accounting.
+        from types import SimpleNamespace
+        source.limb = lambda limb, position: (
+            0, SimpleNamespace(width=1, height=1))
         before = source.data
         report = audit_costume_selectors(source)
         controls = report["control_references"]

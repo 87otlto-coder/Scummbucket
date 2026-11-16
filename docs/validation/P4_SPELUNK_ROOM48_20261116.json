@@ -1,0 +1,221 @@
+{
+  "schema": "scummbucket-p4-static-spelunk-room48/1",
+  "date": "2026-11-16",
+  "status": "ARCHIVE_AND_SOURCE_RESEARCH_ONLY",
+  "edition": "Monkey Island 2 DOS VGA original",
+  "original_sha256": {
+    "MONKEY2.000": "cde7aa8980317e3a750fbb3b49884cdddaf1ff3d4231a0c840b22cceed9033f1",
+    "MONKEY2.001": "ad045372e0d49626503bb50fca29a687ec8e01ef75d9b8bca702a366d143819e"
+  },
+  "room": {
+    "id": 48,
+    "room_offset": 4134176,
+    "room_length": 58391,
+    "object_codes": 41,
+    "object_images": 41,
+    "local_scripts": 18,
+    "objects_with_nonempty_VERB_tables": 41,
+    "initial_palette_cycle_records": 0
+  },
+  "parent_child": {
+    "child": {
+      "id": 517,
+      "name": "parrot chow",
+      "source_obcd_offset": 4176758,
+      "source_obim_offset": 4169640,
+      "stored_images": 1,
+      "source_ordinal": 19,
+      "position_xywh": [
+        240,
+        32,
+        24,
+        32
+      ],
+      "flags_raw": 128,
+      "parent_local_slot_raw": 20,
+      "parentstate": 1
+    },
+    "parent_candidate": {
+      "id": 515,
+      "name": "sign",
+      "source_obcd_offset": 4177144,
+      "source_obim_offset": 4169100,
+      "stored_images": 1,
+      "source_ordinal": 20,
+      "position_xywh": [
+        240,
+        32,
+        24,
+        32
+      ]
+    },
+    "runtime_parent_slot_observed": false,
+    "conditional_source_inference": "If loaded source OBCD ordinal matches room-local slot and 515.state low nibble == 1, 517 state nonzero can be drawn after 515 on normal reverse-slot pass."
+  },
+  "interaction_source": {
+    "hook_object": {
+      "id": 516,
+      "name": "hook",
+      "source_ordinal": 36,
+      "source_obcd_offset": 4179196,
+      "verb_chunk_offset": 4179225,
+      "verb_chunk_size": 199
+    },
+    "verb_event_7": {
+      "event_id": 7,
+      "relative_pointer_from_VERB_chunk_start": 37,
+      "entry_absolute_offset": 4179262,
+      "possible_script_201_calls": [
+        4179269,
+        4179282
+      ]
+    },
+    "verb_event_8": {
+      "event_id": 8,
+      "relative_pointer_from_VERB_chunk_start": 30,
+      "entry_absolute_offset": 4179255,
+      "likely_other_script_call_offset": 4179255,
+      "other_script_id": 209
+    },
+    "source_level_confirmation": "VERB dispatch pointer table and o5_startScript byte form; neither an independent descumm match nor runtime execution."
+  },
+  "object_state_operands": [
+    {
+      "chunk": "ENCD",
+      "script": null,
+      "opcode_offset": 4180234,
+      "operation": "setState",
+      "object_id": 517,
+      "literal_state": 0,
+      "branch_qualification": "conditional_context_unresolved"
+    },
+    {
+      "chunk": "LSCR",
+      "script": 201,
+      "opcode_offset": 4180325,
+      "operation": "setState",
+      "object_id": 517,
+      "literal_state": 1
+    },
+    {
+      "chunk": "LSCR",
+      "script": 201,
+      "opcode_offset": 4180336,
+      "operation": "setState",
+      "object_id": 515,
+      "literal_state": 1
+    },
+    {
+      "chunk": "LSCR",
+      "script": 202,
+      "opcode_offset": 4180440,
+      "operation": "setState",
+      "object_id": 517,
+      "literal_state": 1
+    },
+    {
+      "chunk": "LSCR",
+      "script": 202,
+      "opcode_offset": 4180451,
+      "operation": "setState",
+      "object_id": 515,
+      "literal_state": 1
+    },
+    {
+      "chunk": "LSCR",
+      "script": 211,
+      "opcode_offset": 4189731,
+      "operation": "setState",
+      "object_id": 517,
+      "literal_state": 0,
+      "branch_qualification": "unaligned_candidate"
+    }
+  ],
+  "script_paths": {
+    "script_201": {
+      "chunk_offset": 4180301,
+      "size": 52,
+      "sha256": "c198be0ecb77050cc6bf517b0f353a437b70922c92c6931de1224c3fdda3c6b9",
+      "source_delay_opcode_offset": 4180340,
+      "source_delay_operand": 20,
+      "calls_local_202_offset": 4180349
+    },
+    "script_202": {
+      "chunk_offset": 4180353,
+      "size": 122,
+      "sha256": "a1349b1625eca8a17a12e2db774542e674cfd7a674ead8e3a026d3f0ccacbd6a",
+      "actor_wait_candidate": {
+        "opcode_offset": 4180434,
+        "wait_type": "actor",
+        "actor_id": 8
+      },
+      "calls_local_214_offset": 4180471
+    },
+    "script_211": {
+      "chunk_offset": 4187749,
+      "size": 2433,
+      "sha256": "551e14befbc33894a4d081540f38e35bbd8988d51a2351a833924eacb9659c4e",
+      "reset_517_candidate_offset": 4189731
+    },
+    "entry_script": {
+      "chunk_offset": 4180167,
+      "size": 80,
+      "sha256": "9893e11abe3e840f30fe73763752962abaf3a63fa195c85f77021ac5f44acfb7",
+      "local_script_candidates": [
+        {
+          "offset": 4180198,
+          "id": 205
+        },
+        {
+          "offset": 4180201,
+          "id": 203
+        },
+        {
+          "offset": 4180238,
+          "id": 202
+        }
+      ]
+    }
+  },
+  "other_source_loop_tails": [
+    {
+      "script_id": 210,
+      "body_start": 4187682,
+      "tail_jump_offset": 4187745,
+      "target": 4187682,
+      "preceding_break_here": 4187744
+    },
+    {
+      "script_id": 213,
+      "body_start": 4191689,
+      "tail_jump_offset": 4191705,
+      "target": 4191689,
+      "preceding_break_here": 4191704
+    },
+    {
+      "script_id": 214,
+      "body_start": 4191718,
+      "tail_jump_offset": 4191806,
+      "target": 4191718,
+      "preceding_break_here": 4191805
+    }
+  ],
+  "classification": {
+    "objects_515_517": "parent_gated_script_state_not_autonomous_cycle_established",
+    "separate_actor_scripts": "repeating_actor_animation_control_candidates"
+  },
+  "evidence_gates": {
+    "independent_descumm_alignment": false,
+    "object_parent_link_native_verified": false,
+    "actual_interaction_route_observed": false,
+    "script_execution_recorded": false,
+    "native_indexed_front_fidelity": false
+  },
+  "warnings": [
+    "All opcode/caller positions are source bytes and some are unaligned candidates, no external descumm run.",
+    "VERB relative pointer base is the VERB chunk offset, NOT its payload start.",
+    "The 41st and subsequent local object slots may be influenced by runtime room-object allocation; do not equate source ordinal with live slot unconditionally.",
+    "Room48 three back-jump scripts are not proof that all actor animations execute continuously during gameplay.",
+    "Do not classify single-state objects 515 and 517 as a 2-frame loop."
+  ]
+}

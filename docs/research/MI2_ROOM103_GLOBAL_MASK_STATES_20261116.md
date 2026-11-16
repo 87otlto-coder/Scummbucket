@@ -29,7 +29,7 @@ The groups are nonconsecutive numerically and separated by substantial script se
 
 A private reimplementation of the source-indexed v5 strip decoding path produced a **black background** and **18 color images in state IM01**, arranged as sepia-like illustration fragments. Critically **all 18 images in IM02 have only one opaque RGB color: black (0,0,0)**, with varying transparency masks. This is supported by observed decoded pixels from original bytes, but pixel-perfect fidelity against ScummVM is unverified. Therefore classify these as **source-decoded black-silhouette replacement candidates**, not conventional two-frame motion animations.
 
-For 11 of 18 objects the preview's IM01 vs IM02 opaque alpha-pixel count matches exactly; the other seven differ by small amounts. A black-color image may erase, cover or mask a previously drawn illustration on a black canvas, but determining the actual visual effect requires the runtime compositor and script graph. **Do not label IM02 a 'blank image'**: its opaque black pixels are meaningful and may overwrite artwork.
+For 10 of 18 objects the preview's IM01 vs IM02 opaque alpha-pixel count matches exactly; the other eight differ by small amounts. A black-color image may erase, cover or mask a previously drawn illustration on a black canvas, but determining the actual visual effect requires the runtime compositor and script graph. **Do not label IM02 a 'blank image'**: its opaque black pixels are meaningful and may overwrite artwork.
 
 The original v5 `CDHD` header stores object X and Y in eight-pixel units, and the `IMHD` source provides image dimensions. These exact source positions were decoded for all 18 objects:
 

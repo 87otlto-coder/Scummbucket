@@ -2,12 +2,13 @@
 
 **Project:** ScummBucket original DOS VGA `MONKEY2.000/.001`; archive resource member SHA-256 `ad045372e0d49626503bb50fca29a687ec8e01ef75d9b8bca702a366d143819e`.
 
-**Scope:** research-only, read-only original resource and DOS binary inspection, narrowly scoped static SCUMM v5 bytecode walking, pinned ScummVM source review. **No debugger, ScummVM gameplay, Windows acceptance tests, new engine features, or rendered-frame validation performed.** No copyrighted original game content has been committed. The source tool used for private exploration is an independent one-off research prototype, NOT a verified new ScummBucket decoder.
+**Further primary-source review:** [MI2_PRIMARY_SOURCE_CROSSCHECK_20261116.md](MI2_PRIMARY_SOURCE_CROSSCHECK_20261116.md) corroborates and qualifies earlier source-only findings.\n\n**Scope:** research-only, read-only original resource and DOS binary inspection, narrowly scoped static SCUMM v5 bytecode walking, pinned ScummVM source review. **No debugger, ScummVM gameplay, Windows acceptance tests, new engine features, or rendered-frame validation performed.** No copyrighted original game content has been committed. The source tool used for private exploration is an independent one-off research prototype, NOT a verified new ScummBucket decoder.
 
 ## Index of independently useful findings
 
 | Document | New source-backed knowledge | Next evidence gate |
 | --- | --- | --- |
+| [MI2_PRIMARY_SOURCE_CROSSCHECK_20261116.md](MI2_PRIMARY_SOURCE_CROSSCHECK_20261116.md) | ScummVM v5 palette counters and 60 Hz script-unit scheduling; nested immediate scripts; same-box eviction; per-clip Z masks; descumm/GrogVM/DREAMM evidence hierarchy | Confirm Room35/81 timing with indexed traces and original interpreter comparison |
 | [MI2_SPELUNK_STRUCTURE_20261116.md](MI2_SPELUNK_STRUCTURE_20261116.md) | Room 44/48/55/72/79/103 structural targets; source offsets; raw opcode candidates | Cross-check structural inventory; verify candidate opcode alignment |
 | [MI2_SPELUNK_CODECS_AND_MASKS_20261116.md](MI2_SPELUNK_CODECS_AND_MASKS_20261116.md) | 1,047 stored object image states; object codec and 0–3 Z-plane coverage; rare strip modes | Source-native decode tests and engine pixels |
 | [MI2_SPELUNK_EVENT_SURFACE_20261116.md](MI2_SPELUNK_EVENT_SURFACE_20261116.md) | V5 engine event phase ordering, palette changes, scripts, actor/camera movement | Real phase-stamped engine trace |

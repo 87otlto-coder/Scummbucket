@@ -34,11 +34,17 @@ compatibility or automatic SCUMM script interpretation is claimed.
 5. A private offline source/event/COST package independently re-decodes room
    images/masks and reproduces all 968 candidates without game/capture access.
    Original engine reference buffers are not revalidated offline.
+6. Archive-only linked COST audit: 162 costumes, 3,462 consistent defined
+   selectors and 12 unresolved COST 129 selector/cel failures. Five zero-area
+   references are now accepted with original movement metadata and synthetic
+   coverage. The committed audit CLI has not yet been executed against the
+   private original archive; the aggregate came from a read-only independent
+   temporary harness of the uploaded MI2 archive.
 
-Actual full local Windows suite after animation-step changes: **500 tests,
-16 skipped, no failures**. Hosted Windows CI passed for the 493-test
-complete-state checkpoint; see PR #18 for later commit results.
-No workflow changes or CI artifacts. Optional private/environment skips remain.
+Actual earlier full local Windows suite after animation-step changes: **500 tests,
+16 skipped, no failures**. Latest hosted Windows CI after costume-corpus
+implementation: **506 tests run, 15 skipped, no failures**, no CI artifacts.
+No workflow changes. Optional private/environment skips remain.
 
 ## Evidence
 
@@ -46,6 +52,8 @@ No workflow changes or CI artifacts. Optional private/environment skips remain.
 - [Native animation calls and holdout](docs/research/P4_NATIVE_ANIMATION_STEPS_20261116.md)
 - [Object corpus and redraw source research](docs/research/P4_CORPUS_AND_REDRAW_RESEARCH_20261115.md)
 - [Earlier event/offline-package foundation](docs/research/P4_OBSERVED_EVENT_REPLAY_20261115.md)
+- [COST archive selector corpus and remaining failures](docs/research/P4_COSTUME_CORPUS_20261116.md)
+- [Zero-area-cel source correction](docs/research/P4_COSTUME_ZERO_AREA_CEL_20261116.md)
 
 The old Room 7 capture remains 170/228 exact; old Room 12 remains 232/244.
 Their missing channels cannot be retroactively supplied from new captures.
@@ -58,15 +66,15 @@ Room 34 has source decoding but no live state/order/timing acceptance.
 | P0 research | Substantial edition-specific archive/source/runtime evidence. |
 | P1 archives | Read-only detection, inventory, extraction and provenance implemented; visible unsupported/errors retained. |
 | P2 images | Representative rendering and broad object source decoding validated; all-edition accuracy unclaimed. |
-| P3 costumes | Native composition and bounded speed-zero call advancement verified; general init/timing/events incomplete. |
+| P3 costumes | Native composition, zero-area movement and bounded speed-zero advancement tested; source-only selector corpus has 12 explicit COST 129 failures. General init/timing/events incomplete. |
 | P4 scenery | Room 7 observed-state palette/scenery/actor/mask composition verified. Live object-state transitions and general scene-state acquisition incomplete. |
 | P5 audio | Not advanced in this work. |
 | P6 explorer | Deferred until engine acceptance supports it. |
 | P7 enhancement | Deferred; native fidelity first; BigR stays separate. |
 | P8 extensions | Deferred; no new game/platform acceptance. |
 
-Next broaden source COST frame/cel coverage with explicit failures, then
-close live object-state/order/timing gaps. Nonzero-speed/event/stop-resume
+Next run committed source COST corpus tool privately, investigate COST 129's
+remaining 12 bounded-RLE failures, then close live object-state/order/timing gaps. Nonzero-speed/event/stop-resume
 native checks are separate gates. Do not build a general interpreter.
 
 ## Workspace

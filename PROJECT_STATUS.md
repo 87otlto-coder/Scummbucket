@@ -1,111 +1,81 @@
-# ScummBucket status â€” 15 November 2026
+# ScummBucket status — 16 November 2026
 
 **Current milestone: P4 background animation. Overall project incomplete.**
-Primary validated edition: Monkey Island 2, original DOS VGA. This checkpoint
-does not extend compatibility to MI1, other platforms, or Curse of Monkey Island.
+Primary edition: Monkey Island 2, original DOS VGA. No new edition/platform
+compatibility or automatic SCUMM script interpretation is claimed.
 
-## Expanded research checkpoint
+## Review and continuity
 
-Original archive corpus audit passed **1,047/1,047 stored states** across
-**595 objects / 110 rooms**, covering 3,356,800 pixels, with zero RGBA/mask
-assembly disagreements. Both paths share low-level decoders; runtime fidelity
-and state selection remain unverified. Six new targeted synthetic tests passed locally; hosted Windows run 296
-subsequently passed **482 tests, 15 skipped** including the new state parser/audit.
-
-Pinned ScummVM source confirms that the existing draw hook follows a redraw
-early return. A new pre-gate actor-state overlay passed native syntax and
-object compilation, but **linking/runtime capture are not validated**.
-Pre-redraw state parsing and raw-record/gate audits are now implemented and
-hosted-tested; no new native capture has been obtained.
-The Windows execution environment became unavailable before linking/capture.
-Private outputs were not subsequently re-readable; observed aggregates and
-source/tests were recovered into GitHub. See
-[corpus and redraw research](docs/research/P4_CORPUS_AND_REDRAW_RESEARCH_20261115.md).
-Earlier validation totals below are retained as historical checkpoints.
-
-## Current review checkpoint
-
-- Branch: `research/p4-observed-event-replay`.
+- Branch: research/p4-observed-event-replay.
 - Draft PR: https://github.com/87otlto-coder/Scummbucket/pull/18
-- Base: `research/p5-cross-room-reconstruction` at `8b62784`.
-  That branch's P5 name is historical; it is not the roadmap's audio milestone.
-- No merge into main. Existing PRs #8 and #17 are untouched.
-- Detailed evidence, private paths, reproduction commands and limitations:
-  [Observed event replay checkpoint](docs/research/P4_OBSERVED_EVENT_REPLAY_20261115.md).
+- Base: research/p5-cross-room-reconstruction at 8b62784. Its historical P5
+  name does not rename the roadmap's P5 audio milestone.
+- Main and existing PRs #8/#17 remain unchanged and unmerged.
+- Checkpoint using real upstream ancestry; never push the local synthetic
+  snapshot history over upstream.
 
-## Implemented in this increment
+## Latest native validation
 
-1. Rebind existing indexed capture records to their raw SHA-256, room/tick,
-   camera rectangle, ordered actor draws, source background and final palette.
-2. Replay those explicit snapshots through the reusable native event compositor.
-   Screen-coordinate actor anchors are kept separate from room-coordinate
-   background/mask cropping. No missing actors or object visibility are guessed.
-3. Package source room data, masks, palettes, required COST resources and events
-   for offline replay. Verify inventory/hashes, independently re-decode room
-   graphics/masks, and reproduce candidate frames without game/capture access.
-4. Detect archive changes between inspection, costume extraction and scene loading.
+1. Complete pre-redraw actor state plus archive backgrounds/COST cels/masks
+   matches **968/968 original Room 7 indexed samples**. No cached poses,
+   reference-pixel copies, palette fitting or interpolation. There are
+   25 distinct indexed fronts, one camera rectangle, 96 observed palettes
+   and 44,605,440 pixel observations including repeated frames.
+2. An unchanged-compositor holdout matches **566/566 additional indexed
+   fronts**, 26,081,280 pixel observations. Both captures include ordinary
+   right/left movement and actors without draw operations.
+3. Independent before/after animation state matches the bounded v5 model
+   for **1,132/1,132 calls**, 18,112 limb cursor comparisons and 25 cel changes.
+   All sampled speeds were zero; no sound/counter events were observed.
+   Initialization, nonzero cadence, events and stop/resume remain unverified.
+4. Archive object corpus: **1,047/1,047 stored states**, 595 objects, 110 rooms,
+   3,356,800 pixels, 25 codec numbers. Native/legacy RGBA/mask assembly agrees
+   but shares low-level decoders: consistency, not independent runtime fidelity.
+5. A private offline source/event/COST package independently re-decodes room
+   images/masks and reproduces all 968 candidates without game/capture access.
+   Original engine reference buffers are not revalidated offline.
 
-## Verification actually performed
+Actual full local Windows suite after animation-step changes: **500 tests,
+16 skipped, no failures**. Hosted Windows CI passed for the 493-test
+complete-state checkpoint; see PR #18 for later commit results.
+No workflow changes or CI artifacts. Optional private/environment skips remain.
 
-- Actual Windows Python suite: **468 tests run, 16 skipped, no failures**.
-  Includes 13 new synthetic integration/provenance/package tests. Skips remain
-  explicit optional-private-fixture/environment limits.
-- Original source object probes: Room 7 object 57 **1/1 states decoded**;
-  Room 34 object 358 **16/16 decoded**, no failed/unsupported states.
-  This is archive decoding, not observed object animation/state selection.
-- Room 7 original indexed capture: **170/228 exact frames**;
-  **15,718 remaining native-index mismatches** over 10,506,240 pixel observations.
-  Source backgrounds match all 228 samples. Every non-exact sample lacks
-  actor 1's draw record; every sample containing that record is exact.
-- Controls: disabling masks produces 29,071 errors; shifting all actors right
-  one pixel produces 95,381. Observed palette snapshots round-trip exactly;
-  palette-cycle timing is not independently predicted by this new adapter.
-- Private offline package reproduces all **228 candidate frames**, including
-  failures. Its successful integrity/replay result retains **PARTIAL** scene
-  acceptance. It does not revalidate raw engine references that are not packaged.
-- First new-code hosted Windows CI passed. Check PR #18 for the final-head run;
-  never infer hosted success from local tests alone. No artifact uploads.
+## Evidence
 
-## Remaining milestone boundaries
+- [Complete actor-state capture and pixels](docs/research/P4_COMPLETE_ACTOR_STATE_20261116.md)
+- [Native animation calls and holdout](docs/research/P4_NATIVE_ANIMATION_STEPS_20261116.md)
+- [Object corpus and redraw source research](docs/research/P4_CORPUS_AND_REDRAW_RESEARCH_20261115.md)
+- [Earlier event/offline-package foundation](docs/research/P4_OBSERVED_EVENT_REPLAY_20261115.md)
 
-| Milestone | Current evidence / remaining boundary |
+The old Room 7 capture remains 170/228 exact; old Room 12 remains 232/244.
+Their missing channels cannot be retroactively supplied from new captures.
+Room 34 has source decoding but no live state/order/timing acceptance.
+
+## Roadmap boundaries
+
+| Phase | Current boundary |
 | --- | --- |
-| P0 format research | Substantial v5 research; compatibility remains edition-specific. |
-| P1 archive reader | Implemented read-only detection, inventory, extraction and provenance; retain visible unsupported/error cases. |
-| P2 graphics | Background/object decoders exist; all-resource/all-edition fidelity is not established. |
-| P3 characters | COST decoding/composition verified on representative captures; general animation timing/execution incomplete. |
-| P4 background animation | Room 7 palette/scenery mechanisms verified on prior representative exports; reusable snapshot playback now tested. Complete general scene-state acquisition and object-runtime interaction remain incomplete. |
-| P5 audio | Not advanced in this pass. |
-| P6 explorer UI | Deferred until validated engine capabilities support it. |
-| P7 HD rendering | Deferred; fidelity remains the priority. BigR is a separate project. |
-| P8 extensions | Deferred; no additional game/edition support claimed. |
+| P0 research | Substantial edition-specific archive/source/runtime evidence. |
+| P1 archives | Read-only detection, inventory, extraction and provenance implemented; visible unsupported/errors retained. |
+| P2 images | Representative rendering and broad object source decoding validated; all-edition accuracy unclaimed. |
+| P3 costumes | Native composition and bounded speed-zero call advancement verified; general init/timing/events incomplete. |
+| P4 scenery | Room 7 observed-state palette/scenery/actor/mask composition verified. Live object-state transitions and general scene-state acquisition incomplete. |
+| P5 audio | Not advanced in this work. |
+| P6 explorer | Deferred until engine acceptance supports it. |
+| P7 enhancement | Deferred; native fidelity first; BigR stays separate. |
+| P8 extensions | Deferred; no new game/platform acceptance. |
 
-Room 12 retains its previously reported 12 absent-draw failures (232/244 exact).
-Room 34 runtime holdout remains deferred. Do not combine partial results into
-a blanket claim of complete background-animation support.
+Next broaden source COST frame/cel coverage with explicit failures, then
+close live object-state/order/timing gaps. Nonzero-speed/event/stop-resume
+native checks are separate gates. Do not build a general interpreter.
 
-## Next discriminating work
+## Workspace
 
-Capture complete scene-state at indexed frontbuffer phase, including visible
-actors that did not redraw, or independently record dirty-region/framebuffer
-updates. Draw-operation records are not guaranteed to enumerate every visible
-actor. Establish the source-backed rendering semantics before any persistence
-implementation; do not fit a last-pose correction to known failures.
-
-Then reverify every sample, preserve the existing partial baseline, and connect
-observed object states/order/masks to the event compositor. Native timing,
-script-triggered object transitions and independent general-room acceptance
-remain separate gates. Do not introduce a general SCUMM interpreter.
-
-## Workspace continuity
-
-Writable source: `C:\Users\87otl\Documents\ChatGPT\ScummBucket\SOURCE\ScummBucket-P4-Continuation`.
-Private generated results: sibling `FIXTURE\REPORTS\P5` and `FIXTURE\OUTPUT\P5`.
-F: game/capture inputs were read only; its canonical source checkout could not
-be opened. Older local worktrees/untracked files were not altered.
-
-The continuation checkout has a local synthetic snapshot history. **Never push
-that history over upstream.** GitHub commits use real upstream ancestry through
-the connected tools; GitHub is the durable source/research checkpoint. Keep
-original game archives, COST binaries, replay packages and private captures
-outside Git. See AGENTS.md and the standing project/CI instructions.
+Writable source:
+C:\Users\87otl\Documents\ChatGPT\ScummBucket\SOURCE\ScummBucket-P4-Continuation.
+Private results/builds: sibling FIXTURE and TOOLS. F: originals were read only.
+The Windows interruption ended: private source/build/corpus hashes were
+recovered, native linking/capture resumed. Corpus report SHA-256:
+6595ddb3034e6401c10868ffc3938bc3d9e8143c348e48203a781cdcbefa1979.
+Keep copyrighted resources, private raw capture rows, third-party overlays,
+objects and executables out of Git. Follow AGENTS and standing CI policy.

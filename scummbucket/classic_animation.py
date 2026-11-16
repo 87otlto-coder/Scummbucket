@@ -71,8 +71,8 @@ def advance(costume, state):
             if current in seen: raise ValueError('Control-only animation cycle')
             seen.add(current)
             code=costume.data[costume.commands+current]
-            if code==0x7c: state.animation_counter+=1
-            elif code==0x78: state.sound_counter+=1
+            if code==0x7c: state.animation_counter=(state.animation_counter+1)&65535
+            elif code==0x78: state.sound_counter=(state.sound_counter+1)&255
             if code in (0x78,0x7c) and start!=end: continue
             state.cursors[limb]=current|high
             changed |= (code&127)!=old

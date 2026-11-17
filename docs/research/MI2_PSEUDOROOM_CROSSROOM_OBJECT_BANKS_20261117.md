@@ -64,7 +64,7 @@ Concrete original source examples:
 
 Physical Room97 local scripts:
 - LSCR212 is fully aligned **91/91 bytes, 26 instructions**: **13 draws** of local object1066's five stored states separated by **12 breakHere yields**, then stops. A separate fully aligned LSCR208 starts LSCR212 and waits for it.
-- LSCR213 is fully aligned **98/98 bytes, 19 instructions**: picks an image state conditionally from random value and dialogue variables, calls drawObject(1098, state=Local2), yields once and loops. Object1098 comes from **bank100** and has six stored image states, 32×24. **Caller/reachability for LSCR213 is not yet proved**.
+- LSCR213 is fully aligned **98/98 bytes, 19 instructions**: picks an image state conditionally from random value and dialogue variables, calls drawObject(1098, state=Local2), yields once and loops. Object1098 comes from **bank100** and has six stored image states, 32×24. **Caller now established:** fully aligned Room97 LSCR202 starts script213 at PC0x026D and stops it at PC0x08E3; see [Room97 animated dialogue](MI2_ROOM97_IMPORTED_ANIMATED_DIALOGUE_20261117.md).
 - LSCR205 fully aligned **220/220 bytes, 36 instructions**: actor7 movement/animation, wait, dialogue and ownership change; a separate kind of scene effect.
 - Larger Room97 LSCR202 and scripts203/204 are **not yet fully aligned** by the private narrow walker; do not present them as solved.
 

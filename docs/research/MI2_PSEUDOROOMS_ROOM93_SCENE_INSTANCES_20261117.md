@@ -19,6 +19,10 @@ The five sources have encoded form `CC <resource-id> <one-or-more alias bytes >=
 
 Why this matters: a file inventory of original `ROOM` resources can be correct and yet miss 24 logical scene identifiers in the interpreter. Do not create 24 copies of original assets; implement derived room instances referencing a shared physical resource with unique state/caller contexts.
 
+## Other pseudo-room families: script-assembled cross-resource objects
+
+The remaining alias groups in the source mapping (physical 96/97/98) are now independently fully decoded: each ENCD loads original OBCD/OBIM from **four foreign source banks 99–102** using SO_LOAD_OBJECT, then positions those assets in the current scene. All 39 bank objects are referenced by those entry scripts. Their 8×200 RMIM resource size is not the imported image size. See [13 aliases and object-bank reconstruction](MI2_PSEUDOROOM_CROSSROOM_OBJECT_BANKS_20261117.md), and [Room97 scripted six-state foreign-object dialogue animation](MI2_ROOM97_IMPORTED_ANIMATED_DIALOGUE_20261117.md).
+
 ## Finding 2: Room93 ENCD initializes actor-position lighting and rebuilds the selected logical instance
 
 Room93 `ENCD` source body starts `0x7676AE`, length **215 bytes, 39 aligned instructions, all 16 branches valid**. Its initial operations are:

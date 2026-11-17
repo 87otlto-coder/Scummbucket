@@ -12,12 +12,12 @@ Prior [Room72 dynamic object script200](MI2_ROOM72_DYNAMIC_OBJECT_LAYOUT_2026111
 
 | Original script | Body absolute offset | Body bytes consumed | Instructions | Relative target verification |
 | --- | --- | ---: | ---: | --- |
-| Room72 `ENCD` | `0x5EB??` (see tagged source for precise offset) | **195/195** | **40** | **7/7** valid |
+| Room72 `ENCD` | `0x5EBA78` | **195/195** | **40** | **7/7** valid |
 | Room72 `LSCR201` | `0x5EBD3E` | **840/840** | **130** | **57/57** valid |
 | Room72 `LSCR202` | `0x5EC08F` | **142/142** | **23** | **10/10** valid |
 | Room72 `LSCR203` | `0x5EC126` | **9/9** | **4** | zero branches |
 
-The ENCD row offset is intentionally omitted until a source-index read cross-check; full body length and alignment are independently established. **No independent official descumm run has been claimed.**
+The ENCD tagged chunk starts at `0x5EBA70`; its body begins at `0x5EBA78`, cross-checked directly against the unchanged source archive. **No independent official descumm run has been claimed.**
 
 ## LSCR201: fixed vs randomized layouts, with correct nested variable decoding
 

@@ -60,6 +60,12 @@ The **script file's storage room is not its sole runtime rendering room**. A P4 
 
 This is a distinct architectural class from Room35/36's in-room gradual palette fades and from Room55's local randomized object loops. P4 must model **global script identity separately from current room and asset ownership**, and retain source PC, scope, active room, draw layer, current palette, actor costume and event phase.
 
+## Follow-up source linkage: five brick IDs and a difficulty-dependent outcome
+
+A further complete source-aligned narrow walk of **Room39 LSCR203** (145/145 bytes, 34 instructions, 17/17 valid branches) demonstrates that **Var251 values 392..396 are logical brick object IDs** (each original `OBNA` = “brick”). Its Easy-mode path copies the chosen brick ID into `Local[0]` and sets Bit755; the Regular-mode path branches on the supplied brick ID, then later requires both an exact match `Local[0] == Var251` and `Bit755` before starting a distinct follow-up global script44 rather than script43.
+
+See [Room39 brick selection and difficulty bypass](MI2_ROOM39_BRICK_DIFFICULTY_REVEAL_20261117.md). This is a genuine puzzle-state dependency: **a different image state can encode the answer to an interaction**, not just visual variety. No claim is made that either outcome has been observed in natural play.
+
 ## Suggested next validation
 
 1. Compare independent `descumm -5 -o` on the exact tagged `SCRP[159]` and both 34-byte statue VERB handlers against the source-aligned narrow walk. Branch target map **43/43** is corroboration of alignment but not an independent tool result.

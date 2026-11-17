@@ -59,6 +59,11 @@ Interpolation uses exact integer truncation toward zero; samples assume the entr
 
 Room13's repeated X=320 points make the **exact endpoint 320** a potential divide-by-zero path; the script already contains an error-message branch. Runtime actor X bounds must be checked before declaring it reachable. A 320×144 static RGB export would discard the distinction between changing source RGB and unchanged stored indexed pixels.
 
+
+### Original CYCL resources confirm this is not normal palette rotation
+
+Both Room9 and Room13 carry a tagged CYCL chunk of **10 bytes total** (8-byte header plus **two zero payload bytes**): Room9 CYCL at decoded .001 offset **0xA114A**, Room13 at **0xF0FEE**. These contain **no palette-cycle records**. Therefore the actor-driven changing RGB values in global49/global54 are a separate animation mechanism, and a room-census based only on populated CYCL would miss both. This establishes source-encoded effects, not observed RGB changes in live gameplay.
+
 ## P4 architecture and validation
 
 Record both light-controller script IDs (49/54), target actors, current logical and physical rooms, runtime X breakpoints and brightness arrays, script PC and scheduler phase, RGB ranges 192..207 and 208..255, and source RGB palette identity. P4 should retain dynamic palette transforms as independently composable state rather than pre-baking a frame into object art.

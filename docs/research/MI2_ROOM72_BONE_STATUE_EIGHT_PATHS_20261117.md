@@ -32,7 +32,18 @@ The original .000 **DSCR directory entry88** points to a `SCRP` stored with phys
 4. Eight `isEqual(Var100,1..8)` branches. Each selected branch executes v5 `stringOps.loadstring(String46,<inline string>)`, where the original inline string comprises **13 capital A/H/L/P/R letters plus a literal final period**. The eight original full strings are deliberately **not reproduced** in this Git research note.
 5. The 8 cases then jump to common termination. No ninth case was omitted: the two-stage `getRandomNr(7)+1` yields 8 choices.
 
-An initial raw search also found **candidate** `startScript(88)` call bytes in global script1 (stored Room4) at .001 file offset **`0x36B8A`** and Room60 local script212 at **`0x4E5322`**. These caller candidate positions and their source preconditions **have not been exhaustively opcode-walked**. Thus the 8-string selector is real source code, but which startup/room paths re-roll it is unobserved.
+### Two aligned source callers explicitly await global88 completion
+
+This was upgraded beyond unaligned caller patterns by checking each caller's contiguous original bytecode and backward-branch target. Both sources have the same **13-byte source-aligned start-and-wait idiom**:
+
+| Invoking script | Start opcode absolute file offset / body PC | Source sequence | Wait branch |
+| --- | --- | --- | --- |
+| Global **SCRP[1]** (stored Room4) | **`0x36B8A`** / **PC0x1677** | `startScript(88)`; `breakHere`; `Var0=isScriptRunning(88)`; `equalZero(Var0)` | signed **-10** branches to the `breakHere` instruction at `0x36B8D` **while script88 remains running** |
+| Room60 **LSCR[212]** | **`0x4E5322`** / **PC0x0396** | same source instruction sequence | signed **-10** branches to `0x4E5325` while script88 remains running |
+
+Both opcode spans are exactly `0A 58 FF 80 68 00 00 58 28 00 00 F6 FF`; this small encoding excerpt is included solely as a reproducibility check, **not a game resource extraction**. The branch lands on a verified opcode boundary; the loop exits when `isScriptRunning(88)` returns zero. This is **strong source evidence** of two actual *authored* caller paths that wait for the eight-sequence selector to finish.
+
+**Scope limits:** Complete global1 (several thousand bytes) and Room60 LSCR212 (11,517-byte body) have NOT been fully independently disassembled here. We cannot claim these call sites execute on every normal start or Room60 visit; nor can we claim the Room60 path necessarily rerolls the puzzle in the currently captured save. Whenever one of the call sites is actually reached, the source requests global88 and polls its completion. The caller paths should be captured individually and the original String46 SHA/hash retained privately.
 
 ## Explicit four-object route sequences
 

@@ -25,7 +25,7 @@ Hashes below are SHA-256 **prefixes of the 192-byte raw RGB slice 192–255**, s
 
 | Upper-64 palette class | Distinct rooms | SHA-256 prefix | Notable covered rooms |
 | --- | ---: | --- | --- |
-| **A** | **46** | **c99adbb57f67** | 9, 13, 22, 26, 35? **No**: Room35 is classB, 48, 55, 71, 73; both actor-X script54 examples Rooms9/13 are classA |
+| **A** | **46** | **c99adbb57f67** | Rooms9,13,22,26,48,55,71,73; both actor-X script54 examples Rooms9/13 are classA |
 | **B** | **42** | **6cd15c6fc8be** | **Room72**, Room35, 36, 44, 81, 98, 108 |
 | **C** | **10** | **7886ad5f1ced** | **Room93**, 33, 40, 79, 88, 90, 91, 92, 103, 110 |
 | **D** | **5** | **aea90c9431bb** | Room19 and 104–107 |

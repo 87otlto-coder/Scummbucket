@@ -37,6 +37,10 @@ The current ScummBucket `decode_room_background_indexed` first decodes a strip t
 4. Capture the actual backend/backbuffer state for a representative room, then verify a single strip and finally a full-scene indexed image pixel-by-pixel. Use Room 32 for a four-strip basic-vertical transparency case, Room 36 for nine major/minor transparent strips plus five CYCLs, and Room 49 for the full three-codec mixed, scrolling, two-Z-plane stress case.
 5. Include small 8-pixel rooms as separate diagnostic/utility fixtures; do **not** infer gameplay geometry or visual purpose merely from their presence.
 
+## Later source-backed correction (17 November 2026): Rooms 99–102 are foreign object banks
+
+Original script analysis has now fully aligned three ENCD bodies in physical Rooms 96–98. They issue 107 original SO_LOAD_OBJECT operations across 13 logical aliases and import **all 39 original OBCD/OBIM objects stored in Rooms 99–102**. See [cross-room object bank report](MI2_PSEUDOROOM_CROSSROOM_OBJECT_BANKS_20261117.md). Those rooms' tiny 8×200 RMIMs have separate source transparency strips; **the imported art comes from OBCD/OBIM, NOT from the tiny RMIM backgrounds**. The old descriptive label “utility room candidate” in the inventory table was appropriately uncertain, but can now be improved to **source-proven foreign object banks**. The intended purpose of the tiny RMIM placeholders and their transparency remains unresolved; do not silently infer underlays.
+
 ## Practical priority for P2/P4
 
 1. **Room 32:** small bounded 4-strip transparency test (codec 38), 352-wide scrolling.

@@ -21,18 +21,20 @@ New read-only search:
 
 Room72 includes eight OBCD objects **741–748**, each original OBNA text **`ugly bone thing`**. Their inspected original description text identifies them as strange skeleton statues (not an invented interpretation of the artwork). Every object offers an **OBCD/VERB handler for verb19** containing exactly three direct bytecode writes to global variables **Var375, Var377 and Var376** (in that assignment order), then terminates. **All eight verb19 handlers consume 16 bytes each**, and each assigned value is an uppercase ASCII byte from the set **A/H/L/P/R**.
 
-After reordering as `Var375,Var376,Var377`, the exact original *source-coded* triples are:
+**Correction after tracing String46 and LSCR205:** The game's comparison order is **Var375, Var377, Var376**, matching the assignment order in each verb19 handler. Sorting by variable number produces the wrong visual-to-puzzle code. The original source-coded *comparison* table is:
 
-| Object ID | `Var375` | `Var376` | `Var377` | Three-symbol sequence |
+| Object ID | Var375 | Var377 | Var376 | Compared token |
 | ---: | :---: | :---: | :---: | :---: |
-| 741 | H | L | R | **HLR** |
-| 742 | P | H | A | **PHA** |
-| 743 | L | P | H | **LPH** |
-| 744 | A | R | H | **ARH** |
-| 745 | H | P | R | **HPR** |
-| 746 | R | P | L | **RPL** |
-| 747 | L | A | P | **LAP** |
-| 748 | R | H | A | **RHA** |
+| 741 | H | R | L | **HRL** |
+| 742 | P | A | H | **PAH** |
+| 743 | L | H | P | **LHP** |
+| 744 | A | H | R | **AHR** |
+| 745 | H | R | P | **HRP** |
+| 746 | R | L | P | **RLP** |
+| 747 | L | P | A | **LPA** |
+| 748 | R | A | H | **RAH** |
+
+See [full eight-sequence reconstruction](MI2_ROOM72_BONE_STATUE_EIGHT_PATHS_20261117.md), which locates String46's eight alternatives in original global script88, resolves all 32 three-character tokens to statue object IDs, and verifies `LSCR205` comparison and progression logic.
 
 These are **not** the object's art pixels, image-state IDs or necessarily readable text on the game screen. They are explicit **script variable assignments** in the original interaction method. The source uses each unique three-letter combination as state data.
 

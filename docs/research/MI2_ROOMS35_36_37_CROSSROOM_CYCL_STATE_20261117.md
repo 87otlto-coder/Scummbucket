@@ -65,17 +65,27 @@ The fully aligned first operations set:
 
 Then, conditional on `Bit[51]`, it can start local script203 and clear Bit51. Thereafter start local script202, write `Var[32]=201`, terminate. The first Bit92 write is unconditional in this entry code, but actual entry to Room37 still requires a gameplay/cutscene path.
 
-## 2. A room36 interactive pump can change the state
+## 2. Object366 (pump) verb7 is fully aligned and conditionally toggles Bit92
 
-Room36 paired object **366** has object name `pump`, and its `OBCD` contains a `VERB` table whose verb-7 handler reaches source candidate sequences:
+The `pump` is paired object **366** in Room36 (`CDHD obj_id 366`, `OBNA = pump`). Its `OBCD/VERB` chunk begins at decoded offset `0x2BF9F1`. Verb table maps **verb7** to the handler starting at **`0x2BFA2B`** (offset relative to the VERB block header, not the payload). This handler runs to the start of the subsequent verb24 handler at `0x2BFA75`; length **74 bytes**, **11 narrow-walker instructions consumed**, all **six** signed relative branch destinations land on valid instructions or the terminus.
 
-- `isEqual(Bit[92], 1)`
-- branch writing `Bit[92]=0`
-- alternate branch writing `Bit[92]=1`.
+Derived control flow:
 
-This strongly indicates a **conditional toggle** in the pump's verb script, but this *specific VERB handler has NOT yet received the same full instruction-boundary check as the five entry/exit scripts*, nor have its other preconditions been proved. Do not claim that all pump interactions toggle the bit or that toggling immediately refreshes already loaded rooms.
+| Body PC | Conditional action |
+| --- | --- |
+| `0x00` | If **`Local[0] == 0`**, jump to the toggle block `0x35` |
+| `0x05` | Otherwise, if **`Local[0] != 89`**, jump to a short refusal message `0x15` |
+| `0x0C` | When **`Local[0] == 89`**, invoke `doSentence(verb24, Var[7], object0)`, then exit |
+| `0x15` | Otherwise print a refusal message, then exit |
+| `0x35` | If **`Bit[92] == 1`**, write `Bit[92]=0` |
+| `0x44` | If **`Bit[92] != 1`**, write `Bit[92]=1` |
+| `0x49` | Stop object script |
 
-Two additional source-only observations: Room36's ENCD reads Bit92; Room35's ENCD reads and can set Bit92; Room37's ENCD sets it. A preliminary raw variable-occurrence scan across tagged script resources also found candidate Bit92 writes in a Room4 SCRP and Room37 ENCD; further aligned validation is required for any other authors of this variable.
+**Source-confirmed control dependency:** This interactive verb handler **toggles Bit92 only when invoked with local argument `Local[0]=0`**. Other local values either delegate to verb24 or display a message; they do not toggle this bit through this handler. The handler's external caller arguments, expected normal interaction and graphical response have **not** been observed. Do not claim every pump click immediately flips the scene or calls the handler with `Local[0]=0`.
+
+Source bytecode operands were interpreted per [ScummVM v5 script and object script execution](https://github.com/scummvm/scummvm/blob/v2026.4.0/engines/scumm/script_v5.cpp) and [SCUMM variable addressing](https://github.com/scummvm/scummvm/blob/v2026.4.0/engines/scumm/script.cpp); `0x4000` variable reference is a local variable, not global Var0. `Var[7]` in delegated `doSentence` is kept as a literal global variable reference pending its full gameplay meaning.
+
+The relationship now has **three independent source-aligned links**: Room35 ENCD responds to Bit92; Room36 pump verb7 can toggle Bit92 and Room36 ENCD changes five cycle speeds in VGA; Room37 ENCD sets Bit92=1. The actual causal gameplay path across those entry/verb triggers still requires a captured sequence.
 
 ## 3. Engine interpretation and architectural consequence
 
@@ -88,4 +98,4 @@ Pinned original-reference implementation:
 
 **Suggested focused future trace:** capture Room35 and Room36 entries under both Bit92 values and VGA, logging var49, var160, Bit567, 92, 525, 93, object360/361/362/364/365 states/classes, box10/11 flags, script202 status, sounds34/35, all five Room36 cycle delays, and palette RGB hashes; then explicitly test Room36 pump handler and Room37 entry transition. The evidence should be acquired without overwriting original saves or archives.
 
-**Research discipline:** The 160+17+72+10+42 byte lengths and full instruction alignment are source inspection, not `descumm` cross-validation or runtime observation. The pump verb candidate is explicitly a lower-confidence static finding. All original asset bytes and scratch decoders remain private.
+**Research discipline:** The 160+17+72+10+42 byte lengths and full instruction alignment are source inspection, not `descumm` cross-validation or runtime observation. The pump verb7 instruction boundaries are now independently aligned, but natural-gameplay invocation and runtime effects are not observed. All original asset bytes and scratch decoders remain private.

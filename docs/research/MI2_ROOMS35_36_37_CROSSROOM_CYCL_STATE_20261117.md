@@ -87,7 +87,16 @@ Source bytecode operands were interpreted per [ScummVM v5 script and object scri
 
 The relationship now has **three independent source-aligned links**: Room35 ENCD responds to Bit92; Room36 pump verb7 can toggle Bit92 and Room36 ENCD changes five cycle speeds in VGA; Room37 ENCD sets Bit92=1. The actual causal gameplay path across those entry/verb triggers still requires a captured sequence.
 
-## 3. Engine interpretation and architectural consequence
+## 3. Confirmed pump cutscene and palette-speed transition scripts
+
+Further source-only narrow walks independently consumed all bytes and validated branch destinations for Room36 **LSCR200 (279 bytes / 188 instructions / up to 158 sequential `breakHere` yields)**, **LSCR201 (95 bytes / 18 instructions)** and **LSCR202 (124 bytes / 23 instructions)**. Script200 manipulates Ego costume69 and sound60, animates actions6–14, conditionally skips 80 yields based on Bit763, then toggles Bit92 and immediately starts 201 or 202. The registered cutscene override target skips the long visual segment but still reaches the state-changing tail.
+
+- [Pump cutscene full analysis](MI2_ROOM36_PUMP_CUTSCENE_SCRIPT200_20261117.md)
+- [Both 40-step VGA palette speed transitions](MI2_ROOM36_SCRIPTED_PALETTE_FADES_20261117.md)
+
+**Important updated conclusion:** When Bit92 changes **inside Room36 script200**, Room36 script201 (switch-off) or 202 (switch-on) dynamically issues five `SO_CYCLE_SPEED` calls per pass for 40 passes; this updates palette animation without requiring the Room36 entry script to run again. Those script calls use subop `0xD0` and **indirect local variables**, which raw literal subop `0x10` scans miss. Each script contains one `breakHere` location executed 40 times, not 40 distinct yield opcodes. The virtual palette changes still need runtime evidence.
+
+## 4. Engine interpretation and architectural consequence
 
 Pinned original-reference implementation:
 - [ScummVM v2026.4.0 script_v5.cpp](https://github.com/scummvm/scummvm/blob/v2026.4.0/engines/scumm/script_v5.cpp): `o5_actorOps`, `o5_notEqualZero`, `o5_equalZero`, `o5_isEqual`, `o5_roomOps` case 16, `o5_setClass`, `o5_setState`, `o5_startScript`, `o5_stopSound`.

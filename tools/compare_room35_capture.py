@@ -67,7 +67,8 @@ def compare(game, export, capture):
         meta, phases, back, front, backend = engine(packet, frame)
         lines = [line.split() for line in meta["state"]]
         entry, = (list(map(int, line[1:])) for line in lines if line[0] == "room35")
-        if entry != [35, 35, run["injected_bit92"], 0]:
+        effective = int(bool(run["injected_bit92"] or run["injected_bit567"]))
+        if entry != [35, 35, effective, run["injected_bit567"]]:
             raise ValueError(f"Frame {frame} has unexpected room or effective bits: {entry}")
         camera, = (list(map(int, line[1:])) for line in lines if line[0] == "camera")
         if camera[2:] != [0, 0, width, height, width, height]:

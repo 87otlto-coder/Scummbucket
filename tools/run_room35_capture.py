@@ -37,7 +37,7 @@ def capture(exe, game, save, dest, scenario, dll_dir):
     version = subprocess.check_output([str(exe), "--version"], cwd=dest, env=env,
                                       text=True, timeout=10).strip()
     meta = dict(entry="debugger_equivalent_room_entry", equivalent_command="room 35",
-                injected_bit92=int(scenario == "set"), injected_bit567=0, save_state=state,
+                injected_bit92=int(scenario == "set"), injected_bit567=int(scenario == "override"), save_state=state,
                 save_sha256=save_hash, archives=ARCHIVES, exe_sha256=digest(exe),
                 version=version, command=command)
     (dest / "run.json").write_text(json.dumps(meta, indent=2), encoding="utf8")
@@ -63,6 +63,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Capture controlled debugger-equivalent Room 35 entry.")
     for name in ("exe", "game", "save", "dest"):
         parser.add_argument(name, type=lambda value: Path(value).resolve())
-    parser.add_argument("scenario", choices=("clear", "set"))
+    parser.add_argument("scenario", choices=("clear", "set", "override"))
     parser.add_argument("--dll-dir", type=Path, default=Path("C:/msys64/ucrt64/bin"))
     capture(**vars(parser.parse_args()))

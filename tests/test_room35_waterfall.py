@@ -1,6 +1,15 @@
+from hashlib import sha256
+import json
+from pathlib import Path
+import struct
+import tempfile
 import unittest
+from unittest.mock import patch
 
-from scummbucket.room35_waterfall import paint_indexed_layer, render_waterfall
+from scummbucket.inspector import XOR_KEY
+from scummbucket.room35_waterfall import export_room35, paint_indexed_layer, render_waterfall
+from test_inspector import chunk
+from test_object_images import codec_pixels
 from scummbucket.scene_events import serialize_scene_events
 
 
@@ -54,3 +63,40 @@ class Room35WaterfallTests(unittest.TestCase):
         self.assertEqual(paint_indexed_layer(bytes((3, 4)), 2, 1, bytes((7, 191)),
                                              bytes((0, 255)), 2, 1, -1, 0),
                          bytes((191, 4)))
+
+    def test_export_writes_native_components_and_rejects_existing_output(self):
+        def smap(codec, index):
+            return chunk("SMAP", struct.pack("<I", 12) + codec_pixels(codec, index, height=1))
+
+        rmhd = chunk("RMHD", struct.pack("<HH", 8, 1))
+        rmim = chunk("RMIM", chunk("IM00", smap(68, 176)))
+        clut = chunk("CLUT", self.palette)
+        trns = chunk("TRNS", b"\xbf")
+        imhd = chunk("IMHD", struct.pack("<HHHBBHHHH", 364, 8, 0, 0, 0, 0, 0, 8, 1))
+        images = b"".join(chunk(f"IM{n:02X}", smap(68, 160 + n)) for n in range(1, 9))
+        obim = chunk("OBIM", imhd + images)
+        data = chunk("ROOM", rmhd + rmim + clut + trns + obim)
+        resource = bytes(value ^ XOR_KEY for value in data)
+        archive_hash = sha256(resource).hexdigest()
+        scene = dict(room_id=35, room_offset=0, room_size=len(data), palette_cycles=self.records,
+                     objects=[dict(object_id=364, status="paired",
+                                   image=dict(source_offset=data.index(b"OBIM"),
+                                              image_state_tags=[f"IM{n:02X}" for n in range(1, 9)]))])
+        inventory = dict(status="success", scene_inventory=dict(rooms=[scene]),
+                         sources=[dict(sha256=sha256(b"index").hexdigest()),
+                                  dict(sha256=archive_hash)])
+        args = dict(x=0, y=0, effective_bit92=False, updates=[[5]] + [[] for _ in range(7)])
+        with (tempfile.TemporaryDirectory() as tmp,
+              patch("scummbucket.room35_waterfall.inspect", return_value=inventory),
+              patch("scummbucket.room35_waterfall._read_pair",
+                    return_value=(b"index", resource, "MONKEY2.000", "MONKEY2.001")),
+              patch("scummbucket.room35_waterfall.ARCHIVE_SHA256", archive_hash)):
+            output = Path(tmp) / "new"
+            manifest = export_room35("input", output, **args)
+            self.assertEqual(json.loads((output / "manifest.json").read_bytes()), manifest)
+            self.assertEqual((output / "state-01.indices").read_bytes(), bytes([161] * 8))
+            self.assertEqual((output / "state-01.rgb").read_bytes()[176 * 3], 191)
+            for name, digest in manifest["files"].items():
+                self.assertEqual(sha256((output / name).read_bytes()).hexdigest(), digest)
+            with self.assertRaises(FileExistsError):
+                export_room35("input", output, **args)

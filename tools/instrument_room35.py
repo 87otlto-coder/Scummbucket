@@ -10,15 +10,17 @@ s=s.replace(anchor, anchor+'''
     static bool sb35Logged = false;
     const bool sb35Clear = Common::FSNode(Common::Path("room35-clear.enabled")).exists();
     const bool sb35Set = Common::FSNode(Common::Path("room35-set.enabled")).exists();
+    const bool sb35Override = Common::FSNode(Common::Path("room35-override.enabled")).exists();
     if (!sb35Logged) {
         sb35Logged = true;
         warning("SB35 loop room=%d markers=%d,%d", _currentRoom, sb35Clear, sb35Set);
     }
-    if (!sb35Entered && (sb35Clear != sb35Set) && _currentRoom == 23 && _game.id == GID_MONKEY2) {
+    if (!sb35Entered && (int(sb35Clear) + int(sb35Set) + int(sb35Override) == 1) && _currentRoom == 23 && _game.id == GID_MONKEY2) {
         sb35Entered = true;
         warning("SB35 inherited room=%d resource=%d b92=%d b567=%d", _currentRoom, _roomResource,
                 readVar(0x8000 | 92), readVar(0x8000 | 567));
-        writeVar(0x8000 | 567, 0);
+        writeVar(0x8000 | 567, sb35Override);
+        warning("SB35 injected b92=%d b567=%d", sb35Set, sb35Override);
         writeVar(0x8000 | 92, sb35Set);
         _actors[VAR(VAR_EGO)]->_room = 35;
         _sound->stopAllSounds();

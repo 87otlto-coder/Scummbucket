@@ -174,7 +174,7 @@ def _subchunks(data: bytes, offset: int, size: int):
 
 
 def _decode_stripmap(data: bytes, smap, *, width: int, height: int,
-                     palette: bytes, transparent_color: int) -> tuple[bytes, list[dict]]:
+                     transparent_color: int) -> tuple[bytes, bytes, list[dict]]:
     strips = width // 8
     minimum_offset = 8 + strips * 4
     _need(smap.length >= minimum_offset, "SMAP_TABLE_TRUNCATED", "SMAP table too short",
@@ -186,7 +186,8 @@ def _decode_stripmap(data: bytes, smap, *, width: int, height: int,
     _need(all(a < b for a, b in zip(offsets, offsets[1:])),
           "SMAP_OFFSET_ORDER_INVALID", "SMAP offsets are not strictly increasing",
           offset=smap.offset)
-    image = bytearray(width * height * 4)
+    image = bytearray(width * height)
+    opacity = bytearray(width * height)
     strip_records = []
     for strip, relative in enumerate(offsets):
         position = smap.offset + relative
@@ -203,19 +204,14 @@ def _decode_stripmap(data: bytes, smap, *, width: int, height: int,
         for y in range(height):
             for x in range(8):
                 idx = indices[y * 8 + x]
-                at = (y * width + strip * 8 + x) * 4
-                if has_transparency and idx == transparent_color:
-                    # Zero the invisible RGB channels, too, to avoid colored
-                    # halos if a later scaling filter samples transparent pixels.
-                    image[at:at + 4] = b"\x00\x00\x00\x00"
-                else:
-                    image[at:at + 3] = palette[idx * 3:idx * 3 + 3]
-                    image[at + 3] = 255
+                at = y * width + strip * 8 + x
+                image[at] = idx
+                opacity[at] = 0 if has_transparency and idx == transparent_color else 255
         strip_records.append({
             "strip": strip, "source_offset": position, "codec": code,
             "compressed_length": next_pos - position - 1,
             "consumed_length": consumed, "transparent_codec": has_transparency})
-    return bytes(image), strip_records
+    return bytes(image), bytes(opacity), strip_records
 
 
 def _decode_zplane(data: bytes, plane, *, width: int, height: int) -> bytes:
@@ -245,11 +241,10 @@ def _decode_zplane(data: bytes, plane, *, width: int, height: int) -> bytes:
     return bytes(mask)
 
 
-def decode_object_state(data: bytes, *, obim_offset: int, state_tag: str,
-                        palette: bytes, transparent_color: int,
-                        include_masks: bool = True) -> tuple[dict, bytes, dict[str, bytes]]:
-    """Decode a single IMxx state, but do not composite it into a room."""
-    _need(len(palette) == 768, "PALETTE_INVALID", "Expected 256 RGB palette entries")
+def decode_indexed_object_state(data: bytes, *, obim_offset: int, state_tag: str,
+                                transparent_color: int, include_masks: bool = True
+                                ) -> tuple[dict, bytes, bytes, dict[str, bytes]]:
+    """Return metadata, native indices, opacity and raw per-state Z planes."""
     _need(0 <= transparent_color <= 255, "TRNS_INVALID", "Transparent index out of bounds")
     _need(0 <= obim_offset <= len(data) - 8, "OBIM_OFFSET_INVALID",
           "Object-image chunk header out of bounds", offset=obim_offset)
@@ -277,23 +272,44 @@ def decode_object_state(data: bytes, *, obim_offset: int, state_tag: str,
     smaps = [p for p in child if p.tag == "SMAP"]
     _need(len(smaps) == 1, "SMAP_INVALID",
           f"State {state_tag}: expected exactly one SMAP", offset=found[0].offset)
-    rgba, records = _decode_stripmap(data, smaps[0], width=width, height=height,
-                                     palette=palette, transparent_color=transparent_color)
-    mask_pngs = {}
+    indices, opacity, records = _decode_stripmap(
+        data, smaps[0], width=width, height=height, transparent_color=transparent_color)
+    masks = {}
+    seen = set()
     for p in child:
         if p.tag.startswith("ZP") and p.tag[2:].isdigit():
-            _need(p.tag not in mask_pngs, "ZPLANE_DUPLICATE", "Repeated Z plane tag",
+            _need(p.tag not in seen, "ZPLANE_DUPLICATE", "Repeated Z plane tag",
                   offset=p.offset)
+            seen.add(p.tag)
             if include_masks:
-                plane = _decode_zplane(data, p, width=width, height=height)
-                mask_pngs[p.tag] = encode_png(width, height, plane, rgba=False)
+                masks[p.tag] = _decode_zplane(data, p, width=width, height=height)
     metadata = {"object_id": obj_id, "state_tag": state_tag, "width": width,
                 "height": height, "source_offset": found[0].offset,
                 "source_length": found[0].length,
-                "pixel_rgba_sha256": sha256(rgba).hexdigest(),
                 "strip_codecs": records, "zplane_tags": sorted(
                     p.tag for p in child if p.tag.startswith("ZP"))}
-    return metadata, encode_png(width, height, rgba, rgba=True), mask_pngs
+    return metadata, indices, opacity, masks
+
+
+def decode_object_state(data: bytes, *, obim_offset: int, state_tag: str,
+                        palette: bytes, transparent_color: int,
+                        include_masks: bool = True) -> tuple[dict, bytes, dict[str, bytes]]:
+    """Decode a single IMxx state, but do not composite it into a room."""
+    _need(len(palette) == 768, "PALETTE_INVALID", "Expected 256 RGB palette entries")
+    metadata, indices, opacity, masks = decode_indexed_object_state(
+        data, obim_offset=obim_offset, state_tag=state_tag,
+        transparent_color=transparent_color, include_masks=include_masks)
+    width, height = metadata["width"], metadata["height"]
+    rgba = bytearray(len(indices) * 4)
+    for position, (index, alpha) in enumerate(zip(indices, opacity)):
+        if alpha:
+            offset = position * 4
+            rgba[offset:offset + 3] = palette[index * 3:index * 3 + 3]
+            rgba[offset + 3] = alpha
+    metadata["pixel_rgba_sha256"] = sha256(rgba).hexdigest()
+    mask_pngs = {tag: encode_png(width, height, plane, rgba=False)
+                 for tag, plane in masks.items()}
+    return metadata, encode_png(width, height, bytes(rgba), rgba=True), mask_pngs
 
 
 def export_object_images(input_path: str | Path, output_dir: str | Path, *,

@@ -75,17 +75,19 @@ class Room35WaterfallTests(unittest.TestCase):
         imhd = chunk("IMHD", struct.pack("<HHHBBHHHH", 364, 8, 0, 0, 0, 0, 0, 8, 1))
         images = b"".join(chunk(f"IM{n:02X}", smap(68, 160 + n)) for n in range(1, 9))
         obim = chunk("OBIM", imhd + images)
-        data = chunk("ROOM", rmhd + rmim + clut + trns + obim)
+        obcd = chunk("OBCD", chunk("CDHD", struct.pack("<HBB", 364, 0, 0)))
+        data = chunk("ROOM", rmhd + rmim + clut + trns + obim + obcd)
         resource = bytes(value ^ XOR_KEY for value in data)
         archive_hash = sha256(resource).hexdigest()
         scene = dict(room_id=35, room_offset=0, room_size=len(data), palette_cycles=self.records,
                      objects=[dict(object_id=364, status="paired",
+                                   code=dict(source_offset=data.index(b"OBCD"), byte_length=len(obcd)),
                                    image=dict(source_offset=data.index(b"OBIM"),
                                               image_state_tags=[f"IM{n:02X}" for n in range(1, 9)]))])
         inventory = dict(status="success", scene_inventory=dict(rooms=[scene]),
                          sources=[dict(sha256=sha256(b"index").hexdigest()),
                                   dict(sha256=archive_hash)])
-        args = dict(x=0, y=0, effective_bit92=False, updates=[[5]] + [[] for _ in range(7)])
+        args = dict(effective_bit92=False, updates=[[5]] + [[] for _ in range(7)])
         with (tempfile.TemporaryDirectory() as tmp,
               patch("scummbucket.room35_waterfall.inspect", return_value=inventory),
               patch("scummbucket.room35_waterfall._read_pair",
@@ -94,6 +96,9 @@ class Room35WaterfallTests(unittest.TestCase):
             output = Path(tmp) / "new"
             manifest = export_room35("input", output, **args)
             self.assertEqual(json.loads((output / "manifest.json").read_bytes()), manifest)
+            placement, = (row for row in manifest["events"] if row["kind"] == "object_position")
+            self.assertEqual(placement["evidence"], "archive_decoded")
+            self.assertEqual(placement["payload"]["source_offset"], data.index(b"CDHD"))
             self.assertEqual((output / "state-01.indices").read_bytes(), bytes([161] * 8))
             self.assertEqual((output / "state-01.rgb").read_bytes()[176 * 3], 191)
             for name, digest in manifest["files"].items():

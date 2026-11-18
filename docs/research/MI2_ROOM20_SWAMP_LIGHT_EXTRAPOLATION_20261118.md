@@ -6,7 +6,7 @@
 
 Room20 physical `RMHD` is **792×144** (viewport normally320 wide). The original OBCD names identify the room's scene context as **swamp**, with **shore**, **path**, **shack**, **coffin**, **crate** and **sign** objects. Room20 CYCL chunk at `0x17B4FB` is 10 bytes total and contains **zero palette cycle records**.
 
-Room20 ENCD body at **`0x17D409`**, fully walked **96/96 bytes,20 instructions,3/3 valid branch targets**, executes at:
+Room20 ENCD body at **`0x18DEF3`**, fully walked **96/96 bytes,20 instructions,3/3 valid branch targets**, executes at:
 - PC0x00C `setVarRange(Var285,[0,-30,260,343,490,543])` X breakpoints;
 - PC0x01C `setVarRange(Var291,[0,255,255,150,150,255])` brightness control points;
 - PC0x026 `startScript(global49)` (Ego-X-dependent lighting on palette indices **192–207**).

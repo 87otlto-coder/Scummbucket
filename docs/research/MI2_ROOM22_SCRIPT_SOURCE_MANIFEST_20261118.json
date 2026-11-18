@@ -1,0 +1,137 @@
+{
+  "schema_version": "0.1",
+  "subject": "MI2 DOS VGA Room22 source-only script alignment",
+  "source_001_sha256": "ad045372e0d49626503bb50fca29a687ec8e01ef75d9b8bca702a366d143819e",
+  "decoder_scope": "narrow source-only v5 opcode walker; no official descumm, runtime, or image parity",
+  "validation": {
+    "code_bytes_consumed": 5394,
+    "instructions": 544,
+    "relative_branch_references": 141,
+    "invalid_target_count": 0
+  },
+  "scripts": [
+    {
+      "resource_kind": "EXCD",
+      "script_id": null,
+      "decoded_body_offset": 1850037,
+      "body_size": 17,
+      "instructions": 3,
+      "branch_references": 1,
+      "sha256": "16c25f9257f6cd5cbb53d642db204e1b2fca567542fbd46739799dc040f2da89"
+    },
+    {
+      "resource_kind": "ENCD",
+      "script_id": null,
+      "decoded_body_offset": 1850062,
+      "body_size": 46,
+      "instructions": 13,
+      "branch_references": 5,
+      "sha256": "a503047774b0539062a8e8796adff461e1797be2bc5e00c1383cf3627ac0cda8"
+    },
+    {
+      "resource_kind": "LSCR",
+      "script_id": 200,
+      "decoded_body_offset": 1850127,
+      "body_size": 44,
+      "instructions": 10,
+      "branch_references": 0,
+      "sha256": "fab563f4c31f67686738dd776b85d06086602ebe1994e57edff50c47e226bde9"
+    },
+    {
+      "resource_kind": "LSCR",
+      "script_id": 201,
+      "decoded_body_offset": 1850180,
+      "body_size": 2308,
+      "instructions": 243,
+      "branch_references": 63,
+      "sha256": "fc1f5bd0bb86d6e9338ef30927824e3d77f62786284643a6bdff57b45d05dcea"
+    },
+    {
+      "resource_kind": "LSCR",
+      "script_id": 202,
+      "decoded_body_offset": 1852497,
+      "body_size": 2484,
+      "instructions": 248,
+      "branch_references": 64,
+      "sha256": "ddf1b8db0e11ec52741a321276eb4fd5ff213bb320762fb6320e4f186056d677"
+    },
+    {
+      "resource_kind": "LSCR",
+      "script_id": 203,
+      "decoded_body_offset": 1854990,
+      "body_size": 57,
+      "instructions": 11,
+      "branch_references": 4,
+      "sha256": "3f2519dc59c030e932674d3ee6b450c4b57d6e15038f3b77726e94d699cdec69"
+    },
+    {
+      "resource_kind": "LSCR",
+      "script_id": 204,
+      "decoded_body_offset": 1855056,
+      "body_size": 221,
+      "instructions": 7,
+      "branch_references": 2,
+      "sha256": "369be52795860ef919e6959d5a7e176c77c41df655c63b51700ce5e41f1b7060"
+    },
+    {
+      "resource_kind": "LSCR",
+      "script_id": 205,
+      "decoded_body_offset": 1855286,
+      "body_size": 217,
+      "instructions": 9,
+      "branch_references": 2,
+      "sha256": "93abba7f7225f9c24639763d2769a92f6e0af793669fbe9c6067340f4679d7fd"
+    }
+  ],
+  "objects": [
+    {
+      "object_id": 239,
+      "name": "Captain Dread",
+      "obcd_decoded_offset": 1848945,
+      "source_name_status": "original_OBNA",
+      "image_states": 0
+    },
+    {
+      "object_id": 240,
+      "name": null,
+      "obcd_decoded_offset": 1858174,
+      "source_name_status": "empty_OBNA",
+      "image_states": 1
+    },
+    {
+      "object_id": 237,
+      "name": null,
+      "source_name_status": "empty_OBNA",
+      "image_states": 1
+    }
+  ],
+  "source_only_cases": [
+    {
+      "id": "HEAD_THIRD_MISSING_GUARD",
+      "script_id": 201,
+      "op_pc": 388,
+      "skip_after_draw_bytes": 32,
+      "skip_destination_pc": 426
+    },
+    {
+      "id": "ROOM_ENTRY_BIT321",
+      "resource_kind": "ENCD",
+      "pc": 10
+    },
+    {
+      "id": "TALK_OBJECT_RANDOM",
+      "script_id": 203,
+      "pc": 8
+    },
+    {
+      "id": "TRAVEL_LOGIC_BIT70",
+      "script_id": 202,
+      "pc": 60
+    },
+    {
+      "id": "TRAVEL_LOGIC_BIT69",
+      "script_id": 202,
+      "pc": 65
+    }
+  ]
+}

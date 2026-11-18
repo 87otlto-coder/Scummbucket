@@ -45,7 +45,8 @@ def _script(kind, script_id, pc):
     return dict(kind=kind, storage_room=35, id=script_id, pc=pc)
 
 
-def render_waterfall(background, states, records, *, x, y, effective_bit92, updates):
+def render_waterfall(background, states, records, *, x, y, effective_bit92, updates,
+                     placement_source_offset=None):
     """Render eight source-ordered samples under an explicitly selected branch.
 
     updates has eight sequences of synthetic cyclePalette deltas. Each delta is
@@ -69,7 +70,8 @@ def render_waterfall(background, states, records, *, x, y, effective_bit92, upda
         _event("script_start", "script_static_aligned", script=_script("ENCD", None, 0x7F),
                script_id=202),
         _event("layer_order", "synthetic", layers=["RMIM", "object 364"]),
-        _event("object_position", "synthetic", object_id=364, x=x, y=y),
+        _event("object_position", "synthetic" if placement_source_offset is None else "archive_decoded",
+               object_id=364, x=x, y=y, source_offset=placement_source_offset),
     ]
     for cycle in cycles:
         events.append(_event("palette_cycle", "archive_decoded", cycle_id=cycle["id"],
@@ -102,8 +104,21 @@ def render_waterfall(background, states, records, *, x, y, effective_bit92, upda
     return frames, events, diagnostics
 
 
-def export_room35(source, output, *, x, y, effective_bit92, updates):
+def _authored_position(data, code):
+    """Initial DOS v5 CDHD placement in eight-pixel units."""
+    start = code["source_offset"]
+    children = chunks(data, start + 8, start + code["byte_length"], "Room 35 OBCD")
+    header, = (node for node in children if node.tag == "CDHD")
+    if header.length < 12 or int.from_bytes(data[header.offset + 8:header.offset + 10], "little") != 364:
+        raise ValueError("Missing Room 35 object 364 CDHD placement")
+    x, y = data[header.offset + 10:header.offset + 12]
+    return x * 8, y * 8, header.offset
+
+
+def export_room35(source, output, *, effective_bit92, updates, x=None, y=None):
     """Write a fresh diagnostic preview and provenance manifest from the pinned archive."""
+    if (x is None) != (y is None):
+        raise ValueError("Supply both synthetic coordinates or use authored placement")
     inventory = inspect(source)
     if inventory["status"] != "success":
         raise ValueError(f"Archive inspection failed: {inventory['diagnostics']}")
@@ -116,6 +131,9 @@ def export_room35(source, output, *, x, y, effective_bit92, updates):
     if obj["status"] != "paired" or set(obj["image"]["image_state_tags"]) != set(STATE_TAGS):
         raise ValueError("Room 35 object 364 does not have the expected eight paired states")
     data = bytes(value ^ XOR_KEY for value in resource)
+    placement_offset = None
+    if x is None:
+        x, y, placement_offset = _authored_position(data, obj["code"])
     start, size = scene["room_offset"], scene["room_size"]
     background = decode_room_background_indexed(data, room_offset=start, room_length=size)
     trns, = (node for node in chunks(data, start + 8, start + size, "ROOM") if node.tag == "TRNS")
@@ -127,7 +145,7 @@ def export_room35(source, output, *, x, y, effective_bit92, updates):
               for tag in STATE_TAGS]
     frames, events, diagnostics = render_waterfall(
         background, states, scene["palette_cycles"], x=x, y=y,
-        effective_bit92=effective_bit92, updates=updates)
+        effective_bit92=effective_bit92, updates=updates, placement_source_offset=placement_offset)
     events.insert(0, _event("transparency", "archive_decoded", index=transparent,
                             source_offset=trns.offset))
     width, height = background["width"], background["height"]
@@ -163,8 +181,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source", type=Path)
     parser.add_argument("output", type=Path)
-    parser.add_argument("--x", type=int, required=True, help="Assumed object X")
-    parser.add_argument("--y", type=int, required=True, help="Assumed object Y")
+    parser.add_argument("--x", type=int, help="Override the authored object X")
+    parser.add_argument("--y", type=int, help="Override the authored object Y")
     parser.add_argument("--effective-bit92-clear", action="store_true", required=True)
     parser.add_argument("--synthetic-delta", type=int, required=True,
                         help="Assumed increment for one palette update before each sample")

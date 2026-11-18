@@ -24,7 +24,15 @@ $out = Join-Path $root ('FIXTURE\OUTPUT\Room35\source-' + [guid]::NewGuid().ToSt
 python -B -m scummbucket.room35_waterfall "$root\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" $out --effective-bit92-clear --synthetic-delta $delta
 ```
 
-The archive preview, natural-entry Room 35 comparison and Room 7 private regression were blocked this session when the Windows workspace disconnected. Before the disconnect the canonical capture inventory listed Room12, Room23 and Room7. No paired Room 35 capture was identified. The existing Room 7 acceptance remains historical evidence for 87 frames and 4,008,960 indexed comparisons.
+## Private Windows retry
+
+The retry used an isolated materialization of the engineering snapshot plus the nine GitHub file deltas at `8727197b5b0b92c480f816fa44b224a9923289a0`. The canonical checkout is inaccessible to Git in the Windows sandbox, so the wrapper's checkout gate remained blocked. Its fixture integrity preflight verified both archive hashes and all 87 reference frame digests. The underlying tests and compositor were run directly against canonical read-only fixtures.
+
+- Room 35 original DOS VGA export passed at 320 × 144. Eight source-ordered waterfall samples used authored placement (128, 96) and a synthetic delta of 1. All 48 exported file hashes matched the manifest.
+- Room 7 independent replay matched 87/87 front buffers (4,008,960 indexed positions, zero mismatches). Final palettes matched throughout. Disabling ZP01 produced the expected 778 mismatches.
+- Private-enabled unit suite: 407 discovered, 400 passed, 7 skipped, 0 failed.
+- Room 35 runtime comparison remains blocked. No paired capture was found. Four unique ScummVM saves across canonical GAMES/CAPTURES resolved to Rooms 7, 12 and 23. The existing acceptance launcher supports Rooms 7 and 23. A Room 35 natural-entry trace still needs an appropriate saved starting point and capture path.
+
 
 1. Rerun the Room 7 private acceptance on the sprint branch using `tools/p4_private_acceptance.ps1 -WorkspaceRoot F:\Dev\SCUMMBUCKET -Full`.
 2. Inspect Room 35's decoded object geometry and independently capture natural entry with effective Bit92 clear and set. Record logical/resource room, Bit567 and Bit92, ENCD/LSCR PCs, draw queue and other visible layers, object placement and state, timers, cycle counters, back/front/RGB buffers and Z planes. Keep capture files outside Git.

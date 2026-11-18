@@ -49,7 +49,7 @@ Source CYCL stores a **rate**, not precomputed frame count. Pinned ScummVM `init
 
 [The earlier complete 21-room image-index survey](MI2_CYCL_BACKGROUND_OBJECT_COVERAGE_20261116.md) found **88** cycles with RMIM-only coverage, **29** with RMIM+OBIM coverage, **3** with OBIM-only coverage, **7** without source RMIM/OBIM usage. A source RGB interval with a meaningful period can still be *invisible* when its indexed pixels aren't on screen or the relevant palette phase never advances.
 
-[Room22 named object-layer discovery](MI2_ROOM22_CAPTAIN_DREAD_OBJECT_ONLY_CYCL_20261118.md) identifies **Captain Dread** as original object240 and ties the three OBIM-only cycles6–8 to source image state1 pixels (15/24/5 occurrences). All eight Room22 cycles are two-entry pairs with distinct RGBs and separate initial delays.
+[Room22 unnamed object-layer discovery](MI2_ROOM22_CAPTAIN_DREAD_OBJECT_ONLY_CYCL_20261118.md) correctly identifies **Captain Dread** as original **object239** and the palette-overlap graphic component as **unnamed object240** and ties the three OBIM-only cycles6–8 to source image state1 pixels (15/24/5 occurrences). All eight Room22 cycles are two-entry pairs with distinct RGBs and separate initial delays.
 
 ## Engineering implications
 

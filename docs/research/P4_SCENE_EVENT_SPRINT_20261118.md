@@ -11,17 +11,17 @@
 
 Room 35 uses the existing scene inventory, indexed background decoder, OBIM strip and mask decoders, palette scheduler and indexed PNG encoder. The shared OBIM API now exposes native indices, per-pixel opacity and raw object Z planes. The existing RGBA export continues to use the same decoded pixels. Room 35 renders one traversal of authored object 364 states IM01–IM08 and the two CYCL ranges from the pinned resource archive. One state sample can consume zero or more explicitly provided engine-style counter updates. Counters start at zero against the source CLUT. The preview keeps raw flags and warns about unresolved flag 0x0004. It writes the RGB palette separately from the indexed raster and includes archive, chunk and output provenance.
 
-The source entry branch requires effective Bit92 clear. That value is evaluated after the conditional Bit567 write. Placement and palette deltas are caller assumptions. The output draws one waterfall layer over the archive background and preserves object Z planes separately. Background Z-plane interaction, other live objects and actors, runtime draw ordering and wall-clock cadence need reference evidence.
+The source entry branch requires effective Bit92 clear. That value is evaluated after the conditional Bit567 write. The preview defaults to the authored CDHD position in eight-pixel units. See ScummVM v2026.4.0 [object.cpp](https://github.com/scummvm/scummvm/blob/v2026.4.0/engines/scumm/object.cpp) and [object.h](https://github.com/scummvm/scummvm/blob/v2026.4.0/engines/scumm/object.h) for the v5 field layout. Optional coordinate overrides and palette deltas are caller assumptions. The output draws one waterfall layer over the archive background and preserves object Z planes separately. Background Z-plane interaction, other live objects and actors, runtime draw ordering and wall-clock cadence need reference evidence.
 
 ## Windows reproduction and next validation
 
-Run the preview from the sprint branch using documented source coordinates or an explicitly labeled diagnostic placement. `$x`, `$y` and `$delta` must be supplied by the caller.
+Run the preview from the sprint branch. Supply `$delta` explicitly. Optional `--x` and `--y` coordinates override the authored position and are marked synthetic.
 
 ```powershell
 Set-Location 'F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket'
 $root = 'F:\Dev\SCUMMBUCKET'
 $out = Join-Path $root ('FIXTURE\OUTPUT\Room35\source-' + [guid]::NewGuid().ToString())
-python -B -m scummbucket.room35_waterfall "$root\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" $out --effective-bit92-clear --x $x --y $y --synthetic-delta $delta
+python -B -m scummbucket.room35_waterfall "$root\FIXTURE\GAMES\MonkeyIsland2_DOS_VGA" $out --effective-bit92-clear --synthetic-delta $delta
 ```
 
 The archive preview, natural-entry Room 35 comparison and Room 7 private regression were blocked this session when the Windows workspace disconnected. Before the disconnect the canonical capture inventory listed Room12, Room23 and Room7. No paired Room 35 capture was identified. The existing Room 7 acceptance remains historical evidence for 87 frames and 4,008,960 indexed comparisons.

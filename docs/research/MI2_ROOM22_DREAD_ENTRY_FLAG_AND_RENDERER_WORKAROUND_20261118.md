@@ -29,6 +29,18 @@ The engine comments explain that after talking to Dread, handing him an object a
 
 **Crucial distinction:** this fix relates to original logical **object237**, whereas the three object-only palette cycles were identified in **object240**; do not conflate them. Room22 has a mixture of animated actor/body image state, static/special object overlays and palette effects. The workaround might change which original objects are drawn later in the same script, so a capture with enhancements enabled is **not necessarily an oracle for exact original DOS behaviour**.
 
+## New cross-script writer: Room22 local201 sets Bit321 within a conversation branch
+
+Read-only search of **all Room22 room-owned ENCD/EXCD and LSCR200–205 source bodies** for little-endian bit-variable encoding `41 81` (Bit321) finds:
+- ENCD two already-aligned **reads**, at script PCs0x0A and0x1A.
+- LSCR201 bytecode body starts **0x1C3B44** and has length **2308 bytes**; its **PC0x63D** contains v5 `move(Bit321,1)` (`1A 41 81 01 00`). Its immediate source context is a branching character conversation, with a `wait(message)` and `isLess`-shaped statement in the preceding PC region. The full 2,308-byte parent script is **not** yet independently instruction-walked; classify this particular 5-byte aligned statement as **high-confidence local source write**, not a validated reachable conversation branch.
+- LSCR201 also contains a later Bit321 **read** at bytecode PC0x8C1 (v5 `notEqualZero(Bit321)`).
+- No other Room22-owned ENCD/EXCD/LSCR200,202,203,204,205 contains the literal Bit321 variable operand in this targeted search. External/global scripts or indirect vars could still write it.
+
+This supplies a source-coded **conversation state → Bit321 → room re-entry image choice** causal route: local201 can assign Bit321=1; Room22 ENCD subsequently selects object240 state0 and runs local202 instead of the other entry branch. Whether the source write executes in a normal playthrough, triggers an immediate redraw, or affects the currently running script before exiting must be tested. In particular, the entry script only sets Captain Dread object's image state **when it runs**, and a bit write alone should **not** be modeled as an immediate object redraw.
+
+Do not confuse this **Bit321** story progression with the ScummVM bugfix's **Bit129** head-facing guard; they are different flags in the same room.
+
 ## P4 acceptance implications
 
 - Log: original edition and SHA, current logical and physical room, Bit321, Bit125, Bit129, object240 state/visibility and object237 animation/draw, active script201/202 slots/PC, palette six relevant indices186..191, all CYCL counters, and whether ScummVM minor bugfix enhancements were enabled.

@@ -12,7 +12,7 @@ from scummbucket.cli import main
 from scummbucket.inspector import _read_pair
 from scummbucket.object_images import (
     ImageDecodeError, decode_strip, decode_mask_strip, encode_png,
-    decode_object_state, export_object_images,
+    decode_indexed_object_state, decode_object_state, export_object_images,
 )
 from test_inspector import chunk, index, make_zip
 
@@ -200,6 +200,22 @@ class ImageExportTest(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(main(argv), 0)
             self.assertEqual(main(argv), 2)
+
+
+
+class IndexedObjectStateTest(unittest.TestCase):
+    def test_native_indices_opacity_and_zplane_are_independent(self):
+        data = synth_obim()
+        meta, indices, opacity, masks = decode_indexed_object_state(
+            data, obim_offset=0, state_tag="IM01", transparent_color=5)
+        self.assertEqual(meta["object_id"], 99)
+        self.assertEqual(indices, bytes([5] * 64))
+        self.assertEqual(opacity, bytes(64))
+        self.assertEqual(masks["ZP01"], bytes([255, 0, 0, 0, 0, 0, 0, 255]) * 8)
+        _, indices, opacity, _ = decode_indexed_object_state(
+            data, obim_offset=0, state_tag="IM02", transparent_color=1)
+        self.assertEqual(indices, bytes([1] * 64))
+        self.assertEqual(opacity, bytes([255] * 64))
 
 
 if __name__ == "__main__":

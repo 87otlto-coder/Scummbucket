@@ -14,6 +14,15 @@ from scummbucket.palette_probe import advance_palette, decode_room_background_in
 from tools.compare_room23_frames import engine
 
 
+def retain_unchanged_front(previous, background, actors):
+    """Carry the previously reconstructed pose across an idle redraw omission."""
+    if not any(actor[0] == "actor" and actor[4] == "1" for actor in actors):
+        return background
+    if previous is None or previous[:2] != (background, actors):
+        raise ValueError("Visible actor has no draw record or unchanged prior pose")
+    return previous[2]
+
+
 def compare(game, export, capture):
     manifest = json.loads((export / "manifest.json").read_bytes())
     run = json.loads((capture / "run.json").read_bytes())
@@ -52,6 +61,7 @@ def compare(game, export, capture):
     objects = {obj["object_id"]: obj for obj in room["objects"]}
     object_layers = {}
     rows = []
+    previous = None
     for frame in range(1, 33):
         packet = (capture / f"engine-{frame:03}.bin").read_bytes()
         meta, phases, back, front, backend = engine(packet, frame)
@@ -101,8 +111,11 @@ def compare(game, export, capture):
         extended_back = compare_native_frame(extended, seeded_palette, back, phases[1],
                                              width=width, height=height)
         draw = [list(map(int, line[1:])) for line in lines if line[0] == "draw"]
-        extended_front = bytearray(extended)
+        actors = tuple(tuple(line) for line in lines if line[0] in ("actor", "scale"))
+        # Only actor rows carry the visibility field. Scale is also part of the
+        # stable-pose check below.
         if draw:
+            extended_front = bytearray(extended)
             (ax, ay, plane, sx, sy, facing, costume, *limbs), = draw
             if len(limbs) != 16 or sx != sy or costume != 1:
                 raise ValueError("Unexpected ego draw state")
@@ -113,6 +126,9 @@ def compare(game, export, capture):
                 if not 0 < plane < meta["mask_count"]:
                     raise ValueError("Actor depth plane is out of range")
                 extended_front = apply_depth(extended_front, extended, packed)
+        else:
+            extended_front = retain_unchanged_front(previous, extended, actors)
+        previous = extended, actors, bytes(extended_front)
         extended_front_result = compare_native_frame(extended_front, seeded_palette, front, phases[3],
                                                      width=width, height=height)
         rows.append(dict(extended_back=extended_back, extended_front=extended_front_result,

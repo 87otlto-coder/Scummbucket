@@ -6,7 +6,7 @@
 
 | Room21 resource | Original body offset (.001 XOR-decoded byte position) | Bytes walked | Instructions | Valid jumps |
 | --- | ---: | ---: | ---: | ---: |
-| **ENCD** | `0x1A3FE7` | **155/155** | **29** | **7/7** |
+| **ENCD** | `0x1A3FC7` | **155/155** | **29** | **7/7** |
 | **LSCR208** | `0x1A705B` | **140/140** | **22** | **5/5** |
 | **EXCD** | `0x1A3F9A` | **37/37** | **6** | **2/2** |
 

@@ -1,10 +1,10 @@
-# MI2 Room22 — Captain Dread object-only palette cycling with eight independent two-color clocks
+# MI2 Room22 — unnamed object240 palette cycling next to Captain Dread
 
 **Date:** 2026-11-18. **Evidence:** original MI2 DOS VGA `MONKEY2.000` SHA-256 `cde7aa8980317e3a750fbb3b49884cdddaf1ff3d4231a0c840b22cceed9033f1`; `MONKEY2.001` SHA-256 `ad045372e0d49626503bb50fca29a687ec8e01ef75d9b8bca702a366d143819e`, XOR0x69 decoded read-only. Verified LOFF room22 offset **0x1AF6CF**; Room22 CYCL chunk **0x1AF6E5** size82; CLUT chunk **0x1AF88B** size776. ScummVM [v2026.4.0 palette.cpp](https://github.com/scummvm/scummvm/blob/v2026.4.0/engines/scumm/palette.cpp), `initCycl`, `cyclePalette`, `doCyclePalette`; and source pixel-coverage analysis [CYCL object/background inventory](MI2_CYCL_BACKGROUND_OBJECT_COVERAGE_20261116.md). **No original interpreter execution, ScummVM frame trace, official descumm or native indexed screen pixel parity.** Game bytes/images excluded from Git.
 
-## Source identification: the object-only indices belong to named object240 “Captain Dread”
+## Corrected original names: object239 is Captain Dread; object240 is unnamed
 
-The original Room22 contains exactly 8 v5 color cycle records, followed by a zero record-ID terminator. Source animation metadata and original CLUT are entirely preserved in the read-only original archive. The original OBCD at **0x1C3671** explicitly names object ID **240** **Captain Dread** in its OBNA resource. This resolves an important ambiguity in the earlier source-pixel coverage note: the three *object-only* cycle ranges overlap **Captain Dread's stored OBIM image state IM01**, not an unidentified shipboard environmental object. (This is the game's original *logical object name*; actual costume/actor rendering and overlay visibility still require a runtime trace.)
+The original Room22 contains exactly 8 v5 color cycle records, followed by a zero record-ID terminator. Source animation metadata and original CLUT are entirely preserved in the read-only original archive. **Correction from exact CDHD/OBNA recheck:** the OBCD at **0x1C3671** is ID **239**, named **Captain Dread**, and has **no stored IMxx image state** (its OBIM at 0x1C0EA1 consists only of IMHD). Object **240** has an OBCD at **0x1C3A7E** with **empty OBNA name**, and a separate **OBIM at 0x1C0EC1** carrying IM01. The three object-only cycles really do overlap **object240/IM01**, but the prior attribution of that art to an explicitly named Captain Dread object was **incorrect**. Object240 may be a related scene component, but its identity and layer relationship to actor4/object239 are not yet runtime verified.
 
 The previous complete source-strip research found:
 - CYCL6 range 186–187: 15 decoded nontransparent pixels in object240/IM01, absent from source background.
@@ -35,11 +35,11 @@ Read-only CLUT inspection also confirms **all eight RGB pairs have distinct colo
 
 Since each interval contains exactly two entries, either cycle direction becomes the same visible **swap**. The different delays make the pairs advance independently rather than one uniform eight-color scroll. An exporter should log each original pair's phase/counter separately.
 
-**Important runtime caveat:** the original CYCL data can initialize timers, but script-controlled `stopCycle`, `setCycleSpeed` and room-change behaviour may modify them. Record existence and initialized delays as archive facts, **not proof each timer remains active in ordinary gameplay**. Also verify whether this logical Captain Dread object is actually drawn in the expected state, separately from any actor COST sprites.
+**Important runtime caveat:** the original CYCL data can initialize timers, but script-controlled `stopCycle`, `setCycleSpeed` and room-change behaviour may modify them. Record existence and initialized delays as archive facts, **not proof each timer remains active in ordinary gameplay**. Also verify whether this unnamed object240 component is actually drawn in the expected state, separately from any actor COST sprites.
 
 ## Why this is a P4 architectural test
 
-A validator checking only Room22's 320-pixel-wide source RMIM can correctly see zero direct CYCL6/7/8 pixel coverage, while visible composited room art may still change when an object layer carrying indices 186–191 is present. This is a **named logical-object-only palette-animation** candidate, and also a distinct clock-composition problem: eight pair phases, five BG-affecting and three potentially overlay-only.
+A validator checking only Room22's 320-pixel-wide source RMIM can correctly see zero direct CYCL6/7/8 pixel coverage, while visible composited room art may still change when an object layer carrying indices 186–191 is present. This is an **unnamed logical-object-only palette-animation** candidate, and also a distinct clock-composition problem: eight pair phases, five BG-affecting and three potentially overlay-only.
 
 Suggested future Windows acceptance:
 1. Log native `_colorCycle[0..7]` flags, delays, counters and the actual palette RGB six upper pairs on natural Room22 entry, with game/engine hashes and script slots.

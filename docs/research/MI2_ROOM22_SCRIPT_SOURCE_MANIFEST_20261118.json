@@ -85,24 +85,81 @@
   ],
   "objects": [
     {
-      "object_id": 239,
-      "name": "Captain Dread",
-      "obcd_decoded_offset": 1848945,
+      "object_id": 234,
+      "obim_decoded_offset": 1798231,
+      "obcd_decoded_offset": 1849553,
+      "name": "cabin door",
       "source_name_status": "original_OBNA",
-      "image_states": 0
+      "image_state_tags": [
+        "IM01"
+      ],
+      "stored_image_state_count": 1
     },
     {
-      "object_id": 240,
+      "object_id": 235,
+      "obim_decoded_offset": 1799455,
+      "obcd_decoded_offset": 1849935,
       "name": null,
-      "obcd_decoded_offset": 1849982,
       "source_name_status": "empty_OBNA",
-      "image_states": 1
+      "image_state_tags": [
+        "IM01",
+        "IM02",
+        "IM03"
+      ],
+      "stored_image_state_count": 3
+    },
+    {
+      "object_id": 236,
+      "obim_decoded_offset": 1828799,
+      "obcd_decoded_offset": 1849841,
+      "name": null,
+      "source_name_status": "empty_OBNA",
+      "image_state_tags": [
+        "IM01",
+        "IM02",
+        "IM03"
+      ],
+      "stored_image_state_count": 3
     },
     {
       "object_id": 237,
+      "obim_decoded_offset": 1838319,
+      "obcd_decoded_offset": 1849888,
       "name": null,
       "source_name_status": "empty_OBNA",
-      "image_states": 1
+      "image_state_tags": [
+        "IM01"
+      ],
+      "stored_image_state_count": 1
+    },
+    {
+      "object_id": 238,
+      "obim_decoded_offset": 1838721,
+      "obcd_decoded_offset": 1849640,
+      "name": "Captain Dread's map",
+      "source_name_status": "original_OBNA",
+      "image_state_tags": [],
+      "stored_image_state_count": 0
+    },
+    {
+      "object_id": 239,
+      "obim_decoded_offset": 1838753,
+      "obcd_decoded_offset": 1848945,
+      "name": "Captain Dread",
+      "source_name_status": "original_OBNA",
+      "image_state_tags": [],
+      "stored_image_state_count": 0
+    },
+    {
+      "object_id": 240,
+      "obim_decoded_offset": 1838785,
+      "obcd_decoded_offset": 1849982,
+      "name": null,
+      "source_name_status": "empty_OBNA",
+      "image_state_tags": [
+        "IM01"
+      ],
+      "stored_image_state_count": 1
     }
   ],
   "source_only_cases": [

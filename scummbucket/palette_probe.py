@@ -17,7 +17,7 @@ import struct
 
 from .extraction import _write_new_verified
 from .inspector import chunks, inspect, _read_pair, XOR_KEY, InspectionError
-from .object_images import ImageDecodeError, decode_strip, encode_png, MAX_PIXELS
+from .object_images import ImageDecodeError, _decode_zplane, decode_strip, encode_png, MAX_PIXELS
 
 MAX_SIMULATED_TICKS = 4096
 MAX_SNAPSHOTS = 16
@@ -43,7 +43,7 @@ def _one(children, tag: str):
 
 
 def decode_room_background_indexed(data: bytes, *, room_offset: int,
-                                   room_length: int) -> dict:
+                                   room_length: int, include_masks: bool = False) -> dict:
     """Decode RMIM > IM00 > SMAP to palette indices, not pre-colored pixels."""
     _require(0 <= room_offset <= len(data) - 8 and
              8 <= room_length <= len(data) - room_offset,
@@ -118,7 +118,7 @@ def decode_room_background_indexed(data: bytes, *, room_offset: int,
         strips.append({"index": strip, "source_offset": start, "codec": codec,
                        "compressed_length": end - start - 1,
                        "consumed_length": consumed})
-    return {
+    result = {
         "width": width, "height": height,
         "indexed_pixels": bytes(indexed), "initial_palette": palette,
         "pixel_indices_sha256": sha256(indexed).hexdigest(),
@@ -131,6 +131,19 @@ def decode_room_background_indexed(data: bytes, *, room_offset: int,
                    "clut_offset": clut.offset, "rmim_offset": rmim.offset,
                    "im00_offset": im00.offset, "smap_offset": smap.offset},
     }
+    if include_masks:
+        planes = [node for node in im00_children if node.tag.startswith("ZP")]
+        _require(all(node.tag in {f"ZP{n:02d}" for n in range(1, 9)} for node in planes),
+                 "BACKGROUND_ZPLANE_UNSUPPORTED", "Unexpected Z-plane identifier")
+        _require(len({node.tag for node in planes}) == len(planes),
+                 "BACKGROUND_ZPLANE_DUPLICATE", "Duplicate background mask plane")
+        result["zplane_masks"] = {
+            node.tag: dict(pixels=_decode_zplane(data, node, width=width, height=height),
+                           offset=node.offset, byte_length=node.length,
+                           strip_offsets=list(struct.unpack_from(f"<{width // 8}H", data, node.offset + 8)))
+            for node in planes
+        }
+    return result
 
 
 def prepare_cycles(records: list[dict]) -> tuple[list[dict], list[dict]]:

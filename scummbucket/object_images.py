@@ -221,16 +221,20 @@ def _decode_zplane(data: bytes, plane, *, width: int, height: int) -> bytes:
           "Z plane strip-offset table too short", offset=plane.offset)
     offsets = [struct.unpack_from("<H", data, plane.offset + 8 + i * 2)[0]
                for i in range(strips)]
-    _need(all(min_offset <= x < plane.length for x in offsets),
+    _need(all(x == 0 or min_offset <= x < plane.length for x in offsets),
           "ZPLANE_OFFSET_INVALID", "Z plane strip offset is out of bounds",
           offset=plane.offset)
-    _need(all(a < b for a, b in zip(offsets, offsets[1:])),
+    occupied = [offset for offset in offsets if offset]
+    _need(all(a < b for a, b in zip(occupied, occupied[1:])),
           "ZPLANE_OFFSET_ORDER_INVALID", "Z plane strip offsets out of order",
           offset=plane.offset)
     mask = bytearray(width * height)
+    ends = dict(zip(occupied, occupied[1:] + [plane.length]))
     for strip, relative in enumerate(offsets):
+        if not relative:
+            continue
         start = plane.offset + relative
-        end = plane.offset + (offsets[strip + 1] if strip + 1 < strips else plane.length)
+        end = plane.offset + ends[relative]
         scanlines, consumed = decode_mask_strip(data[start:end], height)
         _need(not any(data[start + consumed:end]), "MASK_TRAILING_NONZERO",
               "Depth-mask strip contains nonzero trailing bytes",

@@ -17,7 +17,7 @@ from tools.compare_room23_frames import engine, present
 from tools.room24_probe_log import palette_hook, room24_rng
 
 
-def compare(game, capture):
+def compare(game, capture, *, zplanes=None):
     run = json.loads((capture / "run.json").read_bytes())
     if (run["entry"], run["equivalent_command"]) != ("debugger_equivalent_room_entry", "room 24"):
         raise ValueError("Expected debugger-equivalent Room 24 capture")
@@ -56,6 +56,7 @@ def compare(game, capture):
         display = (capture / f"present-{frame:03}.bin").read_bytes()
         present(display, frame)
         meta, phases, back, front, backend = engine(packet, frame)
+        predicted_planes = zplanes(meta, packet) if zplanes is not None else None
         rows = [s.split() for s in meta["state"]]
         context, = (list(map(int, r[1:])) for r in rows if r[0] == "room24")
         view, = (list(map(int, r[1:])) for r in rows if r[0] == "camera")
@@ -101,7 +102,8 @@ def compare(game, capture):
         paint_scaled(guy, composed, width, ax, ay, facing, limbs, sx)
         if depth:
             start = packet.index(b"\nDATA\n") + 6 + 95232 + depth * 5760
-            composed = apply_depth(composed, prediction, packet[start:start + 5760])
+            mask = predicted_planes[depth] if predicted_planes is not None else packet[start:start + 5760]
+            composed = apply_depth(composed, prediction, mask)
         events.append(dict(kind="object_state", evidence="runtime_observed", tick=frame,
                            script=dict(kind="LSCR", storage_room=24, id=200, pc=25),
                            payload=dict(object_id=246, state=state)))

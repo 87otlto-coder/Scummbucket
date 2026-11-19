@@ -23,7 +23,7 @@ def retain_unchanged_front(previous, background, actors):
     return previous[2]
 
 
-def compare(game, export, capture):
+def compare(game, export, capture, *, zplanes=None):
     manifest = json.loads((export / "manifest.json").read_bytes())
     run = json.loads((capture / "run.json").read_bytes())
     if run["entry"] != "debugger_equivalent_room_entry":
@@ -65,6 +65,7 @@ def compare(game, export, capture):
     for frame in range(1, 33):
         packet = (capture / f"engine-{frame:03}.bin").read_bytes()
         meta, phases, back, front, backend = engine(packet, frame)
+        predicted_planes = zplanes(meta, packet) if zplanes is not None else None
         lines = [line.split() for line in meta["state"]]
         entry, = (list(map(int, line[1:])) for line in lines if line[0] == "room35")
         effective = int(bool(run["injected_bit92"] or run["injected_bit567"]))
@@ -126,7 +127,8 @@ def compare(game, export, capture):
                 packed = packet[offset:offset + 5760]
                 if not 0 < plane < meta["mask_count"]:
                     raise ValueError("Actor depth plane is out of range")
-                extended_front = apply_depth(extended_front, extended, packed)
+                mask = predicted_planes[plane] if predicted_planes is not None else packed
+                extended_front = apply_depth(extended_front, extended, mask)
         else:
             extended_front = retain_unchanged_front(previous, extended, actors)
         previous = extended, actors, bytes(extended_front)

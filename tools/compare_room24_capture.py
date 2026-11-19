@@ -14,10 +14,10 @@ from scummbucket.room24_water import DOS_HASHES, authored_position, decode_layer
 from scummbucket.room35_waterfall import paint_indexed_layer
 from scummbucket.scene_events import serialize_scene_events
 from tools.compare_room23_frames import engine, present
-from tools.room24_probe_log import palette_hook, room24_rng
+from tools.room24_probe_log import palette_hook, replay_rng, room24_rng
 
 
-def compare(game, capture, *, zplanes=None):
+def compare(game, capture, *, zplanes=None, entry_script_local=None):
     run = json.loads((capture / "run.json").read_bytes())
     if (run["entry"], run["equivalent_command"]) != ("debugger_equivalent_room_entry", "room 24"):
         raise ValueError("Expected debugger-equivalent Room 24 capture")
@@ -41,6 +41,13 @@ def compare(game, capture, *, zplanes=None):
     archive_palette = bytearray(bg["initial_palette"])
     log = (capture / "console.log").read_text(encoding="utf8", errors="replace")
     context = palette_hook(log, 24)
+    event_mode = entry_script_local is not None
+    if event_mode:
+        if zplanes is None or context is None:
+            raise ValueError("Event replay requires archive depth and capture entry-hook operands")
+        rng = replay_rng(log, initial_state=entry_script_local)
+        if len(rng) != 64:
+            raise ValueError("Room 24 event replay requires one accepted LSCR selection per captured frame")
     initialized = None
     if context:
         hook, mode, variables = context
@@ -56,7 +63,6 @@ def compare(game, capture, *, zplanes=None):
         display = (capture / f"present-{frame:03}.bin").read_bytes()
         present(display, frame)
         meta, phases, back, front, backend = engine(packet, frame)
-        predicted_planes = zplanes(meta, packet) if zplanes is not None else None
         rows = [s.split() for s in meta["state"]]
         context, = (list(map(int, r[1:])) for r in rows if r[0] == "room24")
         view, = (list(map(int, r[1:])) for r in rows if r[0] == "camera")
@@ -64,15 +70,24 @@ def compare(game, capture, *, zplanes=None):
             raise ValueError(f"Unexpected room or viewport at frame {frame}")
         script, = (list(map(int, r[1:])) for r in rows if r[0] == "script" and r[2] == "200")
         pos, = (list(map(int, r[2:])) for r in rows if r[:2] == ["position", "246"])
-        if pos != [x, y]:
+        if pos != [x, y] and not event_mode:
             raise ValueError(f"Room 24 placement differs at frame {frame}")
         states = {int(r[1]): int(r[2]) for r in rows if r[0] == "object"}
-        state = states.pop(246)
-        if any(states.values()) or state not in authored or state == previous:
-            raise ValueError(f"Unexpected object transition at frame {frame}")
+        observed_state = states.pop(246)
+        if event_mode:
+            state = rng[frame - 1][-1]["candidate"]
+            inputs = [dict(object_id=246, state=state, x=x, y=y, placement="archive_decoded")]
+            viewport = (0, 0, width, height)
+            predicted_planes = zplanes.render(inputs, viewport)
+            zplanes.check(predicted_planes, inputs, viewport, meta, packet)
+        else:
+            state = observed_state
+            if any(states.values()) or state not in authored or state == previous:
+                raise ValueError(f"Unexpected object transition at frame {frame}")
+            predicted_planes = zplanes(meta, packet) if zplanes is not None else None
         previous = state
         if palette is None:
-            palette = bytearray(phases[0])
+            palette = bytearray(initialized if event_mode else phases[0])
             seed_sha = sha256(palette).hexdigest()
         archive_changes = [i // 3 for i in range(0, 768, 3)
                            if archive_palette[i:i + 3] != phases[0][i:i + 3]]
@@ -104,11 +119,14 @@ def compare(game, capture, *, zplanes=None):
             start = packet.index(b"\nDATA\n") + 6 + 95232 + depth * 5760
             mask = predicted_planes[depth] if predicted_planes is not None else packet[start:start + 5760]
             composed = apply_depth(composed, prediction, mask)
-        events.append(dict(kind="object_state", evidence="runtime_observed", tick=frame,
+        events.append(dict(kind="object_state",
+                           evidence="script_static_aligned" if event_mode else "runtime_observed", tick=frame,
                            script=dict(kind="LSCR", storage_room=24, id=200, pc=25),
                            payload=dict(object_id=246, state=state)))
         frames.append(dict(frame=frame, packet_sha256=sha256(packet).hexdigest(),
                            present_sha256=sha256(display).hexdigest(), state=state, script=script,
+                           object_state_matches=state == observed_state and not any(states.values()),
+                           object_position_matches=pos == [x, y],
                            object_position=pos, inherited_bits=context[2:], actor_draw=rows[[r[0] for r in rows].index("draw")][1:],
                            timer=meta["timer_pair"], cycles=actual_cycles, expected_cycles=expected,
                            archive_pre_palette_difference_indices=archive_changes,
@@ -124,7 +142,8 @@ def compare(game, capture, *, zplanes=None):
                                                           for i in range(0, 768, 3)),
                            backend_index_mismatches=sum(a != b for a, b in zip(
                                front, backend[meta["top"] * width:(meta["top"] + height) * width]))))
-    rng = room24_rng(log, [row["state"] for row in frames])
+    if not event_mode:
+        rng = room24_rng(log, [row["state"] for row in frames])
     if rng is not None:
         aligned = []
         for batch, event in zip(rng, events):
@@ -138,6 +157,8 @@ def compare(game, capture, *, zplanes=None):
                     index_sha256=DOS_HASHES[0], logical_room=24, physical_room=24),
                 entry=run["entry"], save_sha256=run["save_sha256"], exe_sha256=run["exe_sha256"],
                 engine_version=run["version"], raw_rng_calls="observed" if rng is not None else "unobserved",
+                object_state_input="rng_script_replay" if event_mode else "runtime_snapshot_control",
+                entry_script_local_seed=entry_script_local,
                 palette_seed_sha256=seed_sha, entry_hook=None if context is None else dict(
                     script=hook, mode=mode, variables={str(k): v for k,v in variables.items()}),
                 events=events, frames=frames)
@@ -168,3 +189,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -81,7 +81,6 @@ class ArchiveDepth:
         if not objects or len(objects) != len({key for key, _ in objects}):
             raise ValueError("Missing or duplicate observed object slots")
         inputs = []
-        layers = []
         for number, state in reversed(objects):
             obj = self.objects[number]
             # An object without any authored image cannot draw a Z plane.
@@ -91,18 +90,27 @@ class ArchiveDepth:
                 ox, oy = positions[number]
             else:
                 ox, oy, _ = authored_position(self.data, obj, self.room_id)
-            layer = self.object_mask((number, state))
-            layers.append((ox, oy, *layer))
             inputs.append(dict(object_id=number, state=state, x=ox, y=oy,
                                placement="runtime_observed" if number in positions else "archive_decoded"))
+        viewport = (x, y, width, height)
+        return self.render(inputs, viewport), inputs, viewport
+
+    def render(self, inputs, viewport):
+        """Compose archive masks from explicit back-to-front layers."""
+        x, y, width, height = viewport
+        layers = [(row["x"], row["y"], *self.object_mask((row["object_id"], row["state"])))
+                  for row in inputs]
         world = compose_planes(self.background, self.width, self.height, layers)
         predicted = {n: crop_plane(mask, self.width, self.height, x=x, y=y,
                                   view_width=width, view_height=height) for n, mask in world.items()}
-        return predicted, inputs, (x, y, width, height)
+        return predicted
 
     def __call__(self, meta, packet):
         # No packet bytes reach the predictor. Reference bytes are isolated here.
         predicted, inputs, viewport = self.predict(meta["state"])
+        return self.check(predicted, inputs, viewport, meta, packet)
+
+    def check(self, predicted, inputs, viewport, meta, packet):
         _, _, width, height = viewport
         size = width // 8 * height
         start = packet.index(b"\nDATA\n") + 6 + 3072 + 2 * width * height
@@ -122,14 +130,19 @@ def main():
     parser.add_argument("output", type=Path)
     parser.add_argument("--room", type=int, choices=(7, 24, 35), required=True)
     parser.add_argument("--waterfall-export", type=Path)
+    parser.add_argument("--room24-entry-script-local", type=int, choices=range(4),
+                        help="Enable RNG-driven Room 24 replay with this explicit entry seed")
     args = parser.parse_args()
     if args.room == 35 and args.waterfall_export is None:
         parser.error("--waterfall-export is required for Room 35")
+    if args.room != 24 and args.room24_entry_script_local is not None:
+        parser.error("--room24-entry-script-local requires Room 24")
     game = args.fixture / "GAMES/MonkeyIsland2_DOS_VGA"
     masks = ArchiveDepth(game, args.room)
     args.output.mkdir(parents=True, exist_ok=False)
     if args.room == 24:
-        source = compare24(game, args.capture, zplanes=masks)
+        source = compare24(game, args.capture, zplanes=masks,
+                           entry_script_local=args.room24_entry_script_local)
         rows = source["frames"]
         back = sum(r["back"]["indices"]["mismatches"] for r in rows)
         front = sum(r["front"]["indices"]["mismatches"] for r in rows)
@@ -156,6 +169,9 @@ def main():
                for key in ("bytes_compared", "bits_compared", "bytes_mismatched", "bits_mismatched")}
     summary.update(frames=len(rows), back_mismatches=back, front_mismatches=front,
                    final_palette_mismatches=palette, counter_mismatch_frames=counters)
+    if args.room24_entry_script_local is not None:
+        summary["object_state_mismatch_frames"] = sum(not r["object_state_matches"] for r in rows)
+        summary["object_position_mismatch_frames"] = sum(not r["object_position_matches"] for r in rows)
     root = Path(__file__).resolve().parents[1]
     decoder_files = ("object_images.py", "palette_probe.py", "zplanes.py")
     decoder_hashes = {name: sha256((root / "scummbucket" / name).read_bytes()).hexdigest()
@@ -169,8 +185,11 @@ def main():
     if args.room == 7:
         print("Room 7 unmasked mismatches:", source["unmasked"])
     return int(bool(back or front or palette or counters or summary["bytes_mismatched"] or
+                    summary.get("object_state_mismatch_frames") or
+                    summary.get("object_position_mismatch_frames") or
                     (args.room == 7 and (len(rows) != 87 or source["unmasked"] != 778))))
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

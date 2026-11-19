@@ -11,6 +11,7 @@ EVIDENCE = frozenset({
 # Required payload fields and their types. Additional JSON fields can carry
 # conditions, source annotations and engine-specific details.
 FIELDS = {
+    "random_choice": {"result": (int, type(None)), "accepted": (bool, type(None))},
     "object_state": {"object_id": int, "state": int},
     "object_draw": {"object_id": int, "state": int},
     "object_position": {"object_id": int, "x": int, "y": int},

@@ -13,7 +13,7 @@ from scummbucket.classic_costume import ClassicCostume, compose, apply_depth
 from scummbucket.classic_scale import paint_scaled
 from scummbucket.palette_probe import prepare_cycles, advance_palette
 
-def compare(fixture, dest):
+def compare(fixture, dest, *, zplanes=None):
     dest.mkdir(parents=True, exist_ok=False)
     game = fixture / 'GAMES/MonkeyIsland2_DOS_VGA'
     link, = (r for r in inspect(game)['directory_links']['entries'] if r['directory']=='DCOS' and r['id']==142 and r['room_id']==7 and r['status']=='linked')
@@ -27,8 +27,9 @@ def compare(fixture, dest):
     off = guy_link['source_offset']
     guy = ClassicCostume(bytes(v ^ XOR_KEY for v in raw[off:off+guy_link['byte_length']]))
     report = json.loads((fixture/'REPORTS/Room7/sweep-20261110-a/report.json').read_bytes())
-    with Image.open(fixture/'OUTPUT/Room7/native-20261110-a/ZP01.png') as mask_image:
-        mask = mask_image.convert('1')
+    if zplanes is None:
+        with Image.open(fixture/'OUTPUT/Room7/native-20261110-a/ZP01.png') as mask_image:
+            mask = mask_image.convert('1')
     with Image.open(fixture/'OUTPUT/Room7/native-20261110-a/background.png') as world:
         if hashlib.sha256(world.tobytes()).hexdigest() != '843f5d1d81ed8bb8f7353a0c5b3c52d2229505becbd47a411b3cd4314b5bccfc':
             raise ValueError('Unexpected indexed world')
@@ -43,6 +44,7 @@ def compare(fixture, dest):
             if hashlib.sha256(raw).hexdigest() != row['engine_sha256']:
                 raise ValueError(f'Capture hash mismatch at {seq}')
             meta, palettes, back, front, _ = engine(raw, seq)
+            predicted_planes = zplanes(meta, raw) if zplanes is not None else None
             actor, = (s.split() for s in meta['state'] if s.startswith('actor 11 '))
             x = row['viewport_xy'][0]
             bg = world.crop((x,0,x+320,144)).tobytes()
@@ -61,7 +63,8 @@ def compare(fixture, dest):
             paint_scaled(guy,predicted,320,int(guy_actor[2])-x,int(guy_actor[3]),facing,positions,int(scale[2]))
             unmasked = sum(a!=b for a,b in zip(predicted,front))
             if int(walk[1]) == 1:
-                predicted = apply_depth(predicted,scenery,mask.crop((x,0,x+320,144)).tobytes())
+                depth = predicted_planes[1] if predicted_planes is not None else mask.crop((x,0,x+320,144)).tobytes()
+                predicted = apply_depth(predicted,scenery,depth)
             if palette is None:
                 palette = bytearray(palettes[0])
             advance_palette(palette, cycles, delta=max(meta['timer_pair']))

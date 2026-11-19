@@ -132,6 +132,12 @@ def decode_room_background_indexed(data: bytes, *, room_offset: int,
                    "im00_offset": im00.offset, "smap_offset": smap.offset},
     }
     if include_masks:
+        rmih = _one(rmim_children, "RMIH")
+        _require(rmih.length >= 10, "BACKGROUND_RMIH_TRUNCATED", "Missing depth plane count")
+        plane_count = struct.unpack_from("<H", data, rmih.offset + 8)[0] + 1
+        _require(1 <= plane_count <= 8, "BACKGROUND_ZPLANE_COUNT", "Unsupported depth plane count")
+        result["zplane_count"] = plane_count
+        result["source"]["rmih_offset"] = rmih.offset
         planes = [node for node in im00_children if node.tag.startswith("ZP")]
         _require(all(node.tag in {f"ZP{n:02d}" for n in range(1, 9)} for node in planes),
                  "BACKGROUND_ZPLANE_UNSUPPORTED", "Unexpected Z-plane identifier")

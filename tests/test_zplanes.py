@@ -3,6 +3,9 @@ import unittest
 
 from scummbucket.inspector import chunks
 from scummbucket.object_images import ImageDecodeError, _decode_zplane
+from scummbucket.palette_probe import PaletteProbeError, decode_room_background_indexed
+from test_inspector import chunk
+
 from scummbucket.zplanes import compare_plane, compose_planes, crop_plane, pack_plane
 
 
@@ -36,3 +39,21 @@ class ZPlaneTests(unittest.TestCase):
         self.assertEqual(report["bytes_mismatched"], 1)
         self.assertEqual(report["bits_mismatched"], 2)
         self.assertEqual((report["first_mismatch"]["x"], report["first_mismatch"]["y"]), (0, 0))
+
+    def test_background_resource_exposes_native_masks_and_layout(self):
+        bitmap = chunk("SMAP", struct.pack("<I", 12) + bytes((1,)) + bytes(16))
+        mask = chunk("ZP01", struct.pack("<H", 10) + bytes((0x82, 0x81)))
+        rmih = chunk("RMIH", struct.pack("<H", 1))
+        header = chunk("RMHD", struct.pack("<HHH", 8, 2, 0)) + chunk("CLUT", bytes(768))
+        room = chunk("ROOM", header + chunk("RMIM", rmih + chunk("IM00", bitmap + mask)))
+        bg = decode_room_background_indexed(room, room_offset=0, room_length=len(room),
+                                            include_masks=True)
+        self.assertEqual(bg["zplane_count"], 2)
+        plane = bg["zplane_masks"]["ZP01"]
+        self.assertEqual(plane["offset"], room.index(b"ZP01"))
+        self.assertEqual(plane["strip_offsets"], [10])
+        self.assertEqual(pack_plane(plane["pixels"], 8, 2), b"\x81\x81")
+        unsupported = room.replace(b"ZP01", b"ZP99")
+        with self.assertRaises(PaletteProbeError):
+            decode_room_background_indexed(unsupported, room_offset=0, room_length=len(room),
+                                           include_masks=True)

@@ -50,9 +50,14 @@ New bank: 263 streams, Microsoft 4-bit ADPCM, stereo.
 User's successful manual WAV exports (all six uploaded to ChatGPT) substantiate
 the mapping and demonstrate that both wavebanks are decodable. Both Woodtick
 versions have approximately 1:50.18 duration, and both Bar versions about
-0:39.38. The new Jojo WAV is materially smaller than the original Jojo WAV;
-verify its **actual header duration and musical structure** before assuming
-the recordings are equivalent. The `_T` suffix on other remastered bank
+0:39.38. The new Jojo WAV is materially smaller than the original Jojo WAV.
+Using their uploaded byte sizes, subtracting the 44-byte header and dividing
+by four bytes per stereo 16-bit PCM frame predicts **~1:20.533 for New Jojo**
+vs **2:35.748 for Original Jojo**. The same calculation matches the
+independently reported vgmstream sample counts for the other five WAVs;
+therefore this is a strong *derived* timing estimate, **not a direct WAV-header
+inspection or listening confirmation**. Verify the new Jojo header and
+musical structure before assuming the recordings are equivalent. The `_T` suffix on other remastered bank
 entries appears associated with alternate/transition material, but its
 playback semantics have not been verified. The exporter intentionally
 does **not** combine these segments.

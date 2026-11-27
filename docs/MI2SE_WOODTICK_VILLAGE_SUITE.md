@@ -59,3 +59,28 @@ The script verifies the bank's live stream name; decodes only missing WAVs to `F
 - New-bank edition and authentic `_T` transition behavior are separate future investigations, not features in this version.
 
 Related: [draft PR #24](https://github.com/87otlto-coder/Scummbucket/pull/24) and [music handoff #23](https://github.com/87otlto-coder/Scummbucket/issues/23).
+## 27 November Windows preflight: duplicate Original cue (unresolved)
+
+Owner successfully fetched and fast-forwarded this PR branch through commit `33ebc67`. Their initial safety check reported **local working-tree changes**; nevertheless the manual fast-forward completed. Future procedures must inspect `git status --short` and protect those changes—**never discard/stash/overwrite without owner's approval**.
+
+The initial owner-run `-ListOnly` preflight and subsequent full-run attempt both stopped **before decoding** at `Expected exactly one original cue track110. Found 2.` This is a legitimate ambiguity in `MusicOriginal.xwb`'s cue inventory, not a decoder failure. Since the script rejected it during source selection, neither attempt created the full composition WAV. There may be further duplicates after ID 110; the previous preflight terminated on the first ambiguity.
+
+**Hotfix on the same draft PR branch:** `tools/mi2se_woodtick_village_suite.ps1` now inventories **all six original IDs**, prints every matching Original stream index and all descriptive New-bank cue names, and identifies all unresolved cases at once before any decode/render. Duplicate CSV rows referencing the same stream are not treated as multiple audio variants, but **distinct original stream indexes are not automatically conflated**. A `-StreamOverrides` *single string* parameter can explicitly select a verified stream index for one or more ambiguous IDs, e.g. `-StreamOverrides '110=123;152=234'` (these numbers are **illustrative only, NOT actual known streams**). Invalid choices are rejected. Resolved candidate list is included in the final provenance JSON.
+
+This change has been source-reviewed on GitHub but **not yet Windows-tested**. Read-only local diagnostic without fetching any code:
+
+```powershell
+Set-Location "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
+$csv = "F:\Dev\SCUMMBUCKET\FIXTURE\REPORTS\MI2SE_Music\MI2SE_CueMap_20261124_091453.csv"
+$inventory = Import-Csv -LiteralPath $csv
+foreach ($id in @(101,103,104,110,111,152)) {
+    Write-Host "`nSOUND $id" -ForegroundColor Cyan
+    $inventory | Where-Object { $_.Bank -eq 'MusicOriginal.xwb' -and $_.CueName -ceq "track$id" } |
+        Format-Table Bank,Stream,CueName -AutoSize
+    $inventory | Where-Object { $_.Bank -eq 'MusicNew.xwb' -and $_.CueName -match ("^mx{0}_SE_" -f $id) } |
+        Format-Table Bank,Stream,CueName -AutoSize
+}
+git status --short
+```
+
+After seeing the exact duplicate stream IDs, investigate whether `track110` contains Laundry A and Laundry B or just duplicated inventory entries. Do not choose the first arbitrarily. Depending on the evidence, either select the one supported by listening/metadata or revise the suite to present both intentional variants, with their distinct stream provenance. Acknowledged pending acceptance: no full suite output yet.

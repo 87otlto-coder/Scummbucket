@@ -102,21 +102,21 @@ foreach ($soundId in @($SoundIds | Sort-Object -Unique)) {
         } else {
             '^mx{0}_SE_.*_lp$' -f $soundId
         }
-        $matches = @($inventory | Where-Object {
+        $candidates = @($inventory | Where-Object {
             $_.Bank -eq $bankName -and $_.CueName -match $pattern
         })
-        if ($matches.Count -ne 1) {
-            $status = if ($matches.Count -eq 0) { 'MissingCue' } else { 'AmbiguousCue' }
-            $details = "Expected exactly one cue matching $pattern; found $($matches.Count)."
+        if ($candidates.Count -ne 1) {
+            $status = if ($candidates.Count -eq 0) { 'MissingCue' } else { 'AmbiguousCue' }
+            $details = "Expected exactly one cue matching $pattern; found $($candidates.Count)."
             Write-Warning "$bankName sound $soundId : $details"
             $results.Add((New-Result $soundId $bankName '' '' $status '' $details ''))
             continue
         }
 
-        $cueName = [string]$matches[0].CueName
+        $cueName = [string]$candidates[0].CueName
         [int]$stream = 0
-        if (-not [int]::TryParse([string]$matches[0].Stream, [ref]$stream) -or $stream -le 0) {
-            $details = "Invalid stream number in inventory: $($matches[0].Stream)"
+        if (-not [int]::TryParse([string]$candidates[0].Stream, [ref]$stream) -or $stream -le 0) {
+            $details = "Invalid stream number in inventory: $($candidates[0].Stream)"
             $results.Add((New-Result $soundId $bankName '' $cueName 'InvalidStream' '' $details ''))
             continue
         }

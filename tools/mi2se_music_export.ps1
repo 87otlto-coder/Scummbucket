@@ -16,7 +16,7 @@ Never modifies game input archives or overwrites previously exported WAVs.
 param(
     [string]$WorkspaceRoot = 'F:\Dev\SCUMMBUCKET',
     [string]$InventoryCsv = '',
-    [int[]]$SoundIds = @(101, 103, 162),
+    [string[]]$SoundIds = @('101', '103', '162'),
     [switch]$ListOnly
 )
 
@@ -64,7 +64,152 @@ foreach ($column in @('Bank', 'Stream', 'CueName')) {
         throw "Cue inventory lacks required column: $column"
     }
 }
-if (@($SoundIds).Count -eq 0) {
+# powershell.exe -File cannot reliably pass array-valued parameters.
+# Keep the original CLI input as strings, then split explicit CSV values.
+# For example, -SoundIds 101,103,162 must become three IDs, not 101103162.
+$parsedSoundIds = New-Object 'System.Collections.Generic.List[int]'
+foreach ($value in @($SoundIds)) {
+    foreach ($token in ([string]$value -split '[,;\s]+')) {
+        if (-not $token) { continue }
+        if ($token -notmatch '^[0-9]+
+
+function New-Result {
+    param(
+        [int]$Id, [string]$Bank, [string]$Stream, [string]$Cue,
+        [string]$Status, [string]$Output, [string]$Detail, [string]$Metadata
+    )
+    [pscustomobject]@{
+        SoundId = $Id
+        Bank = $Bank
+        Stream = $Stream
+        CueName = $Cue
+        Status = $Status
+        OutputPath = $Output
+        Detail = $Detail
+        DecoderMetadataJson = $Metadata
+    }
+}
+
+New-Item -ItemType Directory -Path $reportDir -Force | Out-Null
+if (-not $ListOnly) {
+    New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
+}
+$results = New-Object 'System.Collections.Generic.List[object]'
+
+foreach ($soundId in @($parsedSoundIds.ToArray() | Sort-Object -Unique)) {
+    if ($soundId -lt 0) {
+        throw "Invalid negative sound ID: $soundId"
+    }
+    foreach ($bankName in $bankNames) {
+        # Deliberately select the main cue only, not _T transition segments.
+        $pattern = if ($bankName -eq 'MusicOriginal.xwb') {
+            '^track{0}$' -f $soundId
+        } else {
+            '^mx{0}_SE_.*_lp$' -f $soundId
+        }
+        $candidates = @($inventory | Where-Object {
+            $_.Bank -eq $bankName -and $_.CueName -match $pattern
+        })
+        if ($candidates.Count -ne 1) {
+            $status = if ($candidates.Count -eq 0) { 'MissingCue' } else { 'AmbiguousCue' }
+            $details = "Expected exactly one cue matching $pattern; found $($candidates.Count)."
+            Write-Warning "$bankName sound $soundId : $details"
+            $results.Add((New-Result $soundId $bankName '' '' $status '' $details ''))
+            continue
+        }
+
+        $cueName = [string]$candidates[0].CueName
+        [int]$stream = 0
+        $parsed = [int]::TryParse([string]$candidates[0].Stream, [ref]$stream)
+        if (-not $parsed -or $stream -le 0) {
+            $details = "Invalid stream number in inventory: $($candidates[0].Stream)"
+            $results.Add((New-Result $soundId $bankName '' $cueName 'InvalidStream' '' $details ''))
+            continue
+        }
+
+        $stem = [System.IO.Path]::GetFileNameWithoutExtension($bankName)
+        $safeName = $cueName -replace '[^a-zA-Z0-9._-]', '_'
+        $filename = '{0}_{1}_stream_{2:D4}.wav' -f $stem, $safeName, $stream
+        $destination = Join-Path $outputDir $filename
+        if ($ListOnly) {
+            Write-Host ("MAP {0}: {1} stream {2} ({3})" -f $soundId, $bankName, $stream, $cueName)
+            $results.Add((New-Result $soundId $bankName "$stream" $cueName 'MappedOnly' $destination '' ''))
+            continue
+        }
+
+        $bankPath = Join-Path $inputDir $bankName
+        try {
+            # Recheck the actual bank before decoding; CSV names alone are insufficient.
+            $metadataText = (& $decoder -m -I -s $stream $bankPath | Out-String)
+            if ($LASTEXITCODE -ne 0) {
+                throw "Decoder metadata failed with exit code $LASTEXITCODE"
+            }
+            $metadata = $metadataText | ConvertFrom-Json
+            $actual = [string]$metadata.streamInfo.name
+            if ($actual -cne $cueName) {
+                throw "Bank reports cue '$actual', inventory expects '$cueName'."
+            }
+
+            # Previous manual exports used different descriptive names: detect by bank+stream.
+            $existingPattern = '{0}_*_stream_{1:D4}.wav' -f $stem, $stream
+            $existing = @(Get-ChildItem -LiteralPath $outputDir -File -Filter $existingPattern)
+            if ($existing.Count -gt 0) {
+                $details = "Existing WAV preserved (not revalidated): $($existing[0].FullName)"
+                Write-Host "SKIP: $details"
+                $results.Add((New-Result $soundId $bankName "$stream" $cueName 'AlreadyPresentUnverified' $existing[0].FullName $details $metadataText))
+                continue
+            }
+
+            if (Test-Path -LiteralPath $destination) {
+                throw "Output already exists: $destination"
+            }
+            & $decoder -i -s $stream -o $destination $bankPath
+            $code = $LASTEXITCODE
+            if ($code -ne 0 -or -not (Test-Path -LiteralPath $destination -PathType Leaf)) {
+                throw "Audio decode failed (exit code $code); any partial output is left for inspection."
+            }
+            $size = (Get-Item -LiteralPath $destination).Length
+            if ($size -le 44) {
+                throw "Decoded output is unexpectedly small: $size bytes"
+            }
+            Write-Host "EXPORTED: $destination"
+            $results.Add((New-Result $soundId $bankName "$stream" $cueName 'Exported' $destination "$size bytes" $metadataText))
+        }
+        catch {
+            $details = $_.Exception.Message
+            Write-Warning ("FAILED: {0} / {1} / {2}: {3}" -f $bankName, $soundId, $cueName, $details)
+            $results.Add((New-Result $soundId $bankName "$stream" $cueName 'Failed' $destination $details ''))
+        }
+    }
+}
+
+$stamp = Get-Date -Format 'yyyyMMdd_HHmmss_fffffff'
+$manifest = Join-Path $reportDir "MI2SE_Export_$stamp.csv"
+if (Test-Path -LiteralPath $manifest) {
+    throw "Report exists, refusing to overwrite: $manifest"
+}
+$results.ToArray() | Export-Csv -LiteralPath $manifest -NoTypeInformation -Encoding UTF8
+Write-Host "Manifest: $manifest"
+$results.ToArray() | Select-Object SoundId, Bank, Stream, CueName, Status |
+    Format-Table -AutoSize
+
+$bad = @($results.ToArray() | Where-Object {
+    $_.Status -in @('MissingCue', 'AmbiguousCue', 'InvalidStream', 'Failed')
+})
+if ($bad.Count -gt 0) {
+    throw "$($bad.Count) cue(s) missing, ambiguous or failed; see manifest."
+}
+) {
+            throw "Invalid sound ID '$token'. Expected non-negative integers separated by commas."
+        }
+        [int]$parsedId = 0
+        if (-not [int]::TryParse($token, [ref]$parsedId)) {
+            throw "Sound ID out of Int32 range: '$token'"
+        }
+        $parsedSoundIds.Add($parsedId)
+    }
+}
+if ($parsedSoundIds.Count -eq 0) {
     throw 'Supply at least one sound ID.'
 }
 

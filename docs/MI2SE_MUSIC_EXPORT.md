@@ -51,13 +51,7 @@ User's successful manual WAV exports (all six uploaded to ChatGPT) substantiate
 the mapping and demonstrate that both wavebanks are decodable. Both Woodtick
 versions have approximately 1:50.18 duration, and both Bar versions about
 0:39.38. The new Jojo WAV is materially smaller than the original Jojo WAV.
-Using their uploaded byte sizes, subtracting the 44-byte header and dividing
-by four bytes per stereo 16-bit PCM frame predicts **~1:20.533 for New Jojo**
-vs **2:35.748 for Original Jojo**. The same calculation matches the
-independently reported vgmstream sample counts for the other five WAVs;
-therefore this is a strong *derived* timing estimate, **not a direct WAV-header
-inspection or listening confirmation**. Verify the new Jojo header and
-musical structure before assuming the recordings are equivalent. The `_T` suffix on other remastered bank
+**Owner-run vgmstream now directly verifies New Jojo's one-pass length as 1:20.534** (3,551,488 samples, decoder-reported 44,099 Hz), with a loop from 0:02.659 to 1:20.534. Original Jojo is 2:35.748; its New recording is approximately 75.214 seconds shorter. The decoder's extended playback duration of 2:48.410 includes loop treatment and is not the one-pass duration. Why Jojo is shorter remains unverified. The _T suffix on other remastered bank entries may identify transition segments, but this has not been verified. The exporter intentionally keeps these separate. Verify musical structure by listening before assuming the recordings are equivalent. The `_T` suffix on other remastered bank
 entries appears associated with alternate/transition material, but its
 playback semantics have not been verified. The exporter intentionally
 does **not** combine these segments.
@@ -116,3 +110,26 @@ No extra top-level project directories are created.
 See [M2 music work tracking — issue #23](https://github.com/87otlto-coder/Scummbucket/issues/23).
 Keep game-derived waveforms and banks local; GitHub stores only code, maps
 of factual stream IDs, procedures and non-copyright diagnostics.
+
+## Creative Woodtick-to-Bar experiment (PR #24)
+
+The separate source script tools/mi2se_woodtick_crossfade.ps1 creates a roughly 31.851-second creative crossfade using *already decoded* Woodtick 101 and Bar 103 WAVs. This is an **artistic preview, NOT a verified XACT or original DOS iMUSE transition**.
+
+The Special Edition implementation CSV documents a shared 3.539-second bar and 0.442-second offset. The script trims five bars from each recording at that offset, overlaps one bar using FFmpeg linear acrossfade, normalizes both to 44.1 kHz stereo PCM, and creates a WAV and JSON with source SHA256 and method metadata. It refuses to overwrite either output. It does not interpret or mix the separate _T segments. No game archives are changed.
+
+FFmpeg is an additional third-party dependency: ffmpeg.exe must be on PATH or somewhere within the existing F:\Dev\SCUMMBUCKET\TOOLS tree. The script fails with an explicit error if FFmpeg or an input WAV is absent; it does not install anything.
+
+From Windows PowerShell 5.1, with the repository on branch feature/m2-mi2se-music-export-20261127:
+
+    Set-Location "F:\Dev\SCUMMBUCKET\SOURCE\ScummBucket"
+    .\tools\mi2se_woodtick_crossfade.ps1 -Variant Original
+    .\tools\mi2se_woodtick_crossfade.ps1 -Variant New
+
+The scripts on this PR branch have **not yet been run or auditioned on Windows**. A successful output requires actual Windows execution, an audible check of the joining bar, and confirmation that the WAV and JSON exist. A creative crossfade does not establish authentic game transition behavior.
+
+### Concise Windows acceptance checklist
+
+1. Run mi2se_music_export.ps1 -ListOnly; confirm six expected mappings and new report CSV (no WAV exports).
+2. Run the exporter for IDs 101,103,162; confirm it preserves six prior WAVs and reports AlreadyPresentUnverified, not Exported.
+3. Run each crossfade variant (if FFmpeg is installed); confirm unique WAV and JSON, approximately 31.851-second audio, no overwritten file, and no audible clicks or unnatural musical mismatch.
+4. Record observed outcomes and failures in FIXTURE\REPORTS; keep game-derived WAVs out of GitHub.

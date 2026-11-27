@@ -15,6 +15,9 @@ Does not modify original game archives or overwrite existing WAVs.
 param(
     [string]$WorkspaceRoot = 'F:\Dev\SCUMMBUCKET',
     [string]$InventoryCsv = '',
+    # Explicitly choose a stream when an Original-bank cue ID occurs more than once.
+    # Example: -StreamOverrides '110=27;152=8'. Never guess which variant is right.
+    [string]$StreamOverrides = '',
     [switch]$ListOnly
 )
 Set-StrictMode -Version Latest
@@ -65,24 +68,89 @@ $sections = @(
     [pscustomobject]@{Name='Carpenter - Woodsmith';   Id=111; Bars=8; StartBar=0},
     [pscustomobject]@{Name='Woodtick - Closing';      Id=101; Bars=8; StartBar=22}
 )
+# PowerShell -File accepts this as a single string rather than an array.
+$overrides = @{}
+if ($StreamOverrides.Trim()) {
+    foreach ($part in ($StreamOverrides -split '[;,]')) {
+        if ($part -notmatch '^\s*(\d+)\s*=\s*(\d+)\s*$') {
+            throw "Invalid stream override '$part'. Use ID=stream;ID=stream, e.g. '110=27;152=8'."
+        }
+        [int]$overrideId = 0
+        [int]$overrideStream = 0
+        if (-not [int]::TryParse($Matches[1], [ref]$overrideId) -or
+            -not [int]::TryParse($Matches[2], [ref]$overrideStream) -or
+            $overrideStream -le 0) {
+            throw "Invalid numeric stream override '$part'."
+        }
+        if ($overrides.ContainsKey($overrideId)) {
+            throw "Repeated stream override for sound $overrideId."
+        }
+        $overrides[$overrideId] = $overrideStream
+    }
+}
+$ids = @($sections | ForEach-Object { $_.Id } | Sort-Object -Unique)
+foreach ($id in @($overrides.Keys)) {
+    if ($id -notin $ids) {
+        throw "Stream override supplied for sound $id, which is not used in this composition."
+    }
+}
 $resolved = @{}
-foreach ($id in @($sections | ForEach-Object { $_.Id } | Sort-Object -Unique)) {
+$unresolved = New-Object 'System.Collections.Generic.List[string]'
+$streamOptions = New-Object 'System.Collections.Generic.List[object]'
+foreach ($id in $ids) {
     $name = "track$id"
-    $matches = @($inventory | Where-Object {
+    $rawMatches = @($inventory | Where-Object {
         $_.Bank -eq 'MusicOriginal.xwb' -and $_.CueName -ceq $name
     })
-    if ($matches.Count -ne 1) {
-        throw "Expected exactly one original cue $name. Found $($matches.Count)."
+    # Duplicate inventory rows pointing to the SAME stream are not alternate audio.
+    # Different stream indexes ARE distinct candidates and must be reported.
+    $candidates = @($rawMatches | Sort-Object {[int]$_.Stream} -Unique)
+    $differentStreamIds = @($rawMatches | Select-Object -ExpandProperty Stream -Unique)
+    $matchingNew = @($inventory | Where-Object {
+        $_.Bank -eq 'MusicNew.xwb' -and $_.CueName -match ('^mx{0}_SE_' -f $id)
+    })
+    Write-Host ("SOUND {0}: {1} Original row(s), {2} distinct stream(s); {3} descriptive New-bank candidate(s)" -f $id,$rawMatches.Count,$differentStreamIds.Count,$matchingNew.Count)
+    foreach ($candidate in $rawMatches) {
+        Write-Host ("  ORIGINAL: Stream={0}, Cue={1}" -f $candidate.Stream,$candidate.CueName)
+        $streamOptions.Add([pscustomobject]@{
+            Id=$id; Bank='MusicOriginal.xwb'; Stream=[string]$candidate.Stream
+            Cue=[string]$candidate.CueName
+        })
     }
-    [int]$stream = 0
-    if (-not [int]::TryParse([string]$matches[0].Stream,[ref]$stream) -or $stream -le 0) {
-        throw "Invalid stream index for $name"
+    foreach ($candidate in $matchingNew) {
+        Write-Host ("  NEW:      Stream={0}, Cue={1}" -f $candidate.Stream,$candidate.CueName)
     }
-    $filename = 'MusicOriginal_{0}_stream_{1:D4}.wav' -f $name,$stream
+    if ($differentStreamIds.Count -eq 0) {
+        $unresolved.Add("sound $id has no Original stream for $name")
+        continue
+    }
+    if ($differentStreamIds.Count -gt 1 -and -not $overrides.ContainsKey($id)) {
+        $unresolved.Add("sound $id has multiple Original streams [$($differentStreamIds -join ', ')]; specify -StreamOverrides 'ID=stream' AFTER identifying the correct variant")
+        continue
+    }
+
+    $chosen = if ($overrides.ContainsKey($id)) {
+        [int]$overrides[$id]
+    } else {
+        [int]$differentStreamIds[0]
+    }
+    $selectedMatches = @($rawMatches | Where-Object { [int]$_.Stream -eq $chosen })
+    if ($selectedMatches.Count -eq 0) {
+        $unresolved.Add("sound $id override $chosen does not match the Original-bank candidates [$($differentStreamIds -join ', ')]")
+        continue
+    }
+    $filename = 'MusicOriginal_{0}_stream_{1:D4}.wav' -f $name,$chosen
     $resolved[$id] = [pscustomobject]@{
-        SoundId=$id; Cue=$name; Stream=$stream; FileName=$filename;
+        SoundId=$id; Cue=$name; Stream=$chosen; FileName=$filename;
         Path=(Join-Path $outputDir $filename)
     }
+}
+if ($unresolved.Count -gt 0) {
+    Write-Warning "No suite rendered: $($unresolved.Count) cue(s) unresolved."
+    foreach ($message in $unresolved) {
+        Write-Warning $message
+    }
+    throw "Music inventory ambiguity: review all candidate streams above. Original bank files and existing WAVs are unchanged."
 }
 $totalBars = [decimal](($sections | Measure-Object -Property Bars -Sum).Sum)
 $expected = ($totalBars - [decimal]($sections.Count - 1)) * $bar
@@ -111,17 +179,7 @@ $chapters.ToArray() | Format-Table Number,Name,SoundId,SuiteStartSeconds -AutoSi
 Write-Host ("Expected runtime: {0} seconds" -f $expected.ToString('0.000',$culture))
 if ($ListOnly) {
     foreach ($source in @($resolved.Values | Sort-Object SoundId)) {
-        Write-Host ("ORIGINAL CUE {0}: {1}, stream {2}" -f $source.SoundId,$source.Cue,$source.Stream)
-        $newPattern = '^mx{0}_SE_' -f $source.SoundId
-        $newCandidates = @($inventory | Where-Object {
-            $_.Bank -eq 'MusicNew.xwb' -and $_.CueName -match $newPattern
-        })
-        $examples = @($newCandidates | Select-Object -First 4 -ExpandProperty CueName)
-        if ($newCandidates.Count -gt 0) {
-            Write-Host ("  Remastered naming evidence ({0} entries): {1}" -f $newCandidates.Count,($examples -join ', '))
-        } else {
-            Write-Warning "No matching New-bank cue names for sound $($source.SoundId); location label requires listening confirmation."
-        }
+        Write-Host ("SELECTED ORIGINAL: ID {0}, {1}, stream {2}" -f $source.SoundId,$source.Cue,$source.Stream)
     }
     Write-Host 'Plan only: no audio decoded or written.'
     return
@@ -241,6 +299,8 @@ $provenance = [ordered]@{
     CueInventory=$InventoryCsv
     Chapters=@($chapters.ToArray())
     Sources=@($sources.ToArray())
+    InventoryOriginalStreamCandidates=@($streamOptions.ToArray())
+    StreamOverrides=$StreamOverrides
     FfmpegExecutable=$ffmpeg
     OutputFile=$wavOut
     OutputBytes=(Get-Item -LiteralPath $wavOut).Length

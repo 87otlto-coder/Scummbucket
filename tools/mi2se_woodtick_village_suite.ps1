@@ -104,7 +104,6 @@ foreach ($id in $ids) {
     })
     # Duplicate inventory rows pointing to the SAME stream are not alternate audio.
     # Different stream indexes ARE distinct candidates and must be reported.
-    $candidates = @($rawMatches | Sort-Object {[int]$_.Stream} -Unique)
     $differentStreamIds = @($rawMatches | Select-Object -ExpandProperty Stream -Unique)
     $matchingNew = @($inventory | Where-Object {
         $_.Bank -eq 'MusicNew.xwb' -and $_.CueName -match ('^mx{0}_SE_' -f $id)

@@ -174,8 +174,8 @@ if (Test-Path -LiteralPath $reportPath) { throw "Refusing report overwrite: $rep
 New-Item -ItemType Directory -Path $runDir | Out-Null
 
 function Format-Seconds([double]$s) { return ([decimal]$s).ToString('0.000000',$culture) }
-function Invoke-CheckedRender([string[]]$args, [string]$path) {
-    & $ffmpeg @args
+function Invoke-CheckedRender([string[]]$renderArgs, [string]$path) {
+    & $ffmpeg @renderArgs
     if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $path -PathType Leaf)) {
         throw "FFmpeg failed; any partial outputs are retained in $runDir. Failed: $path"
     }

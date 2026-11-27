@@ -20,8 +20,28 @@ jobs:
           python-version: "3.11"
       - name: Install optional GIF encoder for full regression coverage
         run: python -m pip install -e ".[gif]"
-      - name: Run synthetic-only unit tests
-        run: python -m unittest discover -s tests -v
+      - name: Check out pinned BigR export sidecar
+        uses: actions/checkout@v5
+        with:
+          repository: 87otlto-coder/BigR
+          ref: 4748826f922a335999651b14951ed2584f6f4ded
+          path: .bigr-test-sidecar
+          persist-credentials: false
+      - name: Set up Node for real sidecar acceptance
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Build pinned BigR sidecar
+        working-directory: .bigr-test-sidecar
+        run: |
+          npm ci --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run build
+      - name: Run synthetic-only unit tests including real BigR
+        shell: pwsh
+        run: |
+          $env:BIGR_TEST_CLI = (Resolve-Path ".bigr-test-sidecar/bin/bigr-export.mjs").Path
+          python -m unittest discover -s tests -v
       - name: Validate P4 private acceptance runner syntax (without private fixtures)
         shell: pwsh
         run: ./tools/p4_private_acceptance.ps1 -CheckSyntax

@@ -3,7 +3,7 @@
 **Scope:** A practical, external-tool-based audio export path. This does not
 reimplement XACT, iMUSE, MIDI synthesis, or game playback logic.
 
-**Implementation:** [`tools/mi2se_music_export.ps1`](../tools/mi2se_music_export.ps1)
+**Implementations:** [`tools/mi2se_music_export.ps1`](../tools/mi2se_music_export.ps1) for extraction and [`tools/mi2se_woodtick_crossfade.ps1`](../tools/mi2se_woodtick_crossfade.ps1) for the optional creative preview.
 (Windows PowerShell 5.1). **Status: prototype; actual Windows execution of this
 new script is still pending.** Earlier manual vgmstream commands and six WAV
 exports were successful and are the evidence for the cue mapping below.
@@ -51,10 +51,7 @@ User's successful manual WAV exports (all six uploaded to ChatGPT) substantiate
 the mapping and demonstrate that both wavebanks are decodable. Both Woodtick
 versions have approximately 1:50.18 duration, and both Bar versions about
 0:39.38. The new Jojo WAV is materially smaller than the original Jojo WAV.
-**Owner-run vgmstream now directly verifies New Jojo's one-pass length as 1:20.534** (3,551,488 samples, decoder-reported 44,099 Hz), with a loop from 0:02.659 to 1:20.534. Original Jojo is 2:35.748; its New recording is approximately 75.214 seconds shorter. The decoder's extended playback duration of 2:48.410 includes loop treatment and is not the one-pass duration. Why Jojo is shorter remains unverified. The _T suffix on other remastered bank entries may identify transition segments, but this has not been verified. The exporter intentionally keeps these separate. Verify musical structure by listening before assuming the recordings are equivalent. The `_T` suffix on other remastered bank
-entries appears associated with alternate/transition material, but its
-playback semantics have not been verified. The exporter intentionally
-does **not** combine these segments.
+**Owner-run vgmstream now directly verifies New Jojo's one-pass length as 1:20.534** (3,551,488 samples, decoder-reported 44,099 Hz), with a loop from 0:02.659 to 1:20.534. Original Jojo is 2:35.748; its New recording is approximately 75.214 seconds shorter. The decoder's extended playback duration of 2:48.410 includes loop treatment and is not the one-pass duration. Why Jojo is shorter remains unverified. The _T suffix on other remastered bank entries may identify transition segments, but this has not been verified. The exporter intentionally keeps these separate. Verify musical structure by listening before assuming the recordings are equivalent.
 
 ## How to use the new script
 

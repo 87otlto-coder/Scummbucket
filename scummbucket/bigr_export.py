@@ -57,13 +57,14 @@ def load_raster(png, room7_manifest=None):
     raw = png.read_bytes()
     evidence = {"extractor": "ScummBucket", "sourcePngSha256": digest(raw)}
     with Image.open(BytesIO(raw)) as im:
-        if im.format != "PNG" or getattr(im, "n_frames", 1) != 1:
+        if (im.format != "PNG" or getattr(im, "n_frames", 1) != 1
+                or raw[12:16] != b"IHDR" or raw[24] != 8):
             raise ValueError("Expected a single decoded PNG raster")
         if im.width * im.height > 4_000_000:
             raise ValueError("Source exceeds adapter's M1 raster safety limit")
         im.load()
         if room7_manifest is None:
-            if im.mode != "RGBA":
+            if im.mode != "RGBA" or raw[25] != 6:
                 raise ValueError("Explicit RGBA PNG required; indexed palette confidence is not inferred")
             evidence["confidence"] = "caller-supplied-decoded-raster"
         else:
@@ -76,7 +77,7 @@ def load_raster(png, room7_manifest=None):
                     or m.get("all_indexed_comparisons_exact") is not True
                     or m.get("palette_source") !=
                     "engine-observed post-presentation palette; not independently forecast here"
-                    or im.mode != "P" or im.size != (320, 144)
+                    or im.mode != "P" or raw[25] != 3 or im.size != (320, 144)
                     or "transparency" in im.info):
                 raise ValueError("Not an opaque, verified Room 7 viewport export")
             rows = [f for s in m["segments"] for f in s["frames"]
@@ -197,7 +198,9 @@ def verify_output(folder, report, raster, scale, asset_id, source_hash):
                 or not isinstance(disk.get("encoder"), dict)):
             raise ValueError("Result provenance, dimensions, rendering or digest mismatch")
         with Image.open(BytesIO(png)) as im:
-            if im.format != "PNG" or im.mode != "RGBA" or im.size != size:
+            if (im.format != "PNG" or im.mode != "RGBA" or im.size != size
+                    or getattr(im, "n_frames", 1) != 1
+                    or png[12:16] != b"IHDR" or png[24:26] != b"\x08\x06"):
                 raise ValueError("Unexpected PNG format, mode or dimensions")
             actual = im.tobytes()
         # Pillow is an independent reference; never used for the BigR output itself.
@@ -242,11 +245,14 @@ def export(png, output, *, asset_id, scale=1, cli=None, node="node",
             report = backend.run("render", "--input", package, "--output", rendered,
                                  "--scale", scale)
             verification = verify_output(rendered, report, raster, scale, asset_id, source_hash)
-            if ((package / "manifest.json").read_bytes() != canonical(json.loads(
-                    (package / "manifest.json").read_bytes()))
-                    or digest((package / "manifest.json").read_bytes()) != source_hash
-                    or (package / PIXELS).read_bytes() != raster.rgba):
-                raise BackendError("INPUT_MUTATED", "BigR changed the staged package")
+            try:
+                if (digest((package / "manifest.json").read_bytes()) != source_hash
+                        or (package / PIXELS).read_bytes() != raster.rgba
+                        or {p.relative_to(package).as_posix() for p in package.rglob("*")}
+                        != {"data", "manifest.json", PIXELS}):
+                    raise ValueError("Staged package changed")
+            except (OSError, ValueError) as exc:
+                raise BackendError("INPUT_MUTATED", str(exc)) from exc
             summary = {"status": "complete", "backend": "BigR", "requestedScale": scale,
                        "actualScale": scale, "capabilities": caps, "validation": checked,
                        "verification": verification, "provenance": raster.provenance}

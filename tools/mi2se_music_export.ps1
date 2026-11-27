@@ -115,7 +115,8 @@ foreach ($soundId in @($SoundIds | Sort-Object -Unique)) {
 
         $cueName = [string]$candidates[0].CueName
         [int]$stream = 0
-        if (-not [int]::TryParse([string]$candidates[0].Stream, [ref]$stream) -or $stream -le 0) {
+        $parsed = [int]::TryParse([string]$candidates[0].Stream, [ref]$stream)
+        if (-not $parsed -or $stream -le 0) {
             $details = "Invalid stream number in inventory: $($candidates[0].Stream)"
             $results.Add((New-Result $soundId $bankName '' $cueName 'InvalidStream' '' $details ''))
             continue

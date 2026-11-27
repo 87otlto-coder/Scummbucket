@@ -71,6 +71,18 @@ If an execution policy prevents locally reviewed scripts from running, invoke
 PowerShell with `-ExecutionPolicy Bypass` **for that process only**, without
 changing machine policy.
 
+**PowerShell 5.1 CLI acceptance note:** An owner-run
+`powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\\tools\\mi2se_music_export.ps1" -SoundIds 101,103,162`
+on the original PR prototype parsed the comma-separated numbers as a *single*
+integer `101103162`, generated two `MissingCue` entries, and left WAVs untouched.
+Microsoft documents that `powershell.exe -File` does not support reliably
+passing array-valued script arguments. Commit `34ed6b31` updates the exporter
+to accept sound IDs as strings and explicitly split commas/semicolons/whitespace
+before strict integer conversion. **This revised parser is source-reviewed but
+not yet Windows runtime-validated.** In the old local checkout, omit `-SoundIds`
+to use the confirmed defaults for 101, 103, and 162. After fetching the fix,
+run `-ListOnly` with `-SoundIds 101,103,162` before trying a full export.
+
 The exporter:
 
 1. Reads the latest `MI2SE_CueMap_*.csv`, or an explicit `-InventoryCsv`.

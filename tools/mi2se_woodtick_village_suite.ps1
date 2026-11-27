@@ -4,6 +4,9 @@
 Produce a creative 11-section Woodtick village suite from MI2SE MusicOriginal.xwb.
 .DESCRIPTION
 Returns to Woodtick between Inn, Bar, Laundry, Wally, and Carpenter.
+Interior rooms are configurable (8-11 bars; default 10); Woodtick bridges
+remain unchanged. Extended passages draw additional original waveform rather
+than guessing loop boundaries or repeating a short clip.
 Not a reconstruction of DOS iMUSE or Special Edition XACT transitions.
 Does not modify original game archives or overwrite existing WAVs.
 .EXAMPLE
@@ -18,6 +21,10 @@ param(
     # Explicitly choose a stream when an Original-bank cue ID occurs more than once.
     # Example: -StreamOverrides '110=27;152=8'. Never guess which variant is right.
     [string]$StreamOverrides = '',
+    # Eight bars recreates v1; ten bars is the default longer listening arrangement.
+    # Eleven is the longest complete-bar excerpt supported by the known short cues.
+    [ValidateRange(8,11)]
+    [int]$RoomBars = 10,
     [switch]$ListOnly
 )
 Set-StrictMode -Version Latest
@@ -53,19 +60,23 @@ foreach ($key in @('Bank','Stream','CueName')) {
 
 # Shared bar timing documented for all six selected cue IDs in
 # MI2_MUSIC_IMPLEMENTATION.csv. Treat edits as creative, not engine-observed.
+# The owner heard that 8-bar room excerpts cut off slightly too soon.
+# Ten bars gives each location two more clean bars before the return crossfade;
+# this uses native recorded material and requires NO synthetic loop.
+# Eleven bars may be selected if the source duration check permits.
 $bar = [decimal]3.539
 $offset = [decimal]0.442
 $sections = @(
     [pscustomobject]@{Name='Woodtick - Opening';      Id=101; Bars=6; StartBar=0},
-    [pscustomobject]@{Name='Swamp Rot Inn';           Id=152; Bars=8; StartBar=0},
+    [pscustomobject]@{Name='Swamp Rot Inn';           Id=152; Bars=$RoomBars; StartBar=0},
     [pscustomobject]@{Name='Woodtick - Interlude 1';  Id=101; Bars=4; StartBar=6},
-    [pscustomobject]@{Name='Bloody Lip Bar';          Id=103; Bars=8; StartBar=0},
+    [pscustomobject]@{Name='Bloody Lip Bar';          Id=103; Bars=$RoomBars; StartBar=0},
     [pscustomobject]@{Name='Woodtick - Interlude 2';  Id=101; Bars=4; StartBar=10},
-    [pscustomobject]@{Name='Laundromat';              Id=110; Bars=8; StartBar=0},
+    [pscustomobject]@{Name='Laundromat';              Id=110; Bars=$RoomBars; StartBar=0},
     [pscustomobject]@{Name='Woodtick - Interlude 3';  Id=101; Bars=4; StartBar=14},
-    [pscustomobject]@{Name='Wally - Cartographer';    Id=104; Bars=8; StartBar=0},
+    [pscustomobject]@{Name='Wally - Cartographer';    Id=104; Bars=$RoomBars; StartBar=0},
     [pscustomobject]@{Name='Woodtick - Interlude 4';  Id=101; Bars=4; StartBar=18},
-    [pscustomobject]@{Name='Carpenter - Woodsmith';   Id=111; Bars=8; StartBar=0},
+    [pscustomobject]@{Name='Carpenter - Woodsmith';   Id=111; Bars=$RoomBars; StartBar=0},
     [pscustomobject]@{Name='Woodtick - Closing';      Id=101; Bars=8; StartBar=22}
 )
 # PowerShell -File accepts this as a single string rather than an array.
@@ -243,7 +254,7 @@ foreach ($source in @($resolved.Values | Sort-Object SoundId)) {
 }
 
 $stamp = Get-Date -Format 'yyyyMMdd_HHmmss_fffffff'
-$baseName = "MI2SE_CREATIVE_Woodtick_Village_Suite_Original_$stamp"
+$baseName = "MI2SE_CREATIVE_Woodtick_Village_Suite_Original_Room$($RoomBars)Bars_$stamp"
 $wavOut = Join-Path $outputDir ($baseName + '.wav')
 $jsonOut = Join-Path $reportDir ($baseName + '.json')
 foreach ($target in @($wavOut,$jsonOut)) {
@@ -294,6 +305,9 @@ $provenance = [ordered]@{
     Game='Monkey Island 2 Special Edition'
     BarLengthSeconds=[double]$bar; BarOffsetSeconds=[double]$offset
     Crossfade='One bar, linear, via FFmpeg; NOT verified iMUSE/XACT'
+    ArrangementVersion='Extended interior-room passages, no synthetic loop'
+    InteriorRoomBars=$RoomBars
+    InteriorRoomExcerptMethod='Contiguous original waveform, bar-aligned; extra room duration does not repeat or synthesize audio'
     ExpectedSeconds=[double]$expected; ActualSeconds=$actual
     CueInventory=$InventoryCsv
     Chapters=@($chapters.ToArray())

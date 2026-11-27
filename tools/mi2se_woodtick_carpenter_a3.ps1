@@ -151,7 +151,7 @@ function Seconds([decimal]$value) { return $value.ToString('0.000000',$culture) 
 function Render([string[]]$ffArgs, [string]$target) {
     & $ffmpeg @ffArgs
     if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $target -PathType Leaf)) {
-        throw "FFmpeg failed; preserve any partial output under $runDir : $target"
+        throw "FFmpeg failed. Partial output (if any) retained: $target"
     }
     $durationJson = (& $ffprobe -v error -show_entries format=duration -of json $target | Out-String)
     if ($LASTEXITCODE -ne 0) { throw "ffprobe failed: $target" }

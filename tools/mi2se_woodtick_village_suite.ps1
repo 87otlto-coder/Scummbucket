@@ -111,7 +111,17 @@ $chapters.ToArray() | Format-Table Number,Name,SoundId,SuiteStartSeconds -AutoSi
 Write-Host ("Expected runtime: {0} seconds" -f $expected.ToString('0.000',$culture))
 if ($ListOnly) {
     foreach ($source in @($resolved.Values | Sort-Object SoundId)) {
-        Write-Host ("CUE {0}: {1}, stream {2}" -f $source.SoundId,$source.Cue,$source.Stream)
+        Write-Host ("ORIGINAL CUE {0}: {1}, stream {2}" -f $source.SoundId,$source.Cue,$source.Stream)
+        $newPattern = '^mx{0}_SE_' -f $source.SoundId
+        $newCandidates = @($inventory | Where-Object {
+            $_.Bank -eq 'MusicNew.xwb' -and $_.CueName -match $newPattern
+        })
+        $examples = @($newCandidates | Select-Object -First 4 -ExpandProperty CueName)
+        if ($newCandidates.Count -gt 0) {
+            Write-Host ("  Remastered naming evidence ({0} entries): {1}" -f $newCandidates.Count,($examples -join ', '))
+        } else {
+            Write-Warning "No matching New-bank cue names for sound $($source.SoundId); location label requires listening confirmation."
+        }
     }
     Write-Host 'Plan only: no audio decoded or written.'
     return

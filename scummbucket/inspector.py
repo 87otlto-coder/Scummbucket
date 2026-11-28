@@ -353,7 +353,14 @@ def _parse_resource(data: bytes, source: str, diagnostics: list[Diagnostic]) -> 
 
 def inspect(path: str | Path) -> dict:
     """Return a JSON-serializable report. Never conceal or discard failures."""
+    report, _ = inspect_archive(path)
+    return report
+
+
+def inspect_archive(path: str | Path) -> tuple[dict, bytes | None]:
+    """Return P1's report and the same decoded resource bytes used to build it."""
     path = Path(path)
+    decoded_resource = None
     report = {"schema_version": "0.1", "status": "failed", "detected_game": None,
               "input": str(path), "sources": [], "index": {}, "resources": {},
               "directory_links": {}, "scene_inventory": {}, "diagnostics": []}
@@ -380,6 +387,7 @@ def inspect(path: str | Path) -> dict:
         diagnostics.extend(Diagnostic(**detail) for detail in scene_diagnostics)
         report["detected_game"] = {"id": "monkey2", "format": "SCUMM v5-style DOS",
                                    "edition_confidence": "structural; exact retail edition unverified"}
+        decoded_resource = decoded1
         report["status"] = ("partial" if any(d.severity in ("error", "fatal") for d in diagnostics)
                             else "success")
     except InspectionError as exc:
@@ -388,4 +396,4 @@ def inspect(path: str | Path) -> dict:
         diagnostics.append(Diagnostic("error", "INPUT_OR_PARSE_FAILED", f"{type(exc).__name__}: {exc}", str(path)))
     report["diagnostics"] = [asdict(d) for d in diagnostics]
     report["diagnostic_counts"] = dict(Counter(d.severity for d in diagnostics))
-    return report
+    return report, decoded_resource

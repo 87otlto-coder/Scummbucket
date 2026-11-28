@@ -6,6 +6,7 @@ import sys
 from .extraction import extract
 from .descumm_verification import verify_descumm
 from .inspector import inspect
+from .music import inventory as music_inventory
 from .object_images import export_object_images
 from .palette_probe import palette_probe
 from .palette_trace import verify_palette_trace
@@ -40,6 +41,12 @@ def main(argv=None) -> int:
     by_id.add_argument("--output-dir", required=True, help="New output directory for chunk and manifest")
     by_id.add_argument("--representation", choices=("decoded", "stored"), default="decoded")
     by_id.add_argument("--json", action="store_true", help="Print full JSON result")
+    music = sub.add_parser("music", help="Inventory and preserve native MI2 DOS sound renditions")
+    music.add_argument("input", help="ZIP, game folder or MONKEY2.000 input")
+    music.add_argument("--output-dir", required=True, help="New output directory")
+    music.add_argument("--export", type=int, nargs="+", default=[], metavar="SOUND_ID")
+    music.add_argument("--woodtick-trace", action="store_true",
+                       help="Include the original archive's static Woodtick-to-Bar trace")
     scene = sub.add_parser("scenes", help="Inspect per-room animation resource candidates (not playback)")
     scene.add_argument("input", help="Original DOS Monkey Island 2 ZIP, folder, or index file")
     scene.add_argument("--room", type=int, help="Show one room ID; omit for all rooms")
@@ -133,6 +140,15 @@ def main(argv=None) -> int:
     event_render.add_argument("--json", action="store_true",
                               help="Print complete result as JSON")
     args = parser.parse_args(argv)
+    if args.command == "music":
+        try:
+            report = music_inventory(args.input, args.output_dir, set(args.export), args.woodtick_trace)
+        except (ValueError, OSError, StopIteration) as exc:
+            print(f"Music extraction failed: {exc}", file=sys.stderr)
+            return 1
+        print(f"Wrote {len(report['sounds'])} sound slots to {args.output_dir}")
+        return 0
+
 
     if args.command == "render-events":
         report = render_palette_event_bundle(
